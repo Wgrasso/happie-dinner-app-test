@@ -298,17 +298,6 @@ export default function MainProfileScreen({
                   transition={200}
                   cachePolicy="memory-disk"
                 />
-                {/* Delete overlay (top-right of image) */}
-                <TouchableOpacity
-                  style={styles.deleteOverlay}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleDeleteRecipe(r);
-                  }}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Feather name="trash-2" size={16} color="#8B7355" />
-                </TouchableOpacity>
               </View>
 
               <View style={styles.cardContent}>
@@ -446,6 +435,18 @@ export default function MainProfileScreen({
                           <Text style={styles.instructionsText}>{selectedRecipe.instructions}</Text>
                         </View>
                       )}
+
+                      <TouchableOpacity
+                        style={styles.modalDeleteButton}
+                        onPress={() => {
+                          closeRecipeModal();
+                          setTimeout(() => handleDeleteRecipe(selectedRecipe), 400);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Feather name="trash-2" size={16} color="#D32F2F" />
+                        <Text style={styles.modalDeleteText}>{t('common.delete') || 'Delete'}</Text>
+                      </TouchableOpacity>
                     </View>
                   </>
                 ) : (
@@ -1067,5 +1068,22 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: '#6B6B6B',
     letterSpacing: 0.1,
+  },
+  modalDeleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    marginTop: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F0E0E0',
+    backgroundColor: '#FFF8F8',
+    gap: 8,
+  },
+  modalDeleteText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    color: '#D32F2F',
   },
 });
