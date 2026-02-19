@@ -371,37 +371,11 @@ export default function ProfileScreen({ route, navigation }) {
 
         {/* Profile Card */}
         <View style={styles.profileCard}>
-          <TouchableOpacity 
-            style={styles.avatarWrapper}
-            onPress={handlePickAvatar}
-            disabled={avatarLoading || isGuest}
-            activeOpacity={0.8}
-          >
-            {avatarLoading ? (
-              <View style={styles.avatarPlaceholder}>
-                <ActivityIndicator size="small" color="#FFF" />
-              </View>
-            ) : avatarUrl ? (
-              <ExpoImage 
-                source={{ uri: avatarUrl }} 
-                style={styles.avatar}
-                contentFit="cover"
-                transition={200}
-                cachePolicy="memory-disk"
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarLetter}>
-                  {name ? name.charAt(0).toUpperCase() : '?'}
-          </Text>
-        </View>
-            )}
-            {!isGuest && (
-              <View style={styles.cameraBadge}>
-                <Text style={styles.cameraIcon}>📷</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <View style={styles.avatarPlaceholder}>
+            <Text style={styles.avatarLetter}>
+              {name ? name.charAt(0).toUpperCase() : '?'}
+            </Text>
+          </View>
           
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{name || t('profile.noNameSet')}</Text>
