@@ -21,8 +21,8 @@
       "buildNumber": "1.1.6",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "Happie Dinner needs camera access to take profile photos",
-        "NSPhotoLibraryUsageDescription": "Happie Dinner needs photo library access to select profile photos",
+        "NSCameraUsageDescription": "Happie Dinner needs camera access to take recipe photos",
+        "NSPhotoLibraryUsageDescription": "Happie Dinner needs photo library access to select recipe photos",
         "UIBackgroundModes": [
           "remote-notification"
         ]
@@ -52,8 +52,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Happie Dinner needs access to your photos to set a profile picture",
-          "cameraPermission": "Happie Dinner needs access to your camera to take profile photos"
+          "photosPermission": "Happie Dinner needs access to your photos to add recipe images",
+          "cameraPermission": "Happie Dinner needs access to your camera to take recipe photos"
         }
       ],
       [
