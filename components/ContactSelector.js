@@ -146,7 +146,7 @@ const ContactSelector = ({
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Zoeken..."
+              placeholder={t('contacts.search')}
               placeholderTextColor="#999"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -157,10 +157,10 @@ const ContactSelector = ({
           {/* Quick Actions */}
           <View style={styles.quickActions}>
             <TouchableOpacity style={styles.quickAction} onPress={selectAll}>
-              <Text style={styles.quickActionText}>Alles selecteren</Text>
+              <Text style={styles.quickActionText}>{t('contacts.selectAll')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickAction} onPress={deselectAll}>
-              <Text style={styles.quickActionText}>Wis selectie</Text>
+              <Text style={styles.quickActionText}>{t('contacts.clearSelection')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -168,15 +168,15 @@ const ContactSelector = ({
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#8B7355" />
-              <Text style={styles.loadingText}>Contacten laden...</Text>
+              <Text style={styles.loadingText}>{t('contacts.loading')}</Text>
             </View>
           ) : filteredContacts.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                {searchQuery ? 'Geen contacten gevonden' : 'Nog geen contacten beschikbaar'}
+                {searchQuery ? t('contacts.noContactsFound') : t('contacts.noContactsAvailable')}
               </Text>
               <Text style={styles.emptySubtext}>
-                {!searchQuery && 'Word lid van groepen om contacten te zien'}
+                {!searchQuery && t('contacts.joinGroupsToSee')}
               </Text>
             </View>
           ) : (
@@ -200,10 +200,10 @@ const ContactSelector = ({
                         </View>
                         <View style={styles.contactInfo}>
                           <Text style={styles.contactName}>
-                            {contact.full_name || contact.user_name || 'User'}
+                            {contact.full_name || contact.user_name || t('common.unknown')}
                           </Text>
                           <Text style={styles.contactGroups} numberOfLines={1}>
-                            {contact.group_names?.join(', ') || 'Geen groep'}
+                            {contact.group_names?.join(', ') || t('contacts.noGroup')}
                           </Text>
                         </View>
                         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -221,7 +221,7 @@ const ContactSelector = ({
           {/* Footer */}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
-              <Text style={styles.cancelButtonText}>Annuleren</Text>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.confirmButton, selectedUserIds.size === 0 && styles.confirmButtonDisabled]}
@@ -229,7 +229,7 @@ const ContactSelector = ({
               disabled={selectedUserIds.size === 0}
             >
               <Text style={styles.confirmButtonText}>
-                Bevestigen ({selectedUserIds.size})
+                {t('contacts.confirm', { count: selectedUserIds.size })}
               </Text>
             </TouchableOpacity>
           </View>

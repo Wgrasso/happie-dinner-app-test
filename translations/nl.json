@@ -70,7 +70,13 @@
     "dinnerRequest": "Diner Verzoek",
     "requestMeal": "Maaltijd aanvragen",
     "signInToCreate": "Log in om groepen aan te maken",
-    "signInToJoin": "Log in om bij groepen aan te sluiten"
+    "signInToJoin": "Log in om bij groepen aan te sluiten",
+    "giveGroupName": "Geef je groep een naam",
+    "namePlaceholder": "bijv. Huisgenoten",
+    "joinGroupTitle": "Join een Groep",
+    "enterCode": "Vul de groepscode in",
+    "codePlaceholder": "bijv. ABC123",
+    "join": "Joinen"
   },
   "dinner": {
     "sendRequest": "Diner Verzoek Sturen",
@@ -157,7 +163,12 @@
     "showMore": "Toon Meer (nog {{count}} beschikbaar)",
     "signInForPersonalized": "Log in voor gepersonaliseerde aanbevelingen",
     "tapToView": "Tik om het volledige recept te bekijken",
-    "american": "Amerikaans"
+    "american": "Amerikaans",
+    "loadingRecipe": "Recept laden...",
+    "recipeNotAvailable": "Receptgegevens niet beschikbaar",
+    "pricePerServing": "Prijs per portie",
+    "defaultName": "Heerlijk Recept",
+    "loadingRecipes": "Heerlijke recepten laden..."
   },
   "userRecipes": {
     "myRecipes": "Mijn Recepten",
@@ -274,7 +285,30 @@
     "respond": "Reageren",
     "viewDetails": "Details bekijken",
     "signInToCreate": "Log in om speciale gelegenheden te plannen",
-    "areYouJoining": "Ga jij mee eten?"
+    "areYouJoining": "Ga jij mee eten?",
+    "dinnerParty": "Etentje",
+    "barbecue": "Barbecue"
+  },
+  "occasions": {
+    "planSomething": "Plan iets leuks",
+    "whatOccasion": "Wat voor gelegenheid is het?",
+    "messageOptional": "Bericht (optioneel)",
+    "messagePlaceholder": "Bijv. Ik word 25!",
+    "timeOptional": "Tijd (optioneel)",
+    "chooseDate": "Kies een datum",
+    "whenIsIt": "Wanneer is het?",
+    "shareWithGroups": "Deel met groepen",
+    "chooseGroups": "Kies de groepen die je wilt uitnodigen",
+    "noGroupsCanCreate": "Je hebt nog geen groepen. Je kunt het moment alsnog aanmaken.",
+    "selectedOne": "{{count}} groep geselecteerd",
+    "selectedMany": "{{count}} groepen geselecteerd",
+    "create": "Aanmaken",
+    "createdSuccess": "Speciaal moment aangemaakt!",
+    "couldNotCreate": "Kon moment niet aanmaken",
+    "confirmDeleteOccasion": "Weet je zeker dat je dit speciale moment wilt verwijderen? Dit kan niet ongedaan worden.",
+    "couldNotDelete": "Kon niet verwijderen",
+    "couldNotStartVoting": "Kon stemronde niet starten",
+    "selectDate": "Selecteer een datum"
   },
   "picker": {
     "selectDate": "Datum selecteren",
@@ -310,7 +344,13 @@
     "activeVotingSession": "Actieve stemsessie",
     "vote": "Stemmen",
     "revealResults": "Resultaten tonen",
-    "terminateSession": "Sessie beëindigen"
+    "terminateSession": "Sessie beëindigen",
+    "swipeHint": "← Swipe om te stemmen →",
+    "likeThis": "♡ Leuk",
+    "dislikeThis": "✕ Niet leuk",
+    "calculatingResults": "Stemresultaten berekenen...",
+    "unableToLoadResults": "Kan resultaten niet laden",
+    "clearResults": "Resultaten wissen"
   },
   "modal": {
     "groupsTitle": "Groepen",
@@ -393,7 +433,8 @@
     "cannotBeUndone": "Deze actie kan niet ongedaan worden gemaakt",
     "noResponses": "Nog geen reacties",
     "you": "jij",
-    "pending": "wacht"
+    "pending": "wacht",
+    "tryAgain": "Opnieuw proberen"
   },
   "emptyStates": {
     "noGroups": "Nog geen groepen",
@@ -422,6 +463,20 @@
     "unauthorized": "Je moet ingelogd zijn om dit te doen",
     "forbidden": "Je hebt geen toestemming om dit te doen",
     "serverError": "Serverfout. Probeer het later opnieuw.",
-    "databaseError": "Databasefout. Neem contact op met support."
+    "databaseError": "Databasefout. Neem contact op met support.",
+    "couldNotLeaveOccasion": "Kon gelegenheid niet verlaten",
+    "couldNotDelete": "Kon niet verwijderen",
+    "couldNotStartVoting": "Kon stemronde niet starten"
+  },
+  "contacts": {
+    "search": "Zoeken...",
+    "selectAll": "Alles selecteren",
+    "clearSelection": "Wis selectie",
+    "loading": "Contacten laden...",
+    "noContactsFound": "Geen contacten gevonden",
+    "noContactsAvailable": "Nog geen contacten beschikbaar",
+    "joinGroupsToSee": "Word lid van groepen om contacten te zien",
+    "noGroup": "Geen groep",
+    "confirm": "Bevestigen ({{count}})"
   }
 }

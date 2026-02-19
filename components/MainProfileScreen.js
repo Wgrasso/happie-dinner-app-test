@@ -387,12 +387,12 @@ export default function MainProfileScreen({
 
                       <View style={styles.modalMetrics}>
                         <View style={styles.modalMetricItem}>
-                          <Text style={styles.metricLabel}>Cooking Time</Text>
+                          <Text style={styles.metricLabel}>{t('recipes.cookingTime')}</Text>
                           <Text style={styles.metricValue}>{formatTime(selectedRecipe.readyInMinutes || selectedRecipe.cooking_time_minutes)}</Text>
                         </View>
                         {selectedRecipe.cuisine_type && (
                           <View style={styles.modalMetricItem}>
-                            <Text style={styles.metricLabel}>Cuisine</Text>
+                            <Text style={styles.metricLabel}>{t('recipes.cuisineType')}</Text>
                             <Text style={styles.metricValue}>{selectedRecipe.cuisine_type}</Text>
                           </View>
                         )}
@@ -400,7 +400,7 @@ export default function MainProfileScreen({
 
                       {selectedRecipe.dietary && selectedRecipe.dietary.length > 0 && (
                         <View style={styles.modalDietary}>
-                          <Text style={styles.dietaryTitle}>Dietary Information</Text>
+                          <Text style={styles.dietaryTitle}>{t('recipes.dietaryInfo')}</Text>
                           <View style={styles.modalDietaryTags}>
                             {selectedRecipe.dietary.map((dietary, index) => (
                               <View key={index} style={styles.modalDietaryTag}>
@@ -413,14 +413,14 @@ export default function MainProfileScreen({
 
                       {selectedRecipe.description && (
                         <View style={styles.modalDescription}>
-                          <Text style={styles.dietaryTitle}>Description</Text>
+                          <Text style={styles.dietaryTitle}>{t('recipes.description')}</Text>
                           <Text style={styles.descriptionText}>{selectedRecipe.description}</Text>
                         </View>
                       )}
 
                       {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (
                         <View style={styles.modalSection}>
-                          <Text style={styles.dietaryTitle}>Ingredients</Text>
+                          <Text style={styles.dietaryTitle}>{t('recipes.ingredients')}</Text>
                           {selectedRecipe.ingredients.map((ingredient, index) => (
                             <Text key={index} style={styles.ingredientText}>
                               • {ingredient}
@@ -431,7 +431,7 @@ export default function MainProfileScreen({
 
                       {selectedRecipe.instructions && selectedRecipe.instructions.length > 0 && (
                         <View style={styles.modalSection}>
-                          <Text style={styles.dietaryTitle}>Instructions</Text>
+                          <Text style={styles.dietaryTitle}>{t('recipes.instructions')}</Text>
                           <Text style={styles.instructionsText}>{selectedRecipe.instructions}</Text>
                         </View>
                       )}
@@ -451,8 +451,8 @@ export default function MainProfileScreen({
                   </>
                 ) : (
                   <View style={styles.modalInfo}>
-                    <Text style={styles.modalTitle}>Loading recipe...</Text>
-                    <Text style={styles.metricValue}>Recipe data not available</Text>
+                    <Text style={styles.modalTitle}>{t('recipes.loadingRecipe')}</Text>
+                    <Text style={styles.metricValue}>{t('recipes.recipeNotAvailable')}</Text>
                   </View>
                 )}
               </ScrollView>

@@ -3544,12 +3544,12 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     if (!currentUserId || !occasionId) return;
     
     Alert.alert(
-      'Verwijderen',
-      'Weet je zeker dat je dit speciale moment wilt verwijderen? Dit kan niet ongedaan worden.',
+      t('common.delete'),
+      t('occasions.confirmDeleteOccasion'),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Verwijderen',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -3563,11 +3563,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   setSpecialOccasions(prev => prev.filter(o => o.id !== occasionId));
                 }
               } else {
-                Alert.alert(t('common.error'), result.error || 'Kon niet verwijderen');
+                Alert.alert(t('common.error'), result.error || t('occasions.couldNotDelete'));
               }
             } catch (error) {
               console.error('Error deleting occasion:', error);
-              Alert.alert(t('common.error'), 'Kon niet verwijderen');
+              Alert.alert(t('common.error'), t('occasions.couldNotDelete'));
             }
           }
         }
@@ -3586,7 +3586,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             style={[styles.swipeLeaveButton, { backgroundColor: '#D32F2F' }]}
             onPress={() => handleDeleteOccasion(occasion.id, isPast)}
           >
-            <Text style={styles.swipeLeaveText}>Verwijderen</Text>
+            <Text style={styles.swipeLeaveText}>{t('common.delete')}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -3619,7 +3619,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // Create special occasion
   const handleCreateOccasion = async () => {
     if (!newOccasionDate?.trim()) {
-      toast.error('Selecteer een datum');
+      toast.error(t('occasions.selectDate'));
       return;
     }
     
@@ -3646,16 +3646,16 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       
       if (result.success) {
         successHaptic();
-        toast.success('Speciaal moment aangemaakt!');
+        toast.success(t('occasions.createdSuccess'));
         setShowCreateOccasionModal(false);
         // Reload occasions from DB to get fresh list
         await loadSpecialOccasionsIndependent();
       } else {
-        toast.error(result.error || 'Kon moment niet aanmaken');
+        toast.error(result.error || t('occasions.couldNotCreate'));
       }
     } catch (error) {
       debugError('COMPONENTS', 'Error creating occasion:', error);
-      toast.error('Er is iets misgegaan');
+      toast.error(t('errors.generic'));
     } finally {
       setCreateOccasionLoading(false);
     }
@@ -3678,7 +3678,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         const createResult = await createOccasionMealOptions(occasion.id, 10);
         
         if (!createResult.success) {
-          toast.error(createResult.error || 'Kon stemronde niet starten');
+          toast.error(createResult.error || t('errors.couldNotStartVoting'));
           return;
         }
         
@@ -3695,7 +3695,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       
     } catch (error) {
       debugError('COMPONENTS', 'Error starting occasion voting:', error);
-      toast.error('Kon stemronde niet starten');
+      toast.error(t('errors.couldNotStartVoting'));
     } finally {
       setOccasionActionLoading(false);
     }
@@ -4181,12 +4181,12 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                           <View style={styles.responseButtonsCompact}>
                             {myResponse === 'yes' && (
                               <View style={[styles.responseButtonSmall, styles.responseButtonYes, styles.responseButtonYesActive]}>
-                                <Text style={[styles.responseButtonTextSmall, styles.responseButtonTextActive]}>Ja</Text>
+                                <Text style={[styles.responseButtonTextSmall, styles.responseButtonTextActive]}>{t('common.yes')}</Text>
                               </View>
                             )}
                             {myResponse === 'no' && (
                               <View style={[styles.responseButtonSmall, styles.responseButtonNo, styles.responseButtonNoActive]}>
-                                <Text style={[styles.responseButtonTextSmall, styles.responseButtonTextActive]}>Nee</Text>
+                                <Text style={[styles.responseButtonTextSmall, styles.responseButtonTextActive]}>{t('common.no')}</Text>
                               </View>
                             )}
                             {!myResponse && (
@@ -4375,10 +4375,10 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           />
           <Pressable style={styles.simpleModal} onPress={Keyboard.dismiss}>
             <Text style={styles.simpleModalTitle}>{t('common.newGroup')}</Text>
-            <Text style={styles.simpleModalSubtitle}>Geef je groep een naam</Text>
+            <Text style={styles.simpleModalSubtitle}>{t('groups.giveGroupName')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="bijv. Huisgenoten"
+              placeholder={t('groups.namePlaceholder')}
               placeholderTextColor="#999"
               value={groupName}
               onChangeText={setGroupName}
@@ -4432,7 +4432,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 style={styles.cancelButton} 
                 onPress={() => setShowJoinModal(false)}
               >
-                <Text style={styles.cancelButtonText}>Annuleren</Text>
+                <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.confirmButton, !joinCode.trim() && styles.confirmButtonDisabled]} 
@@ -4442,7 +4442,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 {modalActionLoading ? (
                   <ActivityIndicator color="#FFF" size="small" />
                 ) : (
-                  <Text style={styles.confirmButtonText}>Joinen</Text>
+                  <Text style={styles.confirmButtonText}>{t('groups.join')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -4472,8 +4472,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             {/* ===== STEP 1: Type & Details ===== */}
             {occasionStep === 1 && (
               <View>
-                <Text style={styles.simpleModalTitle}>Plan iets leuks</Text>
-                <Text style={styles.simpleModalSubtitle}>Wat voor gelegenheid is het?</Text>
+                <Text style={styles.simpleModalTitle}>{t('occasions.planSomething')}</Text>
+                <Text style={styles.simpleModalSubtitle}>{t('occasions.whatOccasion')}</Text>
                 
                 <View style={styles.occasionTypeSelector}>
                   {Object.entries(occasionLabels).map(([key, value]) => (
@@ -4495,17 +4495,17 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   ))}
                 </View>
                 
-                <Text style={occasionWizardStyles.fieldLabel}>Bericht (optioneel)</Text>
+                <Text style={occasionWizardStyles.fieldLabel}>{t('occasions.messageOptional')}</Text>
                 <TextInput
                   style={styles.input}
                   value={newOccasionMessage}
                   onChangeText={setNewOccasionMessage}
-                  placeholder="Bijv. Ik word 25!"
+                  placeholder={t('occasions.messagePlaceholder')}
                   placeholderTextColor="#A0A0A0"
                   multiline
                 />
                 
-                <Text style={occasionWizardStyles.fieldLabel}>Tijd (optioneel)</Text>
+                <Text style={occasionWizardStyles.fieldLabel}>{t('occasions.timeOptional')}</Text>
                 <TextInput
                   style={styles.input}
                   value={newOccasionTime}
@@ -4520,13 +4520,13 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     style={styles.cancelButton}
                     onPress={() => setShowCreateOccasionModal(false)}
                   >
-                    <Text style={styles.cancelButtonText}>Annuleren</Text>
+                    <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.confirmButton}
                     onPress={() => { setOccasionStep(2); lightHaptic(); }}
                   >
-                    <Text style={styles.confirmButtonText}>Volgende</Text>
+                    <Text style={styles.confirmButtonText}>{t('common.next')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -4535,8 +4535,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             {/* ===== STEP 2: Calendar Date Picker ===== */}
             {occasionStep === 2 && (
               <View>
-                <Text style={styles.simpleModalTitle}>Kies een datum</Text>
-                <Text style={styles.simpleModalSubtitle}>Wanneer is het?</Text>
+                <Text style={styles.simpleModalTitle}>{t('occasions.chooseDate')}</Text>
+                <Text style={styles.simpleModalSubtitle}>{t('occasions.whenIsIt')}</Text>
                 
                 <Calendar
                   onDayPress={(day) => {
@@ -4585,14 +4585,14 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     style={styles.cancelButton}
                     onPress={() => { setOccasionStep(1); lightHaptic(); }}
                   >
-                    <Text style={styles.cancelButtonText}>Terug</Text>
+                    <Text style={styles.cancelButtonText}>{t('common.back')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.confirmButton, !newOccasionDate && styles.confirmButtonDisabled]}
                     onPress={() => { if (newOccasionDate) { setOccasionStep(3); lightHaptic(); } }}
                     disabled={!newOccasionDate}
                   >
-                    <Text style={styles.confirmButtonText}>Volgende</Text>
+                    <Text style={styles.confirmButtonText}>{t('common.next')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -4601,8 +4601,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             {/* ===== STEP 3: Select Groups ===== */}
             {occasionStep === 3 && (
               <View>
-                <Text style={styles.simpleModalTitle}>Deel met groepen</Text>
-                <Text style={styles.simpleModalSubtitle}>Kies de groepen die je wilt uitnodigen</Text>
+                <Text style={styles.simpleModalTitle}>{t('occasions.shareWithGroups')}</Text>
+                <Text style={styles.simpleModalSubtitle}>{t('occasions.chooseGroups')}</Text>
                 
                 <ScrollView 
                   style={occasionWizardStyles.groupList} 
@@ -4611,7 +4611,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 >
                   {groups.length === 0 ? (
                     <Text style={occasionWizardStyles.noGroupsText}>
-                      Je hebt nog geen groepen. Je kunt het moment alsnog aanmaken.
+                      {t('occasions.noGroupsCanCreate')}
                     </Text>
                   ) : (
                     groups.map(group => {
@@ -4647,7 +4647,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                               </Text>
                               {memberCount > 0 && (
                                 <Text style={occasionWizardStyles.groupMemberCount}>
-                                  {memberCount} {memberCount === 1 ? 'lid' : 'leden'}
+                                  {memberCount} {memberCount === 1 ? t('common.member') : t('common.members')}
                                 </Text>
                               )}
                             </View>
@@ -4660,7 +4660,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
 
                 {occasionSelectedGroups.length > 0 && (
                   <Text style={occasionWizardStyles.selectedCountLabel}>
-                    {occasionSelectedGroups.length} groep{occasionSelectedGroups.length !== 1 ? 'en' : ''} geselecteerd
+                    {occasionSelectedGroups.length === 1 ? t('occasions.selectedOne', { count: 1 }) : t('occasions.selectedMany', { count: occasionSelectedGroups.length })}
                   </Text>
                 )}
                 
@@ -4669,7 +4669,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     style={styles.cancelButton}
                     onPress={() => { setOccasionStep(2); lightHaptic(); }}
                   >
-                    <Text style={styles.cancelButtonText}>Terug</Text>
+                    <Text style={styles.cancelButtonText}>{t('common.back')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.confirmButton, createOccasionLoading && styles.confirmButtonDisabled]}
@@ -4679,7 +4679,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     {createOccasionLoading ? (
                       <ActivityIndicator color="#FFF" size="small" />
                     ) : (
-                      <Text style={styles.confirmButtonText}>Aanmaken</Text>
+                      <Text style={styles.confirmButtonText}>{t('occasions.create')}</Text>
                     )}
                   </TouchableOpacity>
                 </View>

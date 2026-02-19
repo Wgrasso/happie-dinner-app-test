@@ -70,7 +70,13 @@
     "dinnerRequest": "Dinner Request",
     "requestMeal": "Request Meal",
     "signInToCreate": "Sign in to create groups",
-    "signInToJoin": "Sign in to join groups"
+    "signInToJoin": "Sign in to join groups",
+    "giveGroupName": "Give your group a name",
+    "namePlaceholder": "e.g. Housemates",
+    "joinGroupTitle": "Join a Group",
+    "enterCode": "Enter the group code",
+    "codePlaceholder": "e.g. ABC123",
+    "join": "Join"
   },
   "dinner": {
     "sendRequest": "Send Dinner Request",
@@ -157,7 +163,12 @@
     "showMore": "Show More ({{count}} more available)",
     "signInForPersonalized": "Sign in for personalized recommendations",
     "tapToView": "Tap to view full recipe",
-    "american": "American"
+    "american": "American",
+    "loadingRecipe": "Loading recipe...",
+    "recipeNotAvailable": "Recipe data not available",
+    "pricePerServing": "Price per Serving",
+    "defaultName": "Delicious Recipe",
+    "loadingRecipes": "Loading delicious recipes..."
   },
   "userRecipes": {
     "myRecipes": "My Recipes",
@@ -274,7 +285,30 @@
     "respond": "Respond",
     "viewDetails": "View Details",
     "signInToCreate": "Sign in to plan special occasions",
-    "areYouJoining": "Are you joining?"
+    "areYouJoining": "Are you joining?",
+    "dinnerParty": "Dinner Party",
+    "barbecue": "Barbecue"
+  },
+  "occasions": {
+    "planSomething": "Plan something fun",
+    "whatOccasion": "What kind of occasion is it?",
+    "messageOptional": "Message (optional)",
+    "messagePlaceholder": "e.g. I'm turning 25!",
+    "timeOptional": "Time (optional)",
+    "chooseDate": "Choose a date",
+    "whenIsIt": "When is it?",
+    "shareWithGroups": "Share with groups",
+    "chooseGroups": "Choose the groups you want to invite",
+    "noGroupsCanCreate": "You don't have any groups yet. You can still create the occasion.",
+    "selectedOne": "{{count}} group selected",
+    "selectedMany": "{{count}} groups selected",
+    "create": "Create",
+    "createdSuccess": "Special occasion created!",
+    "couldNotCreate": "Could not create occasion",
+    "confirmDeleteOccasion": "Are you sure you want to delete this special occasion? This cannot be undone.",
+    "couldNotDelete": "Could not delete",
+    "couldNotStartVoting": "Could not start voting",
+    "selectDate": "Select a date"
   },
   "picker": {
     "selectDate": "Select Date",
@@ -310,7 +344,13 @@
     "activeVotingSession": "Active Voting Session",
     "vote": "Vote",
     "revealResults": "Reveal Results",
-    "terminateSession": "Terminate Session"
+    "terminateSession": "Terminate Session",
+    "swipeHint": "← Swipe to vote →",
+    "likeThis": "♡ Like This",
+    "dislikeThis": "✕ Dislike This",
+    "calculatingResults": "Calculating voting results...",
+    "unableToLoadResults": "Unable to Load Results",
+    "clearResults": "Clear Results"
   },
   "modal": {
     "groupsTitle": "Groups",
@@ -393,7 +433,8 @@
     "cannotBeUndone": "This action cannot be undone",
     "noResponses": "No responses yet",
     "you": "you",
-    "pending": "pending"
+    "pending": "pending",
+    "tryAgain": "Try Again"
   },
   "emptyStates": {
     "noGroups": "No groups yet",
@@ -422,6 +463,20 @@
     "unauthorized": "You must be signed in to do that",
     "forbidden": "You don't have permission to do that",
     "serverError": "Server error. Please try again later.",
-    "databaseError": "Database error. Please contact support."
+    "databaseError": "Database error. Please contact support.",
+    "couldNotLeaveOccasion": "Could not leave occasion",
+    "couldNotDelete": "Could not delete",
+    "couldNotStartVoting": "Could not start voting"
+  },
+  "contacts": {
+    "search": "Search...",
+    "selectAll": "Select all",
+    "clearSelection": "Clear selection",
+    "loading": "Loading contacts...",
+    "noContactsFound": "No contacts found",
+    "noContactsAvailable": "No contacts available yet",
+    "joinGroupsToSee": "Join groups to see contacts",
+    "noGroup": "No group",
+    "confirm": "Confirm ({{count}})"
   }
 }

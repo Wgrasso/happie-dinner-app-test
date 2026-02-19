@@ -119,14 +119,14 @@ export default function ResultsScreen({ route, navigation }) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>Unable to Load Results</Text>
+          <Text style={styles.errorTitle}>{t('voting.unableToLoadResults')}</Text>
           <Text style={styles.errorText}>{error}</Text>
           
           <TouchableOpacity 
             style={styles.retryButton}
             onPress={loadResults}
           >
-            <Text style={styles.retryButtonText}>Try Again</Text>
+            <Text style={styles.retryButtonText}>{t('common.tryAgain')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -215,7 +215,7 @@ export default function ResultsScreen({ route, navigation }) {
                 {/* Meal Info */}
                 <View style={styles.resultInfo}>
                   <Text style={styles.resultTitle} numberOfLines={2}>
-                    {meal.meal_data.name || 'Delicious Recipe'}
+                    {meal.meal_data.name || t('recipes.defaultName')}
                   </Text>
                   
                   <View style={styles.resultMeta}>

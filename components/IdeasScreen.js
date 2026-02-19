@@ -433,7 +433,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#8B7355" />
-          <Text style={styles.loadingText}>Loading delicious recipes...</Text>
+          <Text style={styles.loadingText}>{t('recipes.loadingRecipes')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -713,12 +713,12 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                     
                     <View style={styles.modalMetrics}>
                       <View style={styles.modalMetricItem}>
-                        <Text style={styles.metricLabel}>Cooking Time</Text>
+                        <Text style={styles.metricLabel}>{t('recipes.cookingTime')}</Text>
                         <Text style={styles.metricValue}>{formatTime(selectedRecipe.readyInMinutes)}</Text>
                       </View>
                       {selectedRecipe.pricePerServing && (
                       <View style={styles.modalMetricItem}>
-                          <Text style={styles.metricLabel}>Price per Serving</Text>
+                          <Text style={styles.metricLabel}>{t('recipes.pricePerServing')}</Text>
                           <Text style={styles.metricValue}>€{selectedRecipe.pricePerServing.toFixed(2)}</Text>
                       </View>
                       )}
@@ -726,7 +726,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
 
                     {selectedRecipe.dietary && selectedRecipe.dietary.length > 0 && (
                       <View style={styles.modalDietary}>
-                        <Text style={styles.dietaryTitle}>Dietary Information</Text>
+                        <Text style={styles.dietaryTitle}>{t('recipes.dietaryInfo')}</Text>
                         <View style={styles.modalDietaryTags}>
                           {selectedRecipe.dietary.map((dietary, index) => (
                             <View key={index} style={styles.modalDietaryTag}>
@@ -739,7 +739,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
 
                     {selectedRecipe.description && (
                       <View style={styles.modalDescription}>
-                        <Text style={styles.dietaryTitle}>Description</Text>
+                        <Text style={styles.dietaryTitle}>{t('recipes.description')}</Text>
                         <Text style={styles.descriptionText}>{selectedRecipe.description}</Text>
                       </View>
                     )}
@@ -747,7 +747,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                     {/* Ingredients Section */}
                     {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (
                       <View style={styles.modalSection}>
-                        <Text style={styles.dietaryTitle}>Ingredients</Text>
+                        <Text style={styles.dietaryTitle}>{t('recipes.ingredients')}</Text>
                         {selectedRecipe.ingredients.map((ingredient, index) => (
                           <Text key={index} style={styles.ingredientText}>
                             • {ingredient}
@@ -759,7 +759,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                     {/* Instructions Section */}
                     {selectedRecipe.instructions && selectedRecipe.instructions.length > 0 && (
                       <View style={styles.modalSection}>
-                        <Text style={styles.dietaryTitle}>Instructions</Text>
+                        <Text style={styles.dietaryTitle}>{t('recipes.instructions')}</Text>
                         <Text style={styles.instructionsText}>{selectedRecipe.instructions}</Text>
                       </View>
                     )}
@@ -782,8 +782,8 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                 </>
               ) : (
                 <View style={styles.modalInfo}>
-                  <Text style={styles.modalTitle}>Loading recipe...</Text>
-                  <Text style={styles.metricValue}>Recipe data not available</Text>
+                  <Text style={styles.modalTitle}>{t('recipes.loadingRecipe')}</Text>
+                  <Text style={styles.metricValue}>{t('recipes.recipeNotAvailable')}</Text>
                 </View>
               )}
             </ScrollView>

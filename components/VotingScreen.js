@@ -669,7 +669,7 @@ export default function VotingScreen({ route, navigation }) {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => handleBackNavigation()}>
           <Text style={styles.backArrow}>←</Text>
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>{t('common.back')}</Text>
         </TouchableOpacity>
         
         <View style={styles.headerCenter}>
@@ -719,7 +719,7 @@ export default function VotingScreen({ route, navigation }) {
               />
               <View style={styles.mealInfo}>
                 <Text style={styles.mealTitle} numberOfLines={2}>
-                  {mealOptions[currentIndex + 2].meal_data.name || 'Delicious Recipe'}
+                  {mealOptions[currentIndex + 2].meal_data.name || t('recipes.defaultName')}
                 </Text>
               </View>
             </View>
@@ -738,7 +738,7 @@ export default function VotingScreen({ route, navigation }) {
               />
               <View style={styles.mealInfo}>
                 <Text style={styles.mealTitle} numberOfLines={2}>
-                  {mealOptions[currentIndex + 1].meal_data.name || 'Delicious Recipe'}
+                  {mealOptions[currentIndex + 1].meal_data.name || t('recipes.defaultName')}
                 </Text>
               </View>
             </View>
@@ -790,7 +790,7 @@ export default function VotingScreen({ route, navigation }) {
                   { opacity: likeOpacity }
                 ]}
               >
-                <Text style={styles.swipeOverlayText}>♡ LIKE</Text>
+                <Text style={styles.swipeOverlayText}>{t('voting.like')}</Text>
               </Animated.View>
               
               {/* Dislike Overlay (Red) */}
@@ -801,12 +801,12 @@ export default function VotingScreen({ route, navigation }) {
                   { opacity: dislikeOpacity }
                 ]}
               >
-                <Text style={styles.swipeOverlayText}>✕ NOPE</Text>
+                <Text style={styles.swipeOverlayText}>{t('voting.dislike')}</Text>
               </Animated.View>
             
             <View style={styles.mealInfo}>
               <Text style={styles.mealTitle} numberOfLines={2}>
-                {currentMeal.meal_data.name || 'Delicious Recipe'}
+                {currentMeal.meal_data.name || t('recipes.defaultName')}
               </Text>
               
               <View style={styles.mealMeta}>
@@ -824,7 +824,7 @@ export default function VotingScreen({ route, navigation }) {
             
             {/* Swipe hint indicator */}
             <View style={styles.swipeHint}>
-              <Text style={styles.swipeHintText}>← Swipe to vote →</Text>
+              <Text style={styles.swipeHintText}>{t('voting.swipeHint')}</Text>
             </View>
           </Animated.View>
         </View>
@@ -930,7 +930,7 @@ export default function VotingScreen({ route, navigation }) {
                   {/* Recipe Title and Time */}
                   <View style={styles.modalTitleSection}>
                     <Text style={styles.modalTitle}>
-                      {selectedRecipe.meal_data.name || selectedRecipe.meal_data.title || 'Delicious Recipe'}
+                      {selectedRecipe.meal_data.name || selectedRecipe.meal_data.title || t('recipes.defaultName')}
                     </Text>
                     
                     <View style={styles.modalMetaRow}>
@@ -961,7 +961,7 @@ export default function VotingScreen({ route, navigation }) {
                   {/* Description */}
                   {selectedRecipe.meal_data.description && (
                     <View style={styles.modalSection}>
-                      <Text style={styles.modalSectionTitle}>Description</Text>
+                      <Text style={styles.modalSectionTitle}>{t('recipes.description')}</Text>
                       <Text style={styles.modalDescription}>
                         {selectedRecipe.meal_data.description}
                       </Text>
@@ -991,14 +991,14 @@ export default function VotingScreen({ route, navigation }) {
                   {selectedRecipe.meal_data.ingredients && selectedRecipe.meal_data.ingredients.length > 0 && (
                     <View style={styles.modalSection}>
                       <Text style={styles.modalSectionTitle}>
-                        Ingredients ({selectedRecipe.meal_data.ingredients.length})
+                        {t('recipes.ingredients')} ({selectedRecipe.meal_data.ingredients.length})
                       </Text>
                       <View style={styles.ingredientsList}>
                         {selectedRecipe.meal_data.ingredients.map((ingredient, index) => (
                           <View key={index} style={styles.ingredientItem}>
                             <Text style={styles.ingredientBullet}>•</Text>
                             <Text style={styles.ingredientText}>
-                              {typeof ingredient === 'string' ? ingredient : (ingredient.raw_text || ingredient.text || 'Ingredient')}
+                              {typeof ingredient === 'string' ? ingredient : (ingredient.raw_text || ingredient.text || t('recipes.ingredients'))}
                             </Text>
                           </View>
                         ))}
@@ -1010,7 +1010,7 @@ export default function VotingScreen({ route, navigation }) {
                   {selectedRecipe.meal_data.instructions && selectedRecipe.meal_data.instructions.length > 0 && (
                     <View style={styles.modalSection}>
                       <Text style={styles.modalSectionTitle}>
-                        Instructions ({selectedRecipe.meal_data.instructions.length} steps)
+                        {t('recipes.instructions')} ({selectedRecipe.meal_data.instructions.length} steps)
                       </Text>
                       <View style={styles.instructionsList}>
                         {selectedRecipe.meal_data.instructions.map((instruction, index) => (
@@ -1019,7 +1019,7 @@ export default function VotingScreen({ route, navigation }) {
                               <Text style={styles.instructionNumberText}>{index + 1}</Text>
                             </View>
                             <Text style={styles.instructionText}>
-                              {typeof instruction === 'string' ? instruction : (instruction.display_text || instruction.text || 'Step')}
+                              {typeof instruction === 'string' ? instruction : (instruction.display_text || instruction.text || t('recipes.instructions'))}
                             </Text>
                           </View>
                         ))}
@@ -1030,14 +1030,14 @@ export default function VotingScreen({ route, navigation }) {
                   {/* Nutrition Info if available */}
                   {selectedRecipe.meal_data.nutrition && (
                     <View style={styles.modalSection}>
-                      <Text style={styles.modalSectionTitle}>Nutrition</Text>
+                      <Text style={styles.modalSectionTitle}>{t('recipes.nutrition')}</Text>
                       <View style={styles.nutritionGrid}>
                         {selectedRecipe.meal_data.nutrition.calories && (
                           <View style={styles.nutritionItem}>
                             <Text style={styles.nutritionValue}>
                               {Math.round(selectedRecipe.meal_data.nutrition.calories)}
                             </Text>
-                            <Text style={styles.nutritionLabel}>Calories</Text>
+                            <Text style={styles.nutritionLabel}>{t('recipes.calories')}</Text>
                           </View>
                         )}
                         {selectedRecipe.meal_data.nutrition.protein && (
@@ -1045,7 +1045,7 @@ export default function VotingScreen({ route, navigation }) {
                             <Text style={styles.nutritionValue}>
                               {Math.round(selectedRecipe.meal_data.nutrition.protein)}g
                             </Text>
-                            <Text style={styles.nutritionLabel}>Protein</Text>
+                            <Text style={styles.nutritionLabel}>{t('recipes.protein')}</Text>
                           </View>
                         )}
                         {selectedRecipe.meal_data.nutrition.carbs && (
@@ -1053,7 +1053,7 @@ export default function VotingScreen({ route, navigation }) {
                             <Text style={styles.nutritionValue}>
                               {Math.round(selectedRecipe.meal_data.nutrition.carbs)}g
                             </Text>
-                            <Text style={styles.nutritionLabel}>Carbs</Text>
+                            <Text style={styles.nutritionLabel}>{t('recipes.carbs')}</Text>
                           </View>
                         )}
                         {selectedRecipe.meal_data.nutrition.fat && (
@@ -1061,7 +1061,7 @@ export default function VotingScreen({ route, navigation }) {
                             <Text style={styles.nutritionValue}>
                               {Math.round(selectedRecipe.meal_data.nutrition.fat)}g
                             </Text>
-                            <Text style={styles.nutritionLabel}>Fat</Text>
+                            <Text style={styles.nutritionLabel}>{t('recipes.fat')}</Text>
                           </View>
                         )}
                       </View>
@@ -1078,7 +1078,7 @@ export default function VotingScreen({ route, navigation }) {
                       }}
                       disabled={voting}
                     >
-                      <Text style={styles.modalActionText}>✕ Dislike This</Text>
+                      <Text style={styles.modalActionText}>{t('voting.dislikeThis')}</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity 
@@ -1089,7 +1089,7 @@ export default function VotingScreen({ route, navigation }) {
                       }}
                       disabled={voting}
                     >
-                      <Text style={styles.modalActionText}>♡ Like This</Text>
+                      <Text style={styles.modalActionText}>{t('voting.likeThis')}</Text>
                     </TouchableOpacity>
                   </View>
                   
