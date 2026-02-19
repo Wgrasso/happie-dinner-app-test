@@ -4046,7 +4046,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   {/* Expanded: attendees, Start Voting, Top 3 button */}
                   {isExpanded && (
                     <>
-                      <Text style={styles.occasionExpandedTitle}>{displayTitle}</Text>
                       <View style={styles.attendeesList}>
                         <View style={styles.attendeesRow}>
                           {/* Attending */}

@@ -341,9 +341,6 @@ export default function ProfileScreen({ route, navigation }) {
       activeOpacity={0.6}
     >
       <View style={styles.settingsRowLeft}>
-        <View style={styles.iconContainer}>
-          <Text style={styles.rowIcon}>{icon}</Text>
-        </View>
         <Text style={styles.rowLabel}>{label}</Text>
       </View>
       <View style={styles.settingsRowRight}>
