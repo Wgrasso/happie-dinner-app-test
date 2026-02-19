@@ -3586,7 +3586,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             style={[styles.swipeLeaveButton, { backgroundColor: '#D32F2F' }]}
             onPress={() => handleDeleteOccasion(occasion.id, isPast)}
           >
-            <Text style={styles.swipeLeaveText}>{t('common.delete')}</Text>
+            <Text style={styles.swipeLeaveText} numberOfLines={1} adjustsFontSizeToFit>{t('common.delete')}</Text>
           </TouchableOpacity>
         </View>
       );
