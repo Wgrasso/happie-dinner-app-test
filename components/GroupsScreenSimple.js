@@ -2961,10 +2961,16 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         setExpandedResponses(preloadedData.responses || {});
         setExpandedLoading(false);
         
-        // Set my response
+        // Set my response and protect it from the background refresh overwriting it
         if (currentUserId && preloadedData.responses?.[currentUserId]) {
           setMyResponse(preloadedData.responses[currentUserId]);
           setAllGroupResponses(prev => ({ ...prev, [groupId]: preloadedData.responses[currentUserId] }));
+          optimisticUpdateInProgress.current = true;
+          setTimeout(() => { optimisticUpdateInProgress.current = false; }, 2000);
+        } else if (currentUserId && allGroupResponses[groupId]) {
+          setMyResponse(allGroupResponses[groupId]);
+          optimisticUpdateInProgress.current = true;
+          setTimeout(() => { optimisticUpdateInProgress.current = false; }, 2000);
         } else {
           setMyResponse(null);
         }
@@ -3087,7 +3093,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       }
       
       // Fallback: No preloaded data - use cache or fetch
-      setMyResponse(null);
       setTopMeals([]);
       
       // Try to get cached data first for instant display
@@ -3103,11 +3108,19 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         setExpandedLoading(true);
       }
       
+      // Preserve existing response: use cached data, or the collapsed-card value
+      const knownResponse = (cachedResponses && currentUserId && cachedResponses[currentUserId])
+        ? cachedResponses[currentUserId]
+        : allGroupResponses[groupId] || null;
+      setMyResponse(knownResponse);
+      
       if (cachedResponses) {
         setExpandedResponses(cachedResponses);
-        if (currentUserId && cachedResponses[currentUserId]) {
-          setMyResponse(cachedResponses[currentUserId]);
-        }
+      }
+      
+      if (knownResponse) {
+        optimisticUpdateInProgress.current = true;
+        setTimeout(() => { optimisticUpdateInProgress.current = false; }, 2000);
       }
       
       if (cachedRequest?.hasActiveRequest && cachedRequest?.request?.id) {
@@ -3291,29 +3304,18 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     console.log('[TOP3-FLOW] handleStartVoting called for group:', groupId);
     
     try {
-      const { getActiveMealRequest, createMealRequest } = require('../lib/mealRequestService');
+      const { getOrCreateDailyMealRequest } = require('../lib/mealRequestService');
       
-      const activeResult = await getActiveMealRequest(groupId);
-      console.log('[TOP3-FLOW] getActiveMealRequest result:', JSON.stringify({ hasActiveRequest: activeResult.hasActiveRequest, requestId: activeResult.request?.id }));
+      const result = await getOrCreateDailyMealRequest(groupId, 10);
+      console.log('[TOP3-FLOW] getOrCreateDailyMealRequest result:', JSON.stringify({ success: result.success, requestId: result.request?.id }));
       
-      let requestId;
-      let mealOptions = [];
-      
-      if (activeResult.hasActiveRequest && activeResult.request) {
-        requestId = activeResult.request.id;
-        mealOptions = activeResult.request.mealOptions || [];
-      } else {
-        const createResult = await createMealRequest(groupId, 10);
-        console.log('[TOP3-FLOW] createMealRequest result:', JSON.stringify({ success: createResult.success, requestId: createResult.request?.id }));
-        
-        if (!createResult.success) {
-          toast.error(createResult.error || t('errors.generic'));
-          return;
-        }
-        
-        requestId = createResult.request.id;
-        mealOptions = createResult.mealOptions || [];
+      if (!result.success) {
+        toast.error(result.error || t('errors.generic'));
+        return;
       }
+      
+      const requestId = result.request?.id;
+      const mealOptions = result.mealOptions || [];
       
       // CRITICAL: Set activeRequestId BEFORE navigating to VotingScreen.
       // Without this, when the user returns from voting, activeRequestId is null,

@@ -13,6 +13,8 @@ import {
   Dimensions,
   Keyboard,
   Pressable,
+  Modal,
+  Animated,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -61,6 +63,34 @@ export default function MainProfileScreen({
   const [recipeCookingTime, setRecipeCookingTime] = useState('30');
   const [recipeCuisine, setRecipeCuisine] = useState('');
   const [recipeImageUri, setRecipeImageUri] = useState(null);
+
+  // Recipe detail modal state
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [recipeModalVisible, setRecipeModalVisible] = useState(false);
+  const [modalAnimation] = useState(new Animated.Value(0));
+
+  const openRecipeModal = (recipe) => {
+    setSelectedRecipe(recipe);
+    setRecipeModalVisible(true);
+    Animated.spring(modalAnimation, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start();
+  };
+
+  const closeRecipeModal = () => {
+    Animated.spring(modalAnimation, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start(() => {
+      setRecipeModalVisible(false);
+      setSelectedRecipe(null);
+    });
+  };
 
   const loadRecipes = useCallback(async () => {
     const result = await getMyRecipes();
@@ -215,8 +245,7 @@ export default function MainProfileScreen({
 
   const handleRecipePress = (recipe) => {
     lightHaptic();
-    if (onSwitchToInspiration) onSwitchToInspiration(recipe);
-    else Alert.alert(recipe.name, (recipe.description || '') + (recipe.cuisine_type ? `\n\nKeuken: ${recipe.cuisine_type}` : ''));
+    openRecipeModal(recipe);
   };
 
 
@@ -313,6 +342,122 @@ export default function MainProfileScreen({
 
           </ScrollView>
         </Pressable>
+
+        {/* Recipe Detail Modal — identical to IdeasScreen */}
+        <Modal
+          visible={recipeModalVisible}
+          transparent={true}
+          animationType="none"
+          onRequestClose={closeRecipeModal}
+        >
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity
+              style={styles.modalBackground}
+              activeOpacity={1}
+              onPress={closeRecipeModal}
+            />
+
+            <Animated.View
+              style={[
+                styles.modalContainer,
+                {
+                  transform: [
+                    {
+                      scale: modalAnimation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.8, 1],
+                      }),
+                    },
+                  ],
+                  opacity: modalAnimation,
+                },
+              ]}
+            >
+              {/* Modal Header */}
+              <View style={styles.modalHeader}>
+                <TouchableOpacity style={styles.backButton} onPress={closeRecipeModal}>
+                  <Text style={styles.backArrow}>←</Text>
+                  <Text style={styles.backText}>{t('common.back')}</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Modal Content */}
+              <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+                {selectedRecipe ? (
+                  <>
+                    <ExpoImage
+                      source={{ uri: selectedRecipe.image || PLACEHOLDER_IMAGE }}
+                      style={styles.modalImage}
+                      contentFit="cover"
+                      transition={300}
+                      cachePolicy="memory-disk"
+                    />
+
+                    <View style={styles.modalInfo}>
+                      <Text style={styles.modalTitle}>{selectedRecipe.title || selectedRecipe.name}</Text>
+
+                      <View style={styles.modalMetrics}>
+                        <View style={styles.modalMetricItem}>
+                          <Text style={styles.metricLabel}>Cooking Time</Text>
+                          <Text style={styles.metricValue}>{formatTime(selectedRecipe.readyInMinutes || selectedRecipe.cooking_time_minutes)}</Text>
+                        </View>
+                        {selectedRecipe.cuisine_type && (
+                          <View style={styles.modalMetricItem}>
+                            <Text style={styles.metricLabel}>Cuisine</Text>
+                            <Text style={styles.metricValue}>{selectedRecipe.cuisine_type}</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      {selectedRecipe.dietary && selectedRecipe.dietary.length > 0 && (
+                        <View style={styles.modalDietary}>
+                          <Text style={styles.dietaryTitle}>Dietary Information</Text>
+                          <View style={styles.modalDietaryTags}>
+                            {selectedRecipe.dietary.map((dietary, index) => (
+                              <View key={index} style={styles.modalDietaryTag}>
+                                <Text style={styles.modalDietaryText}>{dietary}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+
+                      {selectedRecipe.description && (
+                        <View style={styles.modalDescription}>
+                          <Text style={styles.dietaryTitle}>Description</Text>
+                          <Text style={styles.descriptionText}>{selectedRecipe.description}</Text>
+                        </View>
+                      )}
+
+                      {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (
+                        <View style={styles.modalSection}>
+                          <Text style={styles.dietaryTitle}>Ingredients</Text>
+                          {selectedRecipe.ingredients.map((ingredient, index) => (
+                            <Text key={index} style={styles.ingredientText}>
+                              • {ingredient}
+                            </Text>
+                          ))}
+                        </View>
+                      )}
+
+                      {selectedRecipe.instructions && selectedRecipe.instructions.length > 0 && (
+                        <View style={styles.modalSection}>
+                          <Text style={styles.dietaryTitle}>Instructions</Text>
+                          <Text style={styles.instructionsText}>{selectedRecipe.instructions}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </>
+                ) : (
+                  <View style={styles.modalInfo}>
+                    <Text style={styles.modalTitle}>Loading recipe...</Text>
+                    <Text style={styles.metricValue}>Recipe data not available</Text>
+                  </View>
+                )}
+              </ScrollView>
+            </Animated.View>
+          </View>
+        </Modal>
       </SafeAreaView>
     );
   }
@@ -761,5 +906,166 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-
+  // Recipe detail modal — matches IdeasScreen exactly
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(45, 45, 45, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 50,
+  },
+  modalBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 420,
+    height: '88%',
+    backgroundColor: '#FEFEFE',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#2D2D2D',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F3F0',
+    backgroundColor: '#FEFEFE',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#F5F3F0',
+  },
+  backArrow: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 18,
+    color: '#8B7355',
+    marginRight: 6,
+  },
+  backText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    color: '#8B7355',
+    letterSpacing: 0.2,
+  },
+  modalContent: {
+    flex: 1,
+    backgroundColor: '#FEFEFE',
+  },
+  modalImage: {
+    width: '100%',
+    height: 240,
+  },
+  modalInfo: {
+    padding: 32,
+  },
+  modalTitle: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 26,
+    lineHeight: 34,
+    color: '#2D2D2D',
+    marginBottom: 26,
+    letterSpacing: 0.3,
+  },
+  modalMetrics: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 30,
+    gap: 28,
+  },
+  modalMetricItem: {
+    flex: 1,
+  },
+  metricLabel: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#8B7355',
+    marginBottom: 6,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  metricValue: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#2D2D2D',
+    letterSpacing: 0.1,
+  },
+  modalDietary: {
+    marginBottom: 26,
+  },
+  dietaryTitle: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 18,
+    lineHeight: 24,
+    color: '#2D2D2D',
+    marginBottom: 14,
+    letterSpacing: 0.2,
+  },
+  modalDietaryTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  modalDietaryTag: {
+    backgroundColor: '#F5F3F0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E8E6E3',
+  },
+  modalDietaryText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#8B7355',
+    letterSpacing: 0.2,
+    textTransform: 'capitalize',
+  },
+  modalDescription: {
+    marginBottom: 26,
+  },
+  descriptionText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#6B6B6B',
+    letterSpacing: 0.1,
+  },
+  modalSection: {
+    marginBottom: 26,
+  },
+  ingredientText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#6B6B6B',
+    letterSpacing: 0.1,
+    marginBottom: 8,
+  },
+  instructionsText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#6B6B6B',
+    letterSpacing: 0.1,
+  },
 });

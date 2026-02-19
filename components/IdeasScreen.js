@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, Image, Linking, ActivityIndicator, Modal, Animated, Dimensions, Alert } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { getCurrentUserProfile } from '../lib/profileService';
 import { getUserWishlist, addToWishlist as addToWishlistDB, removeFromWishlist as removeFromWishlistDB, clearWishlist as clearWishlistDB } from '../lib/wishlistService';
 import { getRandomRecipes, getAllRecipes } from '../lib/recipesService';
-import { getMyRecipes } from '../lib/userRecipesService';
 import { useTranslation } from 'react-i18next';
 import { formatDateLongNL } from '../lib/dateFormatting';
 import { useAppState } from '../lib/AppStateContext';
@@ -53,27 +52,13 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
 
   const { width, height } = Dimensions.get('window');
 
-  // Animation refs for + button fade-out per recipe card
-  const plusButtonAnimations = useRef({});
-
-  const getPlusButtonOpacity = useCallback((recipeId) => {
-    if (!plusButtonAnimations.current[recipeId]) {
-      plusButtonAnimations.current[recipeId] = new Animated.Value(1);
+  // Open recipe passed from another tab (e.g. user taps their own recipe in Profile)
+  useEffect(() => {
+    if (pendingOpenRecipe && isActive) {
+      openRecipe(pendingOpenRecipe);
+      if (onOpenRecipeHandled) onOpenRecipeHandled();
     }
-    return plusButtonAnimations.current[recipeId];
-  }, []);
-
-  const handleAddToMyMeals = useCallback(async (recipe) => {
-    const opacity = getPlusButtonOpacity(recipe.id);
-    // Start fade-out animation
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-    // Add to wishlist
-    await addToWishlist(recipe);
-  }, []);
+  }, [pendingOpenRecipe, isActive]);
 
   // Reload wishlist when switching to wishlist tab
   useEffect(() => {
@@ -165,44 +150,44 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
         throw new Error(result.error);
       }
 
-      const dbRecipes = result.recipes || [];
-      if (dbRecipes.length === 0) {
+      if (!result.recipes || result.recipes.length === 0) {
         throw new Error('No recipes found in database');
       }
 
-      // Convert database format to our recipe format (only system recipes, no user recipes)
-      const fromDb = dbRecipes.map(dbRecipe => ({
-        id: dbRecipe.id,
-        title: dbRecipe.name || 'Unnamed Recipe',
-        image: dbRecipe.image || 'https://images.unsplash.com/photo-1546548970-71785318a17b?w=400&h=300&fit=crop',
-        readyInMinutes: dbRecipe.cooking_time_minutes || 30,
-        dietary: dbRecipe.cuisine_type ? [dbRecipe.cuisine_type] : [],
-        description: dbRecipe.description || 'A delicious recipe perfect for your next meal',
-        sourceUrl: `#recipe-${dbRecipe.id}`,
-        tastyId: dbRecipe.id,
-        ingredients: dbRecipe.ingredients || [],
-        instructions: Array.isArray(dbRecipe.steps) ? dbRecipe.steps.join('\n') : (dbRecipe.steps || ''),
-        pricePerServing: null,
-        cuisine_type: dbRecipe.cuisine_type,
-        steps: dbRecipe.steps,
-        name: dbRecipe.name,
-      }));
-
-      const merged = fromDb;
+      // Convert database format to our recipe format
+      const normalizedRecipes = result.recipes.map(dbRecipe => {
+        return {
+          id: dbRecipe.id,
+          title: dbRecipe.name || 'Unnamed Recipe',
+          name: dbRecipe.name,
+          image: dbRecipe.image || 'https://images.unsplash.com/photo-1546548970-71785318a17b?w=400&h=300&fit=crop',
+          readyInMinutes: dbRecipe.cooking_time_minutes || 30,
+          cooking_time_minutes: dbRecipe.cooking_time_minutes,
+          dietary: dbRecipe.cuisine_type ? [dbRecipe.cuisine_type] : [],
+          description: dbRecipe.description || 'A delicious recipe perfect for your next meal',
+          sourceUrl: `#recipe-${dbRecipe.id}`,
+          tastyId: dbRecipe.id,
+          ingredients: dbRecipe.ingredients || [],
+          instructions: Array.isArray(dbRecipe.steps) ? dbRecipe.steps.join('\n') : (dbRecipe.steps || ''),
+          pricePerServing: null,
+          cuisine_type: dbRecipe.cuisine_type,
+          steps: dbRecipe.steps,
+        };
+      });
 
       if (isLoadingMore) {
         // Add new recipes to existing ones
-        setAllLoadedRecipes(prev => [...prev, ...merged]);
-        setRecipes(prev => [...prev, ...merged]);
+        setAllLoadedRecipes(prev => [...prev, ...normalizedRecipes]);
+        setRecipes(prev => [...prev, ...normalizedRecipes]);
       } else {
         // Initial load - replace all recipes
-        setAllLoadedRecipes(merged);
-        setRecipes(merged.slice(0, 20)); // Show first 20
-        setDisplayedCount(Math.min(20, merged.length));
+        setAllLoadedRecipes(normalizedRecipes);
+        setRecipes(normalizedRecipes.slice(0, 20)); // Show first 20
+        setDisplayedCount(Math.min(20, normalizedRecipes.length));
         
         // Save to cache for instant display on next app launch
-        log.cache('Saving', merged.length, 'recipes to cache');
-        saveCachedRecipes(merged);
+        log.cache('Saving', normalizedRecipes.length, 'recipes to cache');
+        saveCachedRecipes(normalizedRecipes);
       }
 
     } catch (error) {
@@ -259,30 +244,6 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
       setLoadingMore(false);
     }
   };
-
-  // Open recipe when navigating from Profile (user tapped their recipe)
-  useEffect(() => {
-    if (pendingOpenRecipe && isActive && pendingOpenRecipe.id) {
-      const r = pendingOpenRecipe;
-      const formatted = {
-        id: r.id,
-        title: r.name || r.title,
-        image: r.image || 'https://images.unsplash.com/photo-1546548970-71785318a17b?w=400&h=300&fit=crop',
-        readyInMinutes: r.readyInMinutes || r.cooking_time_minutes || 30,
-        dietary: r.dietary || (r.cuisine_type ? [r.cuisine_type] : []),
-        description: r.description || '',
-        sourceUrl: `#recipe-${r.id}`,
-        tastyId: r.id,
-        ingredients: r.ingredients || [],
-        instructions: r.instructions || '',
-        name: r.name,
-        cuisine_type: r.cuisine_type,
-        isUserRecipe: true,
-      };
-      openRecipe(formatted);
-      onOpenRecipeHandled?.();
-    }
-  }, [pendingOpenRecipe, isActive]);
 
   const openRecipe = (recipe) => {
     setSelectedRecipe(recipe);
@@ -361,40 +322,11 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     }
   };
 
-  // Wishlist management functions
   const loadWishlistFromDB = async () => {
     try {
-      // Load both user recipes and wishlist items in parallel
-      const [wishlistResult, userResult] = await Promise.all([
-        getUserWishlist(),
-        getMyRecipes(),
-      ]);
-
-      let combined = [];
-
-      // Add user's own recipes first (auto-included in My Meals)
-      if (userResult.recipes && userResult.recipes.length > 0) {
-        const userRecipes = userResult.recipes.map(r => ({
-          id: r.id,
-          title: r.name || r.title,
-          image: r.image || 'https://images.unsplash.com/photo-1546548970-71785318a17b?w=400&h=300&fit=crop',
-          readyInMinutes: r.readyInMinutes || r.cooking_time_minutes || 30,
-          dietary: r.dietary || (r.cuisine_type ? [r.cuisine_type] : []),
-          description: r.description || '',
-          sourceUrl: `#recipe-${r.id}`,
-          tastyId: r.id,
-          ingredients: r.ingredients || [],
-          instructions: r.instructions || '',
-          name: r.name,
-          cuisine_type: r.cuisine_type,
-          isUserRecipe: true,
-        }));
-        combined = [...userRecipes];
-      }
-
-      // Then add wishlist items
-      if (wishlistResult.success) {
-        const wishlistRecipes = wishlistResult.wishlist.map(item => {
+      const result = await getUserWishlist();
+      if (result.success) {
+        const recipes = result.wishlist.map(item => {
           const data = item.recipe_data;
           return {
             id: data.id,
@@ -410,19 +342,13 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
             pricePerServing: null,
             cuisine_type: data.cuisine_type,
             steps: data.steps,
-            name: data.name
+            name: data.name,
           };
         });
-
-        // Deduplicate: don't add wishlist items that are already user recipes
-        const userRecipeIds = new Set(combined.map(r => r.id));
-        const uniqueWishlist = wishlistRecipes.filter(r => !userRecipeIds.has(r.id));
-        combined = [...combined, ...uniqueWishlist];
+        setWishlist(recipes);
       }
-
-      setWishlist(combined);
     } catch (error) {
-      console.error('❌ Error loading wishlist:', error);
+      console.error('Error loading list:', error);
     }
   };
 
@@ -456,12 +382,6 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     return wishlist.some(recipe => recipe.id === recipeId);
   };
 
-  // Check if a recipe is in "My Meals" (either user recipe or in wishlist)
-  const isInMyMeals = useCallback((recipe) => {
-    if (recipe.isUserRecipe) return true;
-    return isRecipeInWishlist(recipe.id);
-  }, [wishlist]);
-
   const toggleWishlist = async (recipe) => {
     if (isRecipeInWishlist(recipe.id)) {
       await removeFromWishlist(recipe.id);
@@ -475,7 +395,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     if (result.success) {
       setWishlist([]);
     } else {
-      console.error('❌ Failed to clear wishlist:', result.error);
+      console.error('Failed to clear list:', result.error);
     }
   };
 
@@ -559,10 +479,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
 
           {activeTab === 'wishlist' && (
             <Text style={styles.dateText}>
-              {wishlist.length !== 1 
-                ? t('recipes.savedRecipesPlural', { count: wishlist.length })
-                : t('recipes.savedRecipes', { count: wishlist.length })
-              }
+              {wishlist.length} recipe{wishlist.length !== 1 ? 's' : ''} saved
             </Text>
           )}
         </View>
@@ -587,18 +504,16 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                   transition={200}
                   cachePolicy="memory-disk"
                 />
-                {!isInMyMeals(recipe) && (
-                  <Animated.View style={{ opacity: getPlusButtonOpacity(recipe.id) }}>
-                    <TouchableOpacity 
-                      style={styles.plusButton}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        handleAddToMyMeals(recipe);
-                      }}
-                    >
-                      <Text style={styles.plusButtonText}>+</Text>
-                    </TouchableOpacity>
-                  </Animated.View>
+                {!isRecipeInWishlist(recipe.id) && (
+                  <TouchableOpacity 
+                    style={styles.wishlistButtonOverlay}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      addToWishlist(recipe);
+                    }}
+                  >
+                    <Text style={styles.addIcon}>+</Text>
+                  </TouchableOpacity>
                 )}
               </View>
               
@@ -638,10 +553,10 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
             
             {wishlist.length === 0 ? (
               <View style={styles.emptyWishlist}>
-                <Text style={styles.emptyWishlistIcon}>🍽️</Text>
+                <Text style={styles.emptyWishlistIcon}>+</Text>
                 <Text style={styles.emptyWishlistTitle}>{t('recipes.noSavedRecipes')}</Text>
                 <Text style={styles.emptyWishlistText}>
-                  {t('recipes.tapHeartToSave')}
+                  {t('recipes.tapPlusToSave')}
                 </Text>
               </View>
             ) : (
@@ -679,7 +594,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                     
                     <Text style={styles.recipeDescription}>{recipe.description}</Text>
                     
-                    {recipe.dietary.length > 0 && (
+                    {recipe.dietary && recipe.dietary.length > 0 && (
                       <View style={styles.dietaryTags}>
                         {recipe.dietary.slice(0, 2).map((dietary, index) => (
                           <View key={index} style={styles.dietaryTag}>
@@ -849,37 +764,20 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                       </View>
                     )}
 
-                    {/* Action Buttons */}
-                    <View style={styles.modalActions}>
-                      {selectedRecipe && selectedRecipe.isUserRecipe ? (
-                        <View style={[styles.modalWishlistButton, styles.modalWishlistButtonInMyMeals]}>
-                          <Text style={[styles.modalWishlistIcon, { color: '#8B7355' }]}>✓</Text>
-                          <Text style={styles.modalWishlistText}>
-                            {t('recipes.inMyMeals')}
-                          </Text>
-                        </View>
-                      ) : selectedRecipe && isRecipeInWishlist(selectedRecipe.id) ? (
+                    {/* Action Buttons — hidden for user-created recipes (already theirs) */}
+                    {selectedRecipe && !selectedRecipe.isUserRecipe && !isRecipeInWishlist(selectedRecipe.id) && (
+                      <View style={styles.modalActions}>
                         <TouchableOpacity 
                           style={styles.modalWishlistButton}
-                          onPress={() => toggleWishlist(selectedRecipe)}
+                          onPress={() => addToWishlist(selectedRecipe)}
                         >
-                          <Text style={[styles.modalWishlistIcon, { color: '#8B7355' }]}>✓</Text>
+                          <Text style={styles.modalAddIcon}>+</Text>
                           <Text style={styles.modalWishlistText}>
-                            {t('recipes.removeFromMyMeals')}
+                            {t('recipes.addToList')}
                           </Text>
                         </TouchableOpacity>
-                      ) : (
-                        <TouchableOpacity 
-                          style={styles.modalWishlistButton}
-                          onPress={() => toggleWishlist(selectedRecipe)}
-                        >
-                          <Text style={[styles.modalWishlistIcon, { fontSize: 22, fontWeight: '600' }]}>+</Text>
-                          <Text style={styles.modalWishlistText}>
-                            {t('recipes.addToMyMeals')}
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
+                      </View>
+                    )}
                   </View>
                 </>
               ) : (
@@ -903,9 +801,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 20,
-    paddingBottom: 120,
+    paddingBottom: 95, // Adjusted for transparent nav
   },
   loadingContainer: {
     flex: 1,
@@ -1056,7 +954,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dietaryTag: {
-    backgroundColor: '#E8E2DA',
+    backgroundColor: '#E8E6E3',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -1136,10 +1034,10 @@ const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E2DA',
+    borderBottomColor: '#F5F3F0',
     backgroundColor: '#FEFEFE',
   },
   backButton: {
@@ -1148,7 +1046,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: '#F8F6F3',
+    backgroundColor: '#F5F3F0',
   },
   backArrow: {
     fontFamily: 'Inter_500Medium',
@@ -1223,12 +1121,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   modalDietaryTag: {
-    backgroundColor: '#F8F6F3',
+    backgroundColor: '#F5F3F0',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E8E2DA',
+    borderColor: '#E8E6E3',
   },
   modalDietaryText: {
     fontFamily: 'Inter_500Medium',
@@ -1303,7 +1201,7 @@ const styles = StyleSheet.create({
   // Tab styles
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F8F6F3',
+    backgroundColor: '#F5F3F0',
     borderRadius: 8,
     padding: 4,
     marginBottom: 16,
@@ -1337,15 +1235,19 @@ const styles = StyleSheet.create({
     color: '#FEFEFE',
   },
   
-  // Plus button styles (replaces heart/wishlist)
-  plusButton: {
+  // Wishlist styles
+  wishlistButton: {
+    padding: 8,
+    marginRight: 4,
+  },
+  wishlistButtonOverlay: {
     position: 'absolute',
-    bottom: 10,
-    right: 10,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#8B7355',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -1353,16 +1255,25 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 5,
   },
-  plusButtonText: {
-    color: '#FFFFFF',
+  wishlistIcon: {
+    fontSize: 20,
+  },
+  addIcon: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#8B7355',
+    lineHeight: 26,
+  },
+  modalAddIcon: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#8B7355',
+    marginRight: 8,
     lineHeight: 24,
-    marginTop: -1,
   },
   emptyWishlist: {
     alignItems: 'center',
@@ -1405,25 +1316,21 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   
-  // Modal my meals button styles
+  // Modal wishlist styles
   modalWishlistButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F6F3',
+    backgroundColor: '#F5F3F0',
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E8E2DA',
-  },
-  modalWishlistButtonInMyMeals: {
-    opacity: 0.6,
+    borderColor: '#E8E6E3',
   },
   modalWishlistIcon: {
     fontSize: 20,
     marginRight: 8,
-    color: '#8B7355',
   },
   modalWishlistText: {
     fontFamily: 'Inter_500Medium',
