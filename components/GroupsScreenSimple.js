@@ -1767,9 +1767,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // Use context profile if available, otherwise fallback to local
   const effectiveProfile = userProfile || localProfile;
   
-  // Derive user info from effective profile
-  const userName = effectiveProfile?.full_name || effectiveProfile?.display_name || '';
-  const userAvatarUrl = effectiveProfile?.avatar_url || null;
+  // Derive user name from profile, auth user metadata, or email as last resort
+  const [authUserName, setAuthUserName] = useState('');
+  const userName = effectiveProfile?.full_name || effectiveProfile?.display_name || authUserName || '';
   
   // Core state - groups now come from context (includes AsyncStorage cache)
   const groups = contextGroups || [];
@@ -1996,6 +1996,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUserId(user.id);
+        if (!effectiveProfile?.full_name) {
+          setAuthUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || '');
+        }
       }
       
       // Sync auth status with context (important for cache to work!)
@@ -3856,19 +3859,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           style={styles.profileButton}
           onPress={() => navigation.navigate('Profile')}
         >
-          {userAvatarUrl ? (
-            <ExpoImage 
-              source={{ uri: userAvatarUrl }} 
-              style={styles.profileButtonImage}
-              contentFit="cover"
-              transition={200}
-              cachePolicy="memory-disk"
-            />
-          ) : (
-            <Text style={styles.profileButtonText}>
-              {userName ? userName.charAt(0).toUpperCase() : '?'}
-            </Text>
-          )}
+          <Text style={styles.profileButtonText}>
+            {userName ? userName.charAt(0).toUpperCase() : '?'}
+          </Text>
         </TouchableOpacity>
       </View>
 
