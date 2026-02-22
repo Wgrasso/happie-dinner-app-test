@@ -4295,54 +4295,53 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     <Text style={styles.recipeModalCloseText}>✕</Text>
                   </TouchableOpacity>
                 </View>
-                <ScrollView style={styles.recipeModalBody}>
+                <ScrollView style={styles.recipeModalBody} showsVerticalScrollIndicator={false}>
                   <Text style={styles.recipeModalTitle}>
-                    {selectedRecipe.meal_data.name || 'Recipe'}
+                    {selectedRecipe.meal_data.name || t('recipes.defaultName')}
                   </Text>
                   <View style={styles.recipeModalMeta}>
                     <View style={styles.recipeModalMetaItem}>
                       <Text style={styles.recipeModalMetaLabel}>{t('common.votes')}</Text>
                       <Text style={styles.recipeModalMetaValue}>{selectedRecipe.yes_votes || 0}</Text>
                     </View>
-                    {selectedRecipe.meal_data.total_time_minutes && (
+                    {selectedRecipe.meal_data.total_time_minutes > 0 && (
                       <View style={styles.recipeModalMetaItem}>
-                        <Text style={styles.recipeModalMetaLabel}>Tijd</Text>
+                        <Text style={styles.recipeModalMetaLabel}>{t('recipes.cookingTime')}</Text>
                         <Text style={styles.recipeModalMetaValue}>{selectedRecipe.meal_data.total_time_minutes} min</Text>
                       </View>
                     )}
+                    {selectedRecipe.meal_data.cuisine_type ? (
+                      <View style={styles.recipeModalMetaItem}>
+                        <Text style={styles.recipeModalMetaLabel}>{t('recipes.cuisineType')}</Text>
+                        <Text style={styles.recipeModalMetaValue}>{selectedRecipe.meal_data.cuisine_type}</Text>
+                      </View>
+                    ) : null}
                   </View>
-                  {selectedRecipe.meal_data.description && (
+                  {selectedRecipe.meal_data.description ? (
+                    <Text style={styles.recipeModalDescription}>{selectedRecipe.meal_data.description}</Text>
+                  ) : null}
+                  {selectedRecipe.meal_data.ingredients?.length > 0 && (
                     <View style={styles.recipeModalSection}>
-                      <Text style={styles.recipeModalSectionTitle}>Beschrijving</Text>
-                      <Text style={styles.recipeModalDescription}>{selectedRecipe.meal_data.description}</Text>
-                    </View>
-                  )}
-                  {selectedRecipe.meal_data.sections?.[0]?.components?.length > 0 && (
-                    <View style={styles.recipeModalSection}>
-                      <Text style={styles.recipeModalSectionTitle}>Ingrediënten</Text>
-                      {selectedRecipe.meal_data.sections[0].components.map((item, idx) => (
-                        <Text key={idx} style={styles.recipeModalIngredient}>
-                          • {item.raw_text || item}
-                        </Text>
+                      <Text style={styles.recipeModalSectionTitle}>{t('recipes.ingredients')}</Text>
+                      {selectedRecipe.meal_data.ingredients.map((item, idx) => (
+                        <Text key={idx} style={styles.recipeModalIngredient}>• {item}</Text>
                       ))}
                     </View>
                   )}
-                  {selectedRecipe.meal_data.instructions?.length > 0 && (
+                  {selectedRecipe.meal_data.steps?.length > 0 && (
                     <View style={styles.recipeModalSection}>
-                      <Text style={styles.recipeModalSectionTitle}>Bereiding</Text>
-                      {selectedRecipe.meal_data.instructions.map((step, idx) => (
+                      <Text style={styles.recipeModalSectionTitle}>{t('recipes.instructions')}</Text>
+                      {selectedRecipe.meal_data.steps.map((step, idx) => (
                         <View key={idx} style={styles.recipeModalStep}>
                           <View style={styles.recipeModalStepNumber}>
                             <Text style={styles.recipeModalStepNumberText}>{idx + 1}</Text>
                           </View>
-                          <Text style={styles.recipeModalStepText}>
-                            {step.display_text || step}
-                          </Text>
+                          <Text style={styles.recipeModalStepText}>{step}</Text>
                         </View>
                       ))}
                     </View>
                   )}
-                  <View style={{ height: 40 }} />
+                  <View style={{ height: 30 }} />
                 </ScrollView>
               </>
             )}
@@ -5560,81 +5559,84 @@ const styles = StyleSheet.create({
     color: '#2D2D2D',
   },
   recipeModalBody: {
-    padding: 20,
-    maxHeight: 400,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    flexGrow: 1,
   },
   recipeModalTitle: {
     fontSize: 22,
     fontFamily: 'PlayfairDisplay_700Bold',
     color: '#2D2D2D',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   recipeModalMeta: {
     flexDirection: 'row',
-    gap: 20,
-    marginBottom: 20,
+    gap: 16,
+    marginBottom: 14,
+    flexWrap: 'wrap',
   },
   recipeModalMetaItem: {
     alignItems: 'center',
   },
   recipeModalMetaLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter_400Regular',
     color: '#8B8885',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   recipeModalMetaValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
     color: '#8B7355',
   },
   recipeModalSection: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   recipeModalSectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
     color: '#2D2D2D',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   recipeModalDescription: {
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
     color: '#666',
-    lineHeight: 22,
+    lineHeight: 20,
+    marginBottom: 14,
   },
   recipeModalIngredient: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter_400Regular',
     color: '#4A4A4A',
-    marginBottom: 6,
-    lineHeight: 20,
+    marginBottom: 4,
+    lineHeight: 18,
   },
   recipeModalStep: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   recipeModalStepNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: '#8B7355',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-    marginTop: 2,
+    marginRight: 10,
+    marginTop: 1,
   },
   recipeModalStepNumberText: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
     color: '#FEFEFE',
   },
   recipeModalStepText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter_400Regular',
     color: '#4A4A4A',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   // Swipe to leave styles
   swipeLeaveContainer: {

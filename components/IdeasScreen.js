@@ -757,12 +757,24 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                     )}
 
                     {/* Instructions Section */}
-                    {selectedRecipe.instructions && selectedRecipe.instructions.length > 0 && (
+                    {selectedRecipe.steps && selectedRecipe.steps.length > 0 ? (
+                      <View style={styles.modalSection}>
+                        <Text style={styles.dietaryTitle}>{t('recipes.instructions')}</Text>
+                        {selectedRecipe.steps.map((step, idx) => (
+                          <View key={idx} style={styles.stepRow}>
+                            <View style={styles.stepNumber}>
+                              <Text style={styles.stepNumberText}>{idx + 1}</Text>
+                            </View>
+                            <Text style={styles.stepText}>{step}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : selectedRecipe.instructions && selectedRecipe.instructions.length > 0 ? (
                       <View style={styles.modalSection}>
                         <Text style={styles.dietaryTitle}>{t('recipes.instructions')}</Text>
                         <Text style={styles.instructionsText}>{selectedRecipe.instructions}</Text>
                       </View>
-                    )}
+                    ) : null}
 
                     {/* Action Buttons — hidden for user-created recipes (already theirs) */}
                     {selectedRecipe && !selectedRecipe.isUserRecipe && !isRecipeInWishlist(selectedRecipe.id) && (
@@ -1188,6 +1200,32 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: '#6B6B6B',
     letterSpacing: 0.1,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  stepNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#8B7355',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    marginTop: 1,
+  },
+  stepNumberText: {
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#FEFEFE',
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    color: '#4A4A4A',
+    lineHeight: 20,
   },
   backgroundWatermark: {
     position: 'absolute',
