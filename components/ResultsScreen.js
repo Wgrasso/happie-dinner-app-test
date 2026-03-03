@@ -19,7 +19,8 @@ const SafeDrawing = ({ source, style, resizeMode = "contain" }) => {
 };
 
 export default function ResultsScreen({ route, navigation }) {
-  const { requestId, groupName, groupId, returnToGroupModal } = route.params;
+  const params = route?.params || {};
+  const { requestId, groupName, groupId, returnToGroupModal } = params;
   const { t } = useTranslation();
   
   // Back navigation - simply pop this screen from the stack.
@@ -43,6 +44,12 @@ export default function ResultsScreen({ route, navigation }) {
   }, []);
 
   const loadResults = async () => {
+    if (!requestId) {
+      setError(t('errors.notFound'));
+      setLoading(false);
+      return;
+    }
+
     console.log('📊 [RESULTS] Loading voting results for request:', requestId);
     setLoading(true);
     setError(null);
@@ -109,7 +116,7 @@ export default function ResultsScreen({ route, navigation }) {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#8B7355" />
-          <Text style={styles.loadingText}>Calculating voting results...</Text>
+          <Text style={styles.loadingText}>{t('voting.calculatingResults')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -186,9 +193,11 @@ export default function ResultsScreen({ route, navigation }) {
         {/* Results Cards */}
         <View style={styles.resultsContainer}>
           {topMeals.length > 0 ? (
-            topMeals.map((meal, index) => (
+            topMeals.map((meal, index) => {
+              const mealData = meal?.meal_data || {};
+              return (
               <View 
-                key={meal.meal_option_id} 
+                key={meal?.meal_option_id || `top-meal-${index}`} 
                 style={[
                   styles.resultCard,
                   index === 0 && styles.firstPlaceCard,
@@ -205,7 +214,7 @@ export default function ResultsScreen({ route, navigation }) {
                 {/* Meal Image */}
                 <Image 
                   source={{ 
-                    uri: meal.meal_data.thumbnail_url || 
+                    uri: mealData.thumbnail_url || 
                          'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop'
                   }} 
                   style={styles.resultImage}
@@ -215,17 +224,17 @@ export default function ResultsScreen({ route, navigation }) {
                 {/* Meal Info */}
                 <View style={styles.resultInfo}>
                   <Text style={styles.resultTitle} numberOfLines={2}>
-                    {meal.meal_data.name || t('recipes.defaultName')}
+                    {mealData.name || t('recipes.defaultName')}
                   </Text>
                   
                   <View style={styles.resultMeta}>
                     <Text style={styles.resultTime}>
-                      {formatTime(meal.meal_data.total_time_minutes)}
+                      {formatTime(mealData.total_time_minutes)}
                     </Text>
                     
-                    {meal.meal_data.description && (
+                    {mealData.description && (
                       <Text style={styles.resultDescription} numberOfLines={2}>
-                        {meal.meal_data.description}
+                        {mealData.description}
                       </Text>
                     )}
                   </View>
@@ -277,7 +286,8 @@ export default function ResultsScreen({ route, navigation }) {
                   </View>
                 </View>
               </View>
-            ))
+            );
+            })
           ) : (
             <View style={styles.noResultsContainer}>
               <Text style={styles.noResultsTitle}>{t('voting.noVotesYet')}</Text>

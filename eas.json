@@ -6,10 +6,18 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://xyynvfmjwhzlqdteofep.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_qDtp_Zng8IcP6kMVLYV4qA_vtwgQlU7"
+      }
     },
     "preview": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://xyynvfmjwhzlqdteofep.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_qDtp_Zng8IcP6kMVLYV4qA_vtwgQlU7"
+      },
       "ios": {
         "simulator": true
       }

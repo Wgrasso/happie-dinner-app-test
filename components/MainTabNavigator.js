@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, View, SafeAreaView, TouchableOpacity, Text, Image } from 'react-native';
+import { StyleSheet, View, SafeAreaView, Text, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import IdeasScreen from './IdeasScreen';
 import MainProfileScreen from './MainProfileScreen';
-import ProfileScreen from './ProfileScreen';
 import GroupsScreen from './GroupsScreenSimple';
-import SignInScreen from './SignInScreen';
-import SignUpScreen from './SignUpScreen';
 import BottomTabNavigation from './BottomTabNavigation';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../lib/AppStateContext';
@@ -27,9 +24,6 @@ export default function MainTabNavigator({ navigation, route }) {
   // Preloading state - other tabs start preloading after groups is ready
   const [groupsReady, setGroupsReady] = useState(false);
   const [shouldPreloadOthers, setShouldPreloadOthers] = useState(false);
-  
-  // Refs to pass to GroupsScreen for state preservation
-  const groupsScreenRef = useRef(null);
   
   // When groups is ready, trigger preloading of other tabs after a short delay
   useEffect(() => {
@@ -152,11 +146,6 @@ export default function MainTabNavigator({ navigation, route }) {
     navigate: (routeName, params) => {
       if (routeName === 'Profile') {
         setCurrentTab('profile');
-        navigation.navigate('Profile', params);
-      } else if (routeName === 'SignIn') {
-        setCurrentTab('signin');
-      } else if (routeName === 'SignUp') {
-        setCurrentTab('signup');
       } else if (routeName === 'MainTabs') {
         checkAuthStatus();
         setCurrentTab('groups');
@@ -189,85 +178,58 @@ export default function MainTabNavigator({ navigation, route }) {
     );
   }
 
-  // Check if showing auth screens (don't keep main tabs mounted for these)
-  const isAuthScreen = currentTab === 'signin' || currentTab === 'signup';
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Auth Screens - render conditionally (not kept mounted) */}
-        {currentTab === 'signin' && (
-          <View style={styles.screenContainer}>
-            <SignInScreen 
-              key={`signin-${profileRefreshKey}`}
-              navigation={enhancedNavigation}
-            />
-          </View>
-        )}
+        {/* Groups Screen - Always mounted, loads first */}
+        <View style={[
+          styles.screenContainer,
+          currentTab === 'groups' ? styles.activeScreen : styles.hiddenScreen
+        ]}>
+          <GroupsScreen 
+            key="groups"
+            route={route || { params: {} }} 
+            navigation={enhancedNavigation}
+            isActive={currentTab === 'groups'}
+            onReady={onGroupsReady}
+            pendingGroupReopen={pendingGroupReopen}
+            onPendingGroupReopenCleared={() => setPendingGroupReopen(null)}
+          />
+        </View>
 
-        {currentTab === 'signup' && (
-          <View style={styles.screenContainer}>
-            <SignUpScreen 
-              key={`signup-${profileRefreshKey}`}
-              navigation={enhancedNavigation}
-            />
-          </View>
-        )}
+        {/* Ideas Screen - Preloads after groups is ready, or loads immediately when active */}
+        <View style={[
+          styles.screenContainer,
+          currentTab === 'inspiration' ? styles.activeScreen : styles.hiddenScreen
+        ]}>
+          <IdeasScreen 
+            key="ideas"
+            route={{ params: {} }} 
+            navigation={enhancedNavigation}
+            hideBottomNav={true}
+            isActive={currentTab === 'inspiration'}
+            shouldPreload={shouldPreloadOthers}
+            pendingOpenRecipe={pendingOpenRecipe}
+            onOpenRecipeHandled={() => setPendingOpenRecipe(null)}
+          />
+        </View>
 
-        {/* Main Tabs - ALL KEPT MOUNTED for instant switching */}
-        {!isAuthScreen && (
-          <>
-            {/* Groups Screen - Always mounted, loads first */}
-            <View style={[
-              styles.screenContainer,
-              currentTab === 'groups' ? styles.activeScreen : styles.hiddenScreen
-            ]}>
-              <GroupsScreen 
-                key="groups"
-                route={route || { params: {} }} 
-                navigation={enhancedNavigation}
-                isActive={currentTab === 'groups'}
-                onReady={onGroupsReady}
-                pendingGroupReopen={pendingGroupReopen}
-                onPendingGroupReopenCleared={() => setPendingGroupReopen(null)}
-              />
-            </View>
-
-            {/* Ideas Screen - Preloads after groups is ready, or loads immediately when active */}
-            <View style={[
-              styles.screenContainer,
-              currentTab === 'inspiration' ? styles.activeScreen : styles.hiddenScreen
-            ]}>
-              <IdeasScreen 
-                key="ideas"
-                route={{ params: {} }} 
-                navigation={enhancedNavigation}
-                hideBottomNav={true}
-                isActive={currentTab === 'inspiration'}
-                shouldPreload={shouldPreloadOthers}
-                pendingOpenRecipe={pendingOpenRecipe}
-                onOpenRecipeHandled={() => setPendingOpenRecipe(null)}
-              />
-            </View>
-
-            {/* Profile Screen - Preloads after groups is ready, or loads immediately when active */}
-            <View style={[
-              styles.screenContainer,
-              currentTab === 'profile' ? styles.activeScreen : styles.hiddenScreen
-            ]}>
-              <MainProfileScreen 
-                key={`profile-${profileRefreshKey}`}
-                route={{ params: {} }} 
-                navigation={enhancedNavigation}
-                hideBottomNav={true}
-                isActive={currentTab === 'profile'}
-                shouldPreload={shouldPreloadOthers}
-                onSwitchToGroups={() => handleTabPress('groups')}
-                onSwitchToInspiration={(recipe) => { setPendingOpenRecipe(recipe); handleTabPress('inspiration'); }}
-              />
-            </View>
-          </>
-        )}
+        {/* Profile Screen - Preloads after groups is ready, or loads immediately when active */}
+        <View style={[
+          styles.screenContainer,
+          currentTab === 'profile' ? styles.activeScreen : styles.hiddenScreen
+        ]}>
+          <MainProfileScreen 
+            key={`profile-${profileRefreshKey}`}
+            route={{ params: {} }} 
+            navigation={enhancedNavigation}
+            hideBottomNav={true}
+            isActive={currentTab === 'profile'}
+            shouldPreload={shouldPreloadOthers}
+            onSwitchToGroups={() => handleTabPress('groups')}
+            onSwitchToInspiration={(recipe) => { setPendingOpenRecipe(recipe); handleTabPress('inspiration'); }}
+          />
+        </View>
       </View>
       
       <View style={styles.bottomNavContainer}>

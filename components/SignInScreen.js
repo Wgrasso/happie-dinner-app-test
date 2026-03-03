@@ -55,9 +55,8 @@ export default function SignInScreen({ navigation }) {
 
     setResetLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'happie://reset-password',
-      });
+      // Use Supabase default recovery redirect to avoid broken deep-link routes.
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
 
       if (error) {
         Alert.alert(t('common.error'), error.message);
