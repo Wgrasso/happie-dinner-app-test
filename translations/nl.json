@@ -227,6 +227,7 @@
     "passwordMinLength": "Wachtwoord moet minimaal 6 tekens zijn",
     "passwordMismatch": "Wachtwoorden komen niet overeen",
     "language": "Taal",
+    "chatNotifications": "Chat notificaties",
     "deleteAccount": "Account verwijderen",
     "deleteAccountWarning": "Dit zal permanent je account en alle bijbehorende gegevens verwijderen. Deze actie kan niet ongedaan worden gemaakt. Weet je het zeker?",
     "deleteAccountConfirm": "Verwijderen",

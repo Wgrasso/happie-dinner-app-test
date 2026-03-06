@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, 
-  ScrollView, Alert, Image, ActivityIndicator, Modal, Dimensions, Share
+  ScrollView, Alert, Image, ActivityIndicator, Modal, Dimensions, Share, Switch
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -40,6 +40,9 @@ export default function ProfileScreen({ route, navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
 
+  // Chat notification preference
+  const [chatNotifications, setChatNotifications] = useState(true);
+
   useEffect(() => {
     if (!isGuest) {
       loadProfile();
@@ -65,6 +68,9 @@ export default function ProfileScreen({ route, navigation }) {
         setOriginalName(profileName);
         if (result.profile.avatar_url) {
           setAvatarUrl(result.profile.avatar_url);
+        }
+        if (result.profile.chat_notifications !== undefined) {
+          setChatNotifications(result.profile.chat_notifications !== false);
         }
       } else if (user) {
           // Fallback: use registration name from user metadata
@@ -310,6 +316,17 @@ export default function ProfileScreen({ route, navigation }) {
     );
   };
 
+  const handleToggleChatNotifications = async (value) => {
+    setChatNotifications(value);
+    lightHaptic();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('profiles').update({ chat_notifications: value }).eq('id', user.id);
+      }
+    } catch (_) {}
+  };
+
   const handleLanguageChange = async (lang) => {
     lightHaptic();
     await i18n.changeLanguage(lang);
@@ -443,6 +460,18 @@ export default function ProfileScreen({ route, navigation }) {
                   <Text style={[styles.langText, i18n.language === 'en' && styles.langTextActive]}>EN</Text>
                 </TouchableOpacity>
               </View>
+            </View>
+            <View style={styles.settingsRowBorder} />
+            <View style={styles.notificationRow}>
+              <View style={styles.settingsRowLeft}>
+                <Text style={styles.rowLabel}>{t('profile.chatNotifications')}</Text>
+              </View>
+              <Switch
+                value={chatNotifications}
+                onValueChange={handleToggleChatNotifications}
+                trackColor={{ false: '#D0CCC7', true: '#8B7355' }}
+                thumbColor="#FEFEFE"
+              />
             </View>
           </View>
         </View>
@@ -735,6 +764,13 @@ const styles = StyleSheet.create({
   },
 
   languageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  notificationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

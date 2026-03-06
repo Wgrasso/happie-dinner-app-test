@@ -228,6 +228,7 @@
     "passwordMinLength": "Password must be at least 6 characters",
     "passwordMismatch": "Passwords do not match",
     "language": "Language",
+    "chatNotifications": "Chat notifications",
     "deleteAccount": "Delete Account",
     "deleteAccountWarning": "This will permanently delete your account and all associated data. This action cannot be undone. Are you sure?",
     "deleteAccountConfirm": "Delete Account",

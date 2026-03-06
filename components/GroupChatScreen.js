@@ -68,12 +68,12 @@ export default function GroupChatScreen({ route, navigation }) {
 
     setSending(true);
     setText('');
-    const res = await sendGroupMessage(groupId, trimmed);
+    const res = await sendGroupMessage(groupId, trimmed, groupName);
     if (!res.success) {
       setText(trimmed);
     }
     setSending(false);
-  }, [text, sending, groupId]);
+  }, [text, sending, groupId, groupName]);
 
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
