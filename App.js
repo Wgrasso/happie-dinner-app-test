@@ -21,6 +21,7 @@ import MainTabNavigator from './components/MainTabNavigator';
 import NewRecipeScreen from './components/NewRecipeScreen';
 import VotingScreen from './components/VotingScreen';
 import ResultsScreen from './components/ResultsScreen';
+import GroupChatScreen from './components/GroupChatScreen';
 
 const Stack = createStackNavigator();
 
@@ -122,13 +123,11 @@ export default function App() {
   useEffect(() => {
     // Listen for notifications received while app is in foreground
     notificationListener.current = addNotificationReceivedListener(notification => {
-      console.log('📬 Notification received:', notification);
       // You can show an in-app alert or update UI here
     });
 
     // Listen for user tapping on a notification
     responseListener.current = addNotificationResponseListener(response => {
-      console.log('👆 Notification tapped:', response);
       const data = response.notification.request.content.data;
       
       // Navigate based on notification data
@@ -211,6 +210,11 @@ export default function App() {
               ...smoothSlideTransition,
               detachPreviousScreen: false,
             }}
+          />
+          <Stack.Screen 
+            name="GroupChat" 
+            component={GroupChatScreen}
+            options={smoothSlideTransition}
           />
         </Stack.Navigator>
       </NavigationContainer>

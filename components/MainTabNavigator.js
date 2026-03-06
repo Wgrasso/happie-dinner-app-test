@@ -54,13 +54,11 @@ export default function MainTabNavigator({ navigation, route }) {
     }
     
     // Handle switching to groups tab and reopening group modal
-    console.log('[TOP3-NAV] MainTabNavigator params changed:', JSON.stringify(route?.params));
     if (route?.params?.switchToGroupsTab) {
       setCurrentTab('groups');
       
       // Store the pending group reopen request
       if (route?.params?.reopenGroupModal && route?.params?.groupId) {
-        console.log('[TOP3-NAV] Setting pendingGroupReopen for group:', route.params.groupId);
         setPendingGroupReopen({
           groupId: route.params.groupId,
           timestamp: Date.now()
@@ -69,7 +67,6 @@ export default function MainTabNavigator({ navigation, route }) {
       
       // Invalidate top meals cache if returning from voting
       if (route?.params?.refreshTopMeals && appState?.invalidateTopMeals) {
-        console.log('[TOP3-NAV] Invalidating top meals cache');
         appState.invalidateTopMeals();
       }
     }

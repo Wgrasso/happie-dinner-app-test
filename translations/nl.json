@@ -26,7 +26,8 @@
     "joinCommunity": "Word lid van onze kookgemeenschap",
     "enterEmailForReset": "Vul je e-mailadres in om een wachtwoord reset link te ontvangen.",
     "emailSent": "E-mail verzonden",
-    "resetEmailSentMessage": "Als dit e-mailadres bij ons bekend is, ontvang je een link om je wachtwoord te resetten."
+    "resetEmailSentMessage": "Als dit e-mailadres bij ons bekend is, ontvang je een link om je wachtwoord te resetten.",
+    "checkEmailConfirm": "Check je e-mail om je account te bevestigen"
   },
   "groups": {
     "title": "Groepen",
@@ -76,7 +77,11 @@
     "joinGroupTitle": "Join een Groep",
     "enterCode": "Vul de groepscode in",
     "codePlaceholder": "bijv. ABC123",
-    "join": "Joinen"
+    "join": "Joinen",
+    "create": "Maken",
+    "memberSingular": "lid",
+    "memberPlural": "leden",
+    "groupNoLongerExists": "Deze groep bestaat niet meer"
   },
   "dinner": {
     "sendRequest": "Diner Verzoek Sturen",
@@ -144,6 +149,7 @@
     "clearWishlist": "Lijst Wissen",
     "confirmClearWishlist": "Weet je zeker dat je alle recepten van je lijst wilt verwijderen?",
     "addToList": "Toevoegen aan Mijn Lijst",
+    "removeFromList": "Verwijderen uit Mijn Lijst",
     "addedToWishlist": "Toegevoegd aan je lijst",
     "removedFromWishlist": "Verwijderd van je lijst",
     "signInToSave": "Log in om recepten op te slaan",
@@ -168,14 +174,21 @@
     "recipeNotAvailable": "Receptgegevens niet beschikbaar",
     "pricePerServing": "Prijs per portie",
     "defaultName": "Heerlijk Recept",
-    "loadingRecipes": "Heerlijke recepten laden..."
+    "loadingRecipes": "Heerlijke recepten laden...",
+    "databaseError": "Verbindingsprobleem",
+    "databaseErrorMessage": "Kon recepten niet laden uit database. Voorbeeldrecepten worden getoond.",
+    "noDirectLink": "Geen directe link",
+    "noDirectLinkMessage": "Dit recept heeft geen directe link. Wil je er online naar zoeken?",
+    "searchOnline": "Zoeken",
+    "clear": "Wissen",
+    "allRecipesShown": "Je hebt alle recepten gezien"
   },
   "userRecipes": {
     "myRecipes": "Mijn Recepten",
     "recipeOne": "recept",
     "recipeMany": "recepten",
     "confirmDelete": "Weet je zeker dat je \"{{name}}\" wilt verwijderen?",
-    "newRecipeTitle": "Nieuw Recept",
+    "newRecipeTitle": "Recept Toevoegen",
     "creatingNew": "Maak een nieuw recept aan",
     "name": "Naam",
     "namePlaceholder": "bijv. Pasta Carbonara",
@@ -287,7 +300,8 @@
     "signInToCreate": "Log in om speciale gelegenheden te plannen",
     "areYouJoining": "Ga jij mee eten?",
     "dinnerParty": "Etentje",
-    "barbecue": "Barbecue"
+    "barbecue": "Barbecue",
+    "specialMoment": "Speciaal moment"
   },
   "occasions": {
     "planSomething": "Plan iets leuks",

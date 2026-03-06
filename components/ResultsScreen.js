@@ -50,7 +50,6 @@ export default function ResultsScreen({ route, navigation }) {
       return;
     }
 
-    console.log('📊 [RESULTS] Loading voting results for request:', requestId);
     setLoading(true);
     setError(null);
 
@@ -58,10 +57,8 @@ export default function ResultsScreen({ route, navigation }) {
       const result = await getTopVotedMeals(requestId);
       
       if (result.success) {
-        console.log(`✅ Loaded results for ${result.topMeals?.length || 0} meals`);
         setTopMeals(result.topMeals || []);
       } else {
-        console.log('❌ Failed to load results:', result.error);
         setError(result.error || 'Failed to load voting results');
       }
     } catch (error) {

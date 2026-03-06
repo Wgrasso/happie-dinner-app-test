@@ -5,6 +5,8 @@ import { getOccasionMealOptions, voteOnOccasionMeal, getOccasionVotingProgress }
 import { useTranslation } from 'react-i18next';
 import { log, debugError } from '../lib/debugConfig';
 import { mediumHaptic, successHaptic, lightHaptic } from '../lib/haptics';
+import { sendPushNotifications } from '../lib/notificationService';
+import { supabase } from '../lib/supabase';
 
 // Swipe configuration
 const SWIPE_THRESHOLD = 100; // pixels to trigger vote
@@ -41,7 +43,6 @@ export default function VotingScreen({ route, navigation }) {
   // Using goBack() preserves the existing MainTabs and GroupsScreenSimple state.
   // The useFocusEffect in GroupsScreenSimple handles refreshing Top 3 data when focus returns.
   const handleBackNavigation = () => {
-    console.log('[TOP3-VOTE] handleBackNavigation - using goBack(). groupId:', groupId);
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
@@ -61,6 +62,7 @@ export default function VotingScreen({ route, navigation }) {
   const votingRef = useRef(false);
   const mealOptionsRef = useRef([]);
   const currentIndexRef = useRef(0);
+  const firstVoteNotifSent = useRef(false);
   
   // Keep refs in sync with state
   useEffect(() => {
@@ -69,7 +71,6 @@ export default function VotingScreen({ route, navigation }) {
   
   useEffect(() => {
     mealOptionsRef.current = mealOptions;
-    console.log('📦 mealOptionsRef updated:', mealOptions.length, 'meals');
   }, [mealOptions]);
   
   useEffect(() => {
@@ -174,7 +175,6 @@ export default function VotingScreen({ route, navigation }) {
         const willSwipeLeft = dx < -SWIPE_THRESHOLD || (dx < -50 && vx < -0.5);
         
         if (votingRef.current) {
-          console.log('🚫 BLOCKED: votingRef is true');
           resetCardPosition(false);
           isSwipingRef.current = false;
           return;
@@ -182,18 +182,12 @@ export default function VotingScreen({ route, navigation }) {
         
         // Check if swipe exceeds threshold OR has high velocity in that direction
         if (willSwipeRight) {
-          console.log('👍 SWIPING RIGHT - triggering vote yes');
-          // Swipe right - Like
           swipeVoteRef.current = 'yes';
           swipeRight();
         } else if (willSwipeLeft) {
-          console.log('👎 SWIPING LEFT - triggering vote no');
-          // Swipe left - Dislike
           swipeVoteRef.current = 'no';
           swipeLeft();
         } else {
-          console.log('↩️ SNAP BACK: dx=' + Math.round(dx) + ' below threshold=' + SWIPE_THRESHOLD);
-          // Return to center - no vote triggered
           isSwipingRef.current = false;
           resetCardPosition();
         }
@@ -210,12 +204,7 @@ export default function VotingScreen({ route, navigation }) {
   
   // Swipe right animation (Like)
   const swipeRight = () => {
-    // #region agent log
-    console.log('🚀 swipeRight() called, votingRef:', votingRef.current);
-    // #endregion
-    
     if (votingRef.current) {
-      console.log('🚫 swipeRight BLOCKED - votingRef is true');
       return;
     }
     
@@ -223,15 +212,12 @@ export default function VotingScreen({ route, navigation }) {
     const vote = swipeVoteRef.current || 'yes';
     swipeVoteRef.current = null;
     
-    console.log('🎬 Starting swipe animation and calling handleVote:', vote);
-    
     // Start animation
     Animated.timing(swipeX, {
       toValue: screenWidth * 1.5,
       duration: SWIPE_OUT_DURATION,
       useNativeDriver: true
     }).start(() => {
-      console.log('🎬 Swipe animation completed');
       isSwipingRef.current = false;
     });
     
@@ -295,16 +281,12 @@ export default function VotingScreen({ route, navigation }) {
     const currentIdx = currentIndexRef.current;
     
     if (voting || votingRef.current) {
-      console.log('🚫 handleVote BLOCKED - voting in progress:', { voting, votingRef: votingRef.current });
-      // Vote in progress - reset card so user can try again when ready
       swipeX.setValue(0);
       swipeY.setValue(0);
       return;
     }
     
     if (currentIdx >= currentMealOptions.length) {
-      console.log('🚫 handleVote BLOCKED - no meals or all voted:', { currentIdx, mealOptionsLength: currentMealOptions.length });
-      // All meals voted on
       swipeX.setValue(0);
       swipeY.setValue(0);
       return;
@@ -316,8 +298,6 @@ export default function VotingScreen({ route, navigation }) {
     const currentMeal = currentMealOptions[currentIdx];
     if (!currentMeal) {
       debugError('VOTING', 'No current meal found at index:', currentIdx);
-      console.log('❌ No meal at index', currentIdx, 'in array of length', currentMealOptions.length);
-      // Reset card position even on validation failure
       swipeX.setValue(0);
       swipeY.setValue(0);
       return;
@@ -343,8 +323,6 @@ export default function VotingScreen({ route, navigation }) {
     votingRef.current = true;
     setVoting(true);
     
-    console.log('🗳️ Submitting vote:', vote, 'for meal:', currentMeal.meal_data?.name);
-    
     try {
       log.voting(`Submitting vote: ${vote} for meal:`, {
         mealOptionId: currentMeal.id,
@@ -367,6 +345,41 @@ export default function VotingScreen({ route, navigation }) {
       
       if (result.success) {
         setVotes(prev => ({ ...prev, [currentMeal.id]: vote }));
+        
+        // Notify group members when this is the first vote (fire-and-forget)
+        if (currentIdx === 0 && groupId && !isOccasion && !firstVoteNotifSent.current) {
+          firstVoteNotifSent.current = true;
+          (async () => {
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) return;
+              const { data: members } = await supabase
+                .from('group_members')
+                .select('user_id')
+                .eq('group_id', groupId)
+                .eq('is_active', true)
+                .neq('user_id', user.id);
+              if (!members?.length) return;
+              const memberIds = members.map(m => m.user_id);
+              const { data: profiles } = await supabase
+                .from('profiles')
+                .select('push_token')
+                .in('id', memberIds)
+                .not('push_token', 'is', null);
+              const tokens = (profiles || []).map(p => p.push_token).filter(Boolean);
+              if (tokens.length > 0) {
+                const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Someone';
+                await sendPushNotifications(
+                  tokens,
+                  groupName || 'Happie',
+                  `${userName} eet vanavond mee. vergeet niet te stemmen`,
+                  { type: 'voting_started', groupId, requestId }
+                );
+              }
+            } catch (e) {
+            }
+          })();
+        }
         
         // SUCCESS: Move to next card
         setCurrentIndex(currentIdx + 1);
@@ -485,6 +498,7 @@ export default function VotingScreen({ route, navigation }) {
           if (progress.votedCount > 0) {
             log.voting(`User has already voted on ${progress.votedCount} meals, resuming from meal ${progress.nextMealIndex + 1}`);
             setIsResuming(true);
+            firstVoteNotifSent.current = true;
             
             if (progress.nextMealIndex >= 0) {
               setCurrentIndex(progress.nextMealIndex);

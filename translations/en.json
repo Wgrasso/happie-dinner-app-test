@@ -26,7 +26,8 @@
     "joinCommunity": "Join our cooking community",
     "enterEmailForReset": "Enter your email address to receive a password reset link.",
     "emailSent": "Email Sent",
-    "resetEmailSentMessage": "If this email address is registered with us, you will receive a link to reset your password."
+    "resetEmailSentMessage": "If this email address is registered with us, you will receive a link to reset your password.",
+    "checkEmailConfirm": "Check your email to confirm your account"
   },
   "groups": {
     "title": "Groups",
@@ -76,7 +77,11 @@
     "joinGroupTitle": "Join a Group",
     "enterCode": "Enter the group code",
     "codePlaceholder": "e.g. ABC123",
-    "join": "Join"
+    "join": "Join",
+    "create": "Create",
+    "memberSingular": "member",
+    "memberPlural": "members",
+    "groupNoLongerExists": "This group no longer exists"
   },
   "dinner": {
     "sendRequest": "Send Dinner Request",
@@ -144,6 +149,7 @@
     "clearWishlist": "Clear List",
     "confirmClearWishlist": "Are you sure you want to remove all recipes from your list?",
     "addToList": "Add to My List",
+    "removeFromList": "Remove from My List",
     "addedToWishlist": "Added to your list",
     "removedFromWishlist": "Removed from your list",
     "signInToSave": "Sign in to save recipes",
@@ -168,14 +174,22 @@
     "recipeNotAvailable": "Recipe data not available",
     "pricePerServing": "Price per Serving",
     "defaultName": "Delicious Recipe",
-    "loadingRecipes": "Loading delicious recipes..."
+    "loadingRecipes": "Loading delicious recipes...",
+    "databaseError": "Database Connection Issue",
+    "databaseErrorMessage": "Could not load recipes from database. Showing sample recipes instead.",
+    "noDirectLink": "No Direct Link Available",
+    "noDirectLinkMessage": "This recipe doesn't have a direct link. Would you like to search for it online?",
+    "searchOnline": "Search",
+    "recipesSaved": "{{count}} recipe{{count, plural, one {} other {s}}} saved",
+    "clear": "Clear",
+    "allRecipesShown": "You've seen all recipes"
   },
   "userRecipes": {
     "myRecipes": "My Recipes",
     "recipeOne": "recipe",
     "recipeMany": "recipes",
     "confirmDelete": "Are you sure you want to delete \"{{name}}\"?",
-    "newRecipeTitle": "New Recipe",
+    "newRecipeTitle": "Add Recipe",
     "creatingNew": "Create a new recipe to add to your collection",
     "name": "Name",
     "namePlaceholder": "e.g. Pasta Carbonara",
@@ -287,7 +301,8 @@
     "signInToCreate": "Sign in to plan special occasions",
     "areYouJoining": "Are you joining?",
     "dinnerParty": "Dinner Party",
-    "barbecue": "Barbecue"
+    "barbecue": "Barbecue",
+    "specialMoment": "Special moment"
   },
   "occasions": {
     "planSomething": "Plan something fun",

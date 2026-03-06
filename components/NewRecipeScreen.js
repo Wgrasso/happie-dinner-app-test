@@ -13,8 +13,6 @@ import {
   Platform,
   Animated,
   Alert,
-  Keyboard,
-  Pressable,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -280,7 +278,6 @@ export default function NewRecipeScreen({ navigation }) {
   /* ── render ── */
   return (
     <SafeAreaView style={s.safe}>
-    <Pressable style={s.flex} onPress={Keyboard.dismiss} accessible={false}>
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -302,7 +299,7 @@ export default function NewRecipeScreen({ navigation }) {
           style={s.scroll}
           contentContainerStyle={s.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
           keyboardDismissMode="on-drag"
           bounces
         >
@@ -442,8 +439,7 @@ export default function NewRecipeScreen({ navigation }) {
             <View style={{ height: 72 }} />
           </View>
         </ScrollView>
-        </KeyboardAvoidingView>
-      </Pressable>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

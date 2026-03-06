@@ -2446,9 +2446,18 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             const votingResultsResponse = await getVotingResults(requestId);
             
             if (votingResultsResponse.success && votingResultsResponse.results && votingResultsResponse.results.length > 0) {
-              // Sort by yes votes and take top 3
-              const sortedResults = votingResultsResponse.results
-                .sort((a, b) => (b.yes_votes || 0) - (a.yes_votes || 0))
+              const sortedResults = [...votingResultsResponse.results]
+                .sort((a, b) => {
+                  const vDiff = (b.yes_votes || 0) - (a.yes_votes || 0);
+                  if (vDiff !== 0) return vDiff;
+                  const nameA = (a.meal_data?.name || '').toLowerCase();
+                  const nameB = (b.meal_data?.name || '').toLowerCase();
+                  const nameCmp = nameA.localeCompare(nameB);
+                  if (nameCmp !== 0) return nameCmp;
+                  const idA = a.meal_option_id || '';
+                  const idB = b.meal_option_id || '';
+                  return idA < idB ? -1 : idA > idB ? 1 : 0;
+                })
                 .slice(0, 3);
               
               topResults = sortedResults;

@@ -75,10 +75,7 @@ export default function SignInScreen({ navigation }) {
   };
 
   const handleSignIn = async () => {
-    console.log('🔐 User attempting to sign in...');
-    
     if (!email || !password) {
-      console.log('❌ Sign in failed: Missing email or password');
       Alert.alert(t('errors.generic'), t('auth.emailRequired') + ' ' + t('auth.passwordRequired'));
       return;
     }
@@ -92,8 +89,6 @@ export default function SignInScreen({ navigation }) {
       });
 
       if (error) {
-        console.log('❌ Sign in failed:', error.message);
-        
         // Provide specific error messages for common issues
         let errorMessage = error.message;
         
@@ -105,9 +100,6 @@ export default function SignInScreen({ navigation }) {
         
         Alert.alert(t('auth.signInError'), errorMessage);
       } else {
-        console.log('✅ Sign in successful! User:', data.user.email);
-        
-        console.log('✅ User signed in successfully');
         const user = data.user;
         
         // Navigate to groups page (middle tab) after login

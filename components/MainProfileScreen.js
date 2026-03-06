@@ -22,7 +22,6 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMyRecipes, deleteUserRecipe, addUserRecipe } from '../lib/userRecipesService';
 import { uploadRecipeImage } from '../lib/recipeImageService';
-import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { lightHaptic, successHaptic } from '../lib/haptics';
 import { useToast } from './ui/Toast';
@@ -59,7 +58,6 @@ export default function MainProfileScreen({
   const [hasLoadedData, setHasLoadedData] = useState(false);
   // Inline recipe creation state
   const [saving, setSaving] = useState(false);
-  const [accountActionLoading, setAccountActionLoading] = useState(false);
   const [recipeName, setRecipeName] = useState('');
   const [recipeDescription, setRecipeDescription] = useState('');
   const [recipeCookingTime, setRecipeCookingTime] = useState('30');
@@ -250,50 +248,6 @@ export default function MainProfileScreen({
     openRecipeModal(recipe);
   };
 
-  const handleDeleteAccount = () => {
-    lightHaptic();
-    Alert.alert(
-      t('profile.deleteAccount'),
-      t('profile.deleteAccountWarning'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('profile.deleteAccountConfirm'),
-          style: 'destructive',
-          onPress: async () => {
-            setAccountActionLoading(true);
-            try {
-              const { data: { user }, error: userErr } = await supabase.auth.getUser();
-              if (userErr || !user) {
-                toast.error(t('common.signInRequiredMessage'));
-                return;
-              }
-
-              const { error } = await supabase.functions.invoke('delete-account', {
-                body: {},
-              });
-              if (error) {
-                throw error;
-              }
-
-              await supabase.auth.signOut();
-              Alert.alert(
-                t('profile.accountDeleted'),
-                t('profile.accountDeletedSuccess'),
-                [{ text: 'OK', onPress: () => navigation.navigate('SignIn') }]
-              );
-            } catch (e) {
-              Alert.alert(t('common.error'), t('profile.deleteAccountError'));
-            } finally {
-              setAccountActionLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-
   if (loading && !hasLoadedData) {
     return (
       <SafeAreaView style={styles.container}>
@@ -373,20 +327,6 @@ export default function MainProfileScreen({
               </View>
             </TouchableOpacity>
           ))}
-
-          <View style={styles.accountDangerZone}>
-            <TouchableOpacity
-              style={[styles.accountDeleteButton, accountActionLoading && styles.submitBtnDisabled]}
-              onPress={handleDeleteAccount}
-              disabled={accountActionLoading}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.accountDeleteText}>
-                {accountActionLoading ? t('common.loading') : t('profile.deleteAccount')}
-              </Text>
-            </TouchableOpacity>
-            <Text style={styles.accountDeleteHint}>{t('common.cannotBeUndone')}</Text>
-          </View>
 
           </ScrollView>
         </Pressable>
@@ -660,20 +600,6 @@ export default function MainProfileScreen({
           )}
         </TouchableOpacity>
 
-        <View style={styles.accountDangerZone}>
-          <TouchableOpacity
-            style={[styles.accountDeleteButton, accountActionLoading && styles.submitBtnDisabled]}
-            onPress={handleDeleteAccount}
-            disabled={accountActionLoading}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.accountDeleteText}>
-              {accountActionLoading ? t('common.loading') : t('profile.deleteAccount')}
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.accountDeleteHint}>{t('common.cannotBeUndone')}</Text>
-        </View>
-
         </ScrollView>
       </Pressable>
     </SafeAreaView>
@@ -698,6 +624,32 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  emptyStateCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 100,
+  },
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyStateText: {
+    fontSize: 17,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#2D2D2D',
+    marginBottom: 6,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    color: '#A09485',
   },
   loadingText: {
     fontSize: 16,
@@ -990,30 +942,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     color: '#FFF',
     letterSpacing: 0.2,
-  },
-  accountDangerZone: {
-    alignItems: 'center',
-    marginTop: 26,
-    marginBottom: 8,
-  },
-  accountDeleteButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#F0E0E0',
-    backgroundColor: '#FFF8F8',
-  },
-  accountDeleteText: {
-    fontSize: 14,
-    fontFamily: 'Inter_500Medium',
-    color: '#B54A4A',
-  },
-  accountDeleteHint: {
-    marginTop: 6,
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-    color: '#C0C0C0',
   },
 
   // Recipe detail modal — matches IdeasScreen exactly

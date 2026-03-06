@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ScrollView, Image, Modal, Animated, Keyboard, Pressable } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ScrollView, Image, Modal, Animated } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { createOrUpdateProfile } from '../lib/profileService';
@@ -68,22 +68,17 @@ export default function SignUpScreen({ navigation }) {
   };
 
   const handleSignUp = async () => {
-    console.log('📝 User attempting to sign up...');
-    
     if (!name || !email || !password || !confirmPassword) {
-      console.log('❌ Sign up failed: Missing required fields');
       showCustomAlert(t('errors.generic'), t('auth.emailRequired') + ' ' + t('auth.passwordRequired'));
       return;
     }
 
     if (password !== confirmPassword) {
-      console.log('❌ Sign up failed: Passwords do not match');
       showCustomAlert(t('errors.generic'), t('auth.passwordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      console.log('❌ Sign up failed: Password too short');
       showCustomAlert(t('errors.generic'), t('auth.weakPassword'));
       return;
     }
@@ -102,25 +97,16 @@ export default function SignUpScreen({ navigation }) {
       });
 
       if (error) {
-        console.log('❌ Sign up failed:', error.message);
         showCustomAlert(t('auth.signUpError'), error.message);
       } else {
-        console.log('🎉 Account created successfully for:', email);
-        
         // Create profile with language preference
         if (data?.user) {
-          console.log('📝 Creating profile with language preference:', selectedLanguage);
           await createOrUpdateProfile(name, null, selectedLanguage);
         }
         
         // Show toast instead of alert
         if (toastRef.current) {
-          toastRef.current.show(
-            i18n.language === 'nl' 
-              ? 'Check je e-mail om je account te bevestigen' 
-              : 'Check your email to confirm your account', 
-            'success'
-          );
+          toastRef.current.show(t('auth.checkEmailConfirm'), 'success');
         }
         
         // Navigate to sign in after short delay
@@ -138,7 +124,6 @@ export default function SignUpScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardContainer}
@@ -149,6 +134,14 @@ export default function SignUpScreen({ navigation }) {
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
           >
+          {/* Back Button */}
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backButtonText}>{'←'}</Text>
+          </TouchableOpacity>
+
           {/* Header Section with Logo */}
           <View style={styles.header}>
             <Image 
@@ -329,7 +322,6 @@ export default function SignUpScreen({ navigation }) {
       
       {/* Toast Component */}
       <Toast ref={toastRef} />
-      </Pressable>
     </SafeAreaView>
   );
 }
@@ -345,18 +337,28 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingTop: 12,
     paddingBottom: 40,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingRight: 16,
+  },
+  backButtonText: {
+    fontSize: 28,
+    color: '#8B7355',
+    lineHeight: 32,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
-    paddingTop: 20,
+    marginBottom: 20,
+    paddingTop: 0,
   },
   smallLogo: {
-    width: 120,
-    height: 120,
-    marginBottom: 16,
+    width: 90,
+    height: 90,
+    marginBottom: 10,
   },
   title: {
     fontFamily: 'PlayfairDisplay_700Bold',

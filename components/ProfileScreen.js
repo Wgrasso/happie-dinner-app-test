@@ -28,6 +28,7 @@ export default function ProfileScreen({ route, navigation }) {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [accountActionLoading, setAccountActionLoading] = useState(false);
   
   // Edit name modal
   const [showEditName, setShowEditName] = useState(false);
@@ -129,8 +130,6 @@ export default function ProfileScreen({ route, navigation }) {
         reader.readAsArrayBuffer(blob);
       });
       
-      console.log('📸 Uploading avatar:', filePath, 'size:', arrayBuffer.byteLength);
-      
       // Upload to Supabase storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
@@ -146,8 +145,6 @@ export default function ProfileScreen({ route, navigation }) {
         return;
       }
       
-      console.log('✅ Upload successful:', uploadData);
-      
       // Get the public URL
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
       const publicUrl = urlData?.publicUrl;
@@ -157,8 +154,6 @@ export default function ProfileScreen({ route, navigation }) {
         return;
       }
       
-      console.log('🔗 Public URL:', publicUrl);
-
       // Update profile in database
       const { error: updateError } = await supabase
         .from('profiles')
@@ -283,23 +278,31 @@ export default function ProfileScreen({ route, navigation }) {
           text: t('profile.deleteAccountConfirm'),
           style: 'destructive',
           onPress: async () => {
-            setLoading(true);
+            setAccountActionLoading(true);
             try {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user) return;
+              const { data: { user }, error: userErr } = await supabase.auth.getUser();
+              if (userErr || !user) {
+                Alert.alert(t('common.error'), t('common.signInRequiredMessage'));
+                return;
+              }
 
-              await supabase.from('profiles').delete().eq('id', user.id);
-              await supabase.from('group_members').delete().eq('user_id', user.id);
-              await supabase.from('wishlist').delete().eq('user_id', user.id);
+              const { error: rpcError } = await supabase.rpc('delete_user_account_data', {
+                p_user_id: user.id,
+              });
+              if (rpcError) {
+                throw rpcError;
+              }
+
               await supabase.auth.signOut();
               
               Alert.alert(t('profile.accountDeleted'), t('profile.accountDeletedSuccess'), [
                 { text: 'OK', onPress: () => navigation.navigate('SignIn') }
               ]);
             } catch (error) {
+              console.error('❌ Delete account failed:', error?.message || error);
               Alert.alert(t('common.error'), t('profile.deleteAccountError'));
             } finally {
-              setLoading(false);
+              setAccountActionLoading(false);
             }
           }
         }
@@ -358,15 +361,23 @@ export default function ProfileScreen({ route, navigation }) {
       >
         {/* Header */}
         <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-            onPress={() => navigation.goBack()}
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MainTabs', { screen: 'groups' });
+              }
+            }}
             activeOpacity={0.7}
-        >
+          >
             <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('common.settings')}</Text>
-          <View style={styles.headerSpacer} />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>{t('common.settings')}</Text>
+            <Text style={styles.headerSubtitle}>{email || ''}</Text>
+          </View>
         </View>
 
         {/* Profile Card */}
@@ -376,7 +387,6 @@ export default function ProfileScreen({ route, navigation }) {
               {name ? name.charAt(0).toUpperCase() : '?'}
             </Text>
           </View>
-          
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{name || t('profile.noNameSet')}</Text>
             <Text style={styles.profileEmail}>{email || t('profile.noEmail')}</Text>
@@ -395,7 +405,7 @@ export default function ProfileScreen({ route, navigation }) {
                 setEditingName(name);
                 setShowEditName(true);
               }}
-              />
+            />
             <SettingsRow 
               label={t('profile.changePassword')} 
               onPress={() => {
@@ -404,8 +414,8 @@ export default function ProfileScreen({ route, navigation }) {
               }}
               isLast
             />
-            </View>
           </View>
+        </View>
 
         {/* Preferences */}
         <View style={styles.section}>
@@ -416,34 +426,22 @@ export default function ProfileScreen({ route, navigation }) {
                 <Text style={styles.rowLabel}>{t('profile.language')}</Text>
               </View>
               <View style={styles.languageToggle}>
-            <TouchableOpacity 
-              style={[
-                    styles.langOption, 
-                    i18n.language === 'nl' && styles.langOptionActive
-              ]} 
+                <TouchableOpacity 
+                  style={[styles.langOption, i18n.language === 'nl' && styles.langOptionActive]} 
                   onPress={() => handleLanguageChange('nl')}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.langFlag}>🇳🇱</Text>
-                  <Text style={[
-                    styles.langText,
-                    i18n.language === 'nl' && styles.langTextActive
-                  ]}>NL</Text>
-            </TouchableOpacity>
-              <TouchableOpacity 
-                style={[
-                    styles.langOption, 
-                    i18n.language === 'en' && styles.langOptionActive
-                ]}
+                  <Text style={[styles.langText, i18n.language === 'nl' && styles.langTextActive]}>NL</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.langOption, i18n.language === 'en' && styles.langOptionActive]}
                   onPress={() => handleLanguageChange('en')}
                   activeOpacity={0.7}
-              >
+                >
                   <Text style={styles.langFlag}>🇬🇧</Text>
-                <Text style={[
-                    styles.langText,
-                    i18n.language === 'en' && styles.langTextActive
-                  ]}>EN</Text>
-              </TouchableOpacity>
+                  <Text style={[styles.langText, i18n.language === 'en' && styles.langTextActive]}>EN</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -452,7 +450,7 @@ export default function ProfileScreen({ route, navigation }) {
         {/* Invite Friends */}
         <View style={styles.section}>
           <View style={styles.settingsCard}>
-              <TouchableOpacity 
+            <TouchableOpacity 
               style={styles.inviteRow}
               onPress={handleInviteFriends}
               activeOpacity={0.7}
@@ -467,37 +465,39 @@ export default function ProfileScreen({ route, navigation }) {
                 </View>
               </View>
               <Text style={styles.chevron}>›</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-        {/* Actions */}
-        <View style={styles.section}>
-            <TouchableOpacity 
-              style={styles.logoutButton}
-              onPress={handleLogout}
-            activeOpacity={0.8}
-            >
-            <Text style={styles.logoutText}>{t('profile.logout')}</Text>
             </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Danger Zone */}
+        {/* Logout */}
+        <View style={styles.section}>
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.logoutText}>{t('profile.logout')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Delete Account */}
         <View style={styles.dangerZone}>
-            <TouchableOpacity 
-            style={styles.deleteButton} 
-              onPress={handleDeleteAccount}
-              disabled={loading}
+          <TouchableOpacity 
+            style={[styles.deleteButton, accountActionLoading && styles.buttonDisabled]} 
+            onPress={handleDeleteAccount}
+            disabled={accountActionLoading}
             activeOpacity={0.6}
-            >
-            <Text style={styles.deleteText}>{t('profile.deleteAccount')}</Text>
-            </TouchableOpacity>
+          >
+            <Text style={styles.deleteText}>
+              {accountActionLoading ? t('common.loading') : t('profile.deleteAccount')}
+            </Text>
+          </TouchableOpacity>
           <Text style={styles.dangerHint}>{t('common.cannotBeUndone')}</Text>
         </View>
 
         {/* App Version */}
         <View style={styles.footer}>
-          <Text style={styles.versionText}>Happie v1.1.0</Text>
+          <Text style={styles.versionText}>Happie v1.1.1</Text>
         </View>
       </ScrollView>
 
@@ -609,123 +609,81 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
-  
-  // Header
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: '#FEFEFE',
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 8,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingRight: 16,
+    paddingVertical: 4,
   },
   backIcon: {
-    fontSize: 22,
-    color: '#2D2D2D',
-    marginTop: -2,
+    fontSize: 28,
+    color: '#8B7355',
+  },
+  headerContent: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 17,
-    fontFamily: 'Inter_600SemiBold',
+    fontSize: 34,
+    fontFamily: 'PlayfairDisplay_700Bold',
     color: '#2D2D2D',
-    letterSpacing: -0.3,
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  headerSpacer: {
-    width: 44,
+  headerSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
+    color: '#8B7355',
+    letterSpacing: 0.3,
   },
 
-  // Profile Card
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 24,
-    padding: 20,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  avatarWrapper: {
-    position: 'relative',
-  },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#E8E2DA',
+    marginHorizontal: 24,
+    marginTop: 16,
+    marginBottom: 28,
+    backgroundColor: '#F8F6F3',
+    padding: 18,
+    borderRadius: 16,
   },
   avatarPlaceholder: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#8B7355',
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarLetter: {
-    fontSize: 28,
+    fontSize: 22,
     fontFamily: 'Inter_700Bold',
     color: '#FFFFFF',
   },
-  cameraBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 2,
-    borderColor: '#FEFEFE',
-  },
-  cameraIcon: {
-    fontSize: 14,
-  },
   profileInfo: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: 14,
   },
   profileName: {
-    fontSize: 20,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 18,
+    fontFamily: 'Inter_600SemiBold',
     color: '#2D2D2D',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   profileEmail: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter_400Regular',
-    color: '#6B6B6B',
+    color: '#8B8B8B',
   },
 
-  // Sections
   section: {
     marginBottom: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
   },
   sectionTitle: {
     fontSize: 12,
@@ -736,27 +694,21 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   settingsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#F8F6F3',
+    borderRadius: 14,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 1,
   },
 
-  // Settings Rows
   settingsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    paddingVertical: 15,
     paddingHorizontal: 16,
   },
   settingsRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F0EDE8',
+    borderBottomColor: '#EBE7E1',
   },
   settingsRowLeft: {
     flexDirection: 'row',
@@ -766,170 +718,144 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#F8F6F3',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  rowIcon: {
-    fontSize: 18,
-  },
   rowLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Inter_500Medium',
     color: '#2D2D2D',
   },
   rowValue: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Inter_400Regular',
     color: '#8B8B8B',
     marginRight: 8,
   },
   chevron: {
-    fontSize: 22,
-    color: '#C0C0C0',
-    marginTop: -2,
+    fontSize: 20,
+    color: '#C0B9AE',
   },
 
-  // Language Row
   languageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  languageToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#FEFEFE',
+    borderRadius: 10,
+    padding: 3,
+  },
+  langOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  langOptionActive: {
+    backgroundColor: '#8B7355',
+  },
+  langFlag: {
+    fontSize: 16,
+    marginRight: 5,
+  },
+  langText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    color: '#8B8B8B',
+  },
+  langTextActive: {
+    color: '#FEFEFE',
+  },
+
+  inviteRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  languageToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#F8F6F3',
-    borderRadius: 12,
-    padding: 4,
-  },
-  langOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-  },
-  langOptionActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  langFlag: {
-    fontSize: 18,
-    marginRight: 6,
-  },
-  langText: {
-    fontSize: 14,
-    fontFamily: 'Inter_500Medium',
-    color: '#8B8B8B',
-  },
-  langTextActive: {
-    color: '#2D2D2D',
-  },
-
-  // Invite Friends Row
-  inviteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
   inviteLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   inviteIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(139, 115, 85, 0.1)',
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(139, 115, 85, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
   inviteIcon: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#8B7355',
-    fontFamily: 'Inter_600SemiBold',
   },
   inviteLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
     color: '#2D2D2D',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   inviteHint: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Inter_400Regular',
     color: '#8B8B8B',
   },
 
-  // Logout Button
   logoutButton: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 1,
-  },
-  logoutIcon: {
-    fontSize: 18,
-    marginRight: 10,
+    backgroundColor: '#F8F6F3',
+    paddingVertical: 15,
+    borderRadius: 14,
   },
   logoutText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: '#E53935',
+    color: '#C0534F',
   },
 
-  // Danger Zone
   dangerZone: {
     alignItems: 'center',
-    paddingTop: 24,
-    paddingBottom: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    paddingHorizontal: 24,
   },
   deleteButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E0D5D5',
+    backgroundColor: 'transparent',
   },
   deleteText: {
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
-    color: '#A0A0A0',
+    color: '#C0534F',
   },
   dangerHint: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter_400Regular',
-    color: '#C0C0C0',
-    marginTop: 4,
+    color: '#C0A0A0',
+    marginTop: 8,
   },
 
-  // Footer
   footer: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 20,
   },
   versionText: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter_400Regular',
-    color: '#C0C0C0',
+    color: '#D0D0D0',
   },
 
   // Modal

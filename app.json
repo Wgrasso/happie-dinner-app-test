@@ -3,7 +3,7 @@
     "name": "Happie Dinner",
     "slug": "happie-dinner",
     "scheme": "happie",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,6 +18,7 @@
     ],
     "ios": {
       "supportsTablet": true,
+      "icon": "./assets/icon-ios.png",
       "bundleIdentifier": "com.willemgrasso.happie",
       "buildNumber": "1.1.6",
       "infoPlist": {

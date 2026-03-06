@@ -32,6 +32,9 @@ import {
   deleteSpecialOccasion
 } from '../lib/specialOccasionService';
 import { Swipeable } from 'react-native-gesture-handler';
+import { Feather } from '@expo/vector-icons';
+import { notifyOccasionParticipants } from '../lib/notificationService';
+import { sortTopMeals } from '../lib/sortTopMeals';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 
 // Configure Dutch locale for calendar
@@ -43,6 +46,8 @@ LocaleConfig.locales['nl'] = {
   today: 'Vandaag',
 };
 LocaleConfig.defaultLocale = 'nl';
+
+const FEATURE_SPECIAL_OCCASIONS = false;
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -407,10 +412,13 @@ const ExpandableGroupCard = React.memo(({
   recipeType = 'voting', // 'voting' or 'no_voting'
   onLeaveGroup,
   onDeleteGroup,
-  isCreator = false
+  isCreator = false,
+  onOpenChat,
+  hasUnread = false,
 }) => {
   const expandAnimation = useRef(new Animated.Value(isExpanded ? 1 : 0)).current;
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
   const { t } = useTranslation();
   
   useEffect(() => {
@@ -433,7 +441,15 @@ const ExpandableGroupCard = React.memo(({
   };
 
   const counts = getResponseCounts();
-  const memberCount = group.member_count || members?.length || 0;
+  const memberCount =
+    group.member_count ??
+    group.memberCount ??
+    group.members_count ??
+    group.membersCount ??
+    group.member_total ??
+    group.memberTotal ??
+    members?.length ??
+    0;
 
   // Status dot color based on my response
   const getStatusColor = () => {
@@ -442,16 +458,20 @@ const ExpandableGroupCard = React.memo(({
     return '#D0D0D0';
   };
 
-  // Calculate dynamic height based on content (simplified two-column layout)
-  const attendeesHeight = 100; // Two-column attendee list
+  // Calculate dynamic height based on content
+  const yesCount = members?.filter(m => memberResponses?.[m.user_id] === 'yes').length || 0;
+  const noCount = members?.filter(m => memberResponses?.[m.user_id] === 'no').length || 0;
+  const maxColumnCount = Math.max(yesCount, noCount, 1);
+  const attendeesHeight = 14 + 20 + (maxColumnCount * 22); // paddingTop + label + names (generous)
   const actionButtonsHeight = recipeType !== 'no_voting' && myResponse === 'yes' ? 60 : 0;
   const top3CardCount = topMeals?.length > 0 ? Math.min(topMeals.length, 3) : 0;
-  const top3Height = recipeType !== 'no_voting' && top3CardCount > 0 ? (20 + top3CardCount * 66) : 0; // 20px title+margin + 66px per card (44+8+8+6gap)
-  const threeDotsHeight = 40; // Compact three-dot menu
+  const top3Height = recipeType !== 'no_voting' && top3CardCount > 0 ? (24 + top3CardCount * 70) : 0;
+  const threeDotsHeight = 48;
+  const bottomPadding = 18;
   
   const expandedHeight = expandAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, attendeesHeight + actionButtonsHeight + top3Height + threeDotsHeight + 20],
+    outputRange: [0, attendeesHeight + actionButtonsHeight + top3Height + threeDotsHeight + bottomPadding],
   });
 
   const handleCopyCode = () => {
@@ -471,45 +491,55 @@ const ExpandableGroupCard = React.memo(({
         <View style={cardStyles.info}>
           <Text style={cardStyles.name} numberOfLines={1}>
             {group.name || group.group_name}
-            </Text>
-          <Text style={cardStyles.attendanceCount}>
-            {counts.yes} mee · {memberCount} {memberCount === 1 ? 'lid' : 'leden'}
           </Text>
+          {group.join_code && (
+            <Text style={cardStyles.joinCodeText}>{group.join_code}</Text>
+          )}
         </View>
 
-        {/* Right: Yes/No Buttons */}
-        <View style={cardStyles.responseButtons}>
-          <TouchableOpacity 
-            style={[
-              cardStyles.responseBtn, 
-              cardStyles.responseBtnYes,
-              myResponse === 'yes' && cardStyles.responseBtnYesActive
-            ]}
-            onPress={(e) => {
-              e.stopPropagation();
-              onResponseChange(currentUserId, 'yes');
-            }}
+        {/* Right: Yes/No Buttons + Chat */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={cardStyles.responseButtons}>
+            <TouchableOpacity 
+              style={[
+                cardStyles.responseBtn, 
+                cardStyles.responseBtnYes,
+                myResponse === 'yes' && cardStyles.responseBtnYesActive
+              ]}
+              onPress={(e) => {
+                e.stopPropagation();
+                onResponseChange(currentUserId, myResponse === 'yes' ? null : 'yes');
+              }}
+            >
+              <Text style={[
+                cardStyles.responseBtnText,
+                myResponse === 'yes' && cardStyles.responseBtnTextActive
+              ]}>Ja</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                cardStyles.responseBtn, 
+                cardStyles.responseBtnNo,
+                myResponse === 'no' && cardStyles.responseBtnNoActive
+              ]}
+              onPress={(e) => {
+                e.stopPropagation();
+                onResponseChange(currentUserId, myResponse === 'no' ? null : 'no');
+              }}
+            >
+              <Text style={[
+                cardStyles.responseBtnText,
+                myResponse === 'no' && cardStyles.responseBtnTextActive
+              ]}>Nee</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={cardStyles.chatButton}
+            onPress={(e) => { e.stopPropagation(); onOpenChat(); }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[
-              cardStyles.responseBtnText,
-              myResponse === 'yes' && cardStyles.responseBtnTextActive
-            ]}>Ja</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[
-              cardStyles.responseBtn, 
-              cardStyles.responseBtnNo,
-              myResponse === 'no' && cardStyles.responseBtnNoActive
-            ]}
-            onPress={(e) => {
-              e.stopPropagation();
-              onResponseChange(currentUserId, 'no');
-            }}
-          >
-            <Text style={[
-              cardStyles.responseBtnText,
-              myResponse === 'no' && cardStyles.responseBtnTextActive
-            ]}>Nee</Text>
+            <Feather name="message-circle" size={20} color="#8B7355" />
+            {hasUnread && <View style={cardStyles.unreadDot} />}
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -617,7 +647,7 @@ const ExpandableGroupCard = React.memo(({
                             {cookingTime ? (
                               <Text style={cardStyles.top3RecipeTime}>{cookingTime} min</Text>
                             ) : null}
-                            <Text style={cardStyles.top3RecipeVotes}>{votes} {votes === 1 ? 'vote' : 'votes'}</Text>
+                            <Text style={cardStyles.top3RecipeVotes}>{votes} {votes === 1 ? t('meals.vote') : t('meals.votes')}</Text>
                           </View>
                         </View>
                         <Text style={cardStyles.top3RecipeChevron}>›</Text>
@@ -674,6 +704,18 @@ const ExpandableGroupCard = React.memo(({
               style={cardStyles.menuItem}
               onPress={() => {
                 setShowActionsMenu(false);
+                setShowMembersModal(true);
+              }}
+            >
+              <Text style={cardStyles.menuItemText}>{t('common.members')}</Text>
+            </TouchableOpacity>
+            
+            <View style={cardStyles.menuDivider} />
+            
+            <TouchableOpacity
+              style={cardStyles.menuItem}
+              onPress={() => {
+                setShowActionsMenu(false);
                 onLeaveGroup();
               }}
             >
@@ -700,6 +742,46 @@ const ExpandableGroupCard = React.memo(({
             >
               <Text style={cardStyles.menuItemTextCancel}>{t('common.cancel')}</Text>
             </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Members Modal */}
+      <Modal
+        visible={showMembersModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMembersModal(false)}
+      >
+        <TouchableOpacity 
+          style={cardStyles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowMembersModal(false)}
+        >
+          <View style={cardStyles.membersContainer} onStartShouldSetResponder={() => true}>
+            <View style={cardStyles.membersHeader}>
+              <Text style={cardStyles.membersTitle}>{t('common.members')}</Text>
+              <TouchableOpacity onPress={() => setShowMembersModal(false)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                <Text style={cardStyles.membersClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={cardStyles.membersList} showsVerticalScrollIndicator={false}>
+              {members && members.length > 0 ? members.map(m => (
+                <View key={m.user_id} style={cardStyles.memberRow}>
+                  <View style={cardStyles.memberAvatar}>
+                    <Text style={cardStyles.memberAvatarText}>
+                      {(m.full_name || m.user_name || '?').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <Text style={cardStyles.memberName}>
+                    {m.full_name || m.user_name || t('common.unknown')}
+                    {m.user_id === currentUserId && ` (${t('common.you')})`}
+                  </Text>
+                </View>
+              )) : (
+                <Text style={cardStyles.membersEmpty}>{t('emptyStates.noMembers')}</Text>
+              )}
+            </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -739,6 +821,13 @@ const cardStyles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Inter_400Regular',
     color: '#A09485',
+  },
+  joinCodeText: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+    color: '#C0B9AE',
+    marginTop: 2,
+    letterSpacing: 1,
   },
   // Yes/No buttons on header -- segmented control
   responseButtons: {
@@ -964,6 +1053,19 @@ const cardStyles = StyleSheet.create({
     color: '#999',
     letterSpacing: 2,
   },
+  chatButton: {
+    padding: 4,
+    position: 'relative',
+  },
+  unreadDot: {
+    position: 'absolute',
+    top: 2,
+    right: 1,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#8B7355',
+  },
   // Actions menu modal
   menuOverlay: {
     flex: 1,
@@ -1025,6 +1127,48 @@ const cardStyles = StyleSheet.create({
   menuDivider: {
     height: 1,
     backgroundColor: '#F0EDE8',
+  },
+  membersContainer: {
+    backgroundColor: '#FEFEFE',
+    borderRadius: 22,
+    width: '100%',
+    maxWidth: 360,
+    maxHeight: '70%',
+    overflow: 'hidden',
+  },
+  membersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0EDE8',
+  },
+  membersTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#2D2D2D',
+  },
+  membersClose: {
+    fontSize: 18,
+    color: '#C0B9AE',
+  },
+  membersList: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  memberName: {
+    fontSize: 15,
+    fontFamily: 'Inter_500Medium',
+    color: '#2D2D2D',
+  },
+  membersEmpty: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    color: '#8B8B8B',
+    textAlign: 'center',
+    paddingVertical: 20,
   },
   // Legacy styles (kept for compatibility)
   memberRow: {
@@ -1700,7 +1844,7 @@ const occasionStyles = StyleSheet.create({
 // MAIN COMPONENT
 // ============================================
 export default function GroupsScreenSimple({ navigation, route, isActive = true, onReady, pendingGroupReopen, onPendingGroupReopenCleared }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   
   // Use AppStateContext for cached data
@@ -1792,6 +1936,10 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // Track my response for each group (for collapsed state display)
   const [allGroupResponses, setAllGroupResponses] = useState({});
 
+  // Unread chat messages per group
+  const [unreadGroups, setUnreadGroups] = useState({});
+  const chatOpenGroupRef = useRef(null);
+
   // INSTANT: Load cached responses from AsyncStorage on mount for immediate yes/no display
   useEffect(() => {
     const loadCachedResponsesInstant = async () => {
@@ -1831,7 +1979,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   }, []); // Run once on mount
 
   // Top meals state (for expanded groups/occasions)
-  const [topMeals, setTopMeals] = useState([]);
+  const [topMeals, setTopMealsRaw] = useState([]);
+  const setTopMeals = (meals) => setTopMealsRaw(Array.isArray(meals) && meals.length > 0 ? sortTopMeals(meals) : meals || []);
   const [topMealsLoading, setTopMealsLoading] = useState(false);
   const [activeRequestId, setActiveRequestId] = useState(null);
   const [activeRecipeType, setActiveRecipeType] = useState(null); // 'voting' or 'no_voting'
@@ -1976,15 +2125,14 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     return responseMap;
   }, [currentUserId, getCachedDailyResponses, contextLoadDailyResponses]);
   
-  // Occasion type labels - friendly Dutch names
   const occasionLabels = {
-    birthday: { label: 'Verjaardag', color: '#E91E63' },
-    celebration: { label: 'Feest', color: '#9C27B0' },
-    holiday: { label: 'Feestdag', color: '#F44336' },
-    graduation: { label: 'Afstuderen', color: '#2196F3' },
-    dinner: { label: 'Etentje', color: '#4CAF50' },
-    bbq: { label: 'Barbecue', color: '#FF9800' },
-    other: { label: 'Speciaal moment', color: '#8B7355' },
+    birthday: { label: t('specialOccasion.occasionTypes.birthday'), color: '#E91E63' },
+    celebration: { label: t('specialOccasion.occasionTypes.celebration'), color: '#9C27B0' },
+    holiday: { label: t('specialOccasion.occasionTypes.holiday'), color: '#F44336' },
+    graduation: { label: t('specialOccasion.occasionTypes.graduation'), color: '#2196F3' },
+    dinner: { label: t('specialOccasion.dinnerParty'), color: '#4CAF50' },
+    bbq: { label: t('specialOccasion.barbecue'), color: '#FF9800' },
+    other: { label: t('specialOccasion.specialMoment'), color: '#8B7355' },
   };
 
   // Get current user on mount and load data from context
@@ -2050,8 +2198,10 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           if (isCancelled) {
             return;
           }
-          loadSpecialOccasionsIndependent();
-          loadPastOccasions();
+          if (FEATURE_SPECIAL_OCCASIONS) {
+            loadSpecialOccasionsIndependent();
+            loadPastOccasions();
+          }
         });
         deferredTasks.push(handle);
       }
@@ -2099,9 +2249,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // Real-time subscription for vote updates - updates Top 3 when anyone votes
   // Includes error handling and automatic reconnection (max 3 retries)
   useEffect(() => {
-    console.log('[TOP3-RT] Realtime effect triggered. activeRequestId:', activeRequestId);
     if (!activeRequestId) {
-      console.log('[TOP3-RT] No activeRequestId - skipping realtime subscription');
       realtimeHealthyRef.current = false;
       return;
     }
@@ -2218,9 +2366,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // Polling for Top 3 - checks every 1s when expanded for instant vote updates
   const POLL_INTERVAL_MS = 1000;
   useEffect(() => {
-    console.log('[TOP3-POLL] Polling effect triggered. activeRequestId:', activeRequestId, 'expandedGroupId:', expandedGroupId);
     if (!activeRequestId || !expandedGroupId) {
-      console.log('[TOP3-POLL] SKIPPED - activeRequestId:', activeRequestId, 'expandedGroupId:', expandedGroupId);
       return;
     }
     
@@ -2273,7 +2419,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   const lastRefreshedFromVotingRef = useRef(null);
   useEffect(() => {
     const refreshRequested = route?.params?.refreshTopMeals || (pendingGroupReopen?.groupId && pendingGroupReopen.groupId === expandedGroupId);
-    console.log('[TOP3-RETURN] Return-from-voting effect. refreshRequested:', refreshRequested, 'route.params:', JSON.stringify(route?.params), 'activeRequestId:', activeRequestId, 'expandedGroupId:', expandedGroupId);
     if (!refreshRequested) {
       if (pendingGroupReopen?.groupId && onPendingGroupReopenCleared) {
         onPendingGroupReopenCleared();
@@ -2284,7 +2429,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     // Avoid duplicate refreshes within 2 seconds
     const now = Date.now();
     if (lastRefreshedFromVotingRef.current && (now - lastRefreshedFromVotingRef.current) < 2000) {
-      console.log('[TOP3-RETURN] SKIPPED - duplicate refresh within 2s');
       if (onPendingGroupReopenCleared) onPendingGroupReopenCleared();
       return;
     }
@@ -2299,7 +2443,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       let reqId = activeRequestId;
       
       if (!reqId && groupId) {
-        console.log('[TOP3] No activeRequestId on return from voting, fetching for group:', groupId);
         try {
           const requestResult = await contextLoadActiveMealRequest(groupId);
           if (requestResult?.hasActiveRequest && requestResult?.request?.id) {
@@ -2307,7 +2450,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             setActiveRequestId(reqId);
             activeRequestIdRef.current = reqId;
             setActiveRecipeType('voting');
-            console.log('[TOP3] Found active request:', reqId);
           }
         } catch (e) {
           debugError('COMPONENTS', 'Error fetching active request on voting return:', e);
@@ -2315,7 +2457,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       }
       
       if (!reqId) {
-        console.log('[TOP3] Still no activeRequestId after fetch - storing pending flag');
         pendingTopMealsRefreshRef.current = true;
         return;
       }
@@ -2325,7 +2466,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       try {
         const topMealsData = await loadTopMealsRef.current?.(reqId, true);
         setTopMeals(topMealsData || []);
-        console.log('[TOP3] Top meals refreshed after voting:', topMealsData?.length || 0);
       } catch (err) {
         debugError('COMPONENTS', 'Error refreshing top meals after voting:', err);
       }
@@ -2342,12 +2482,10 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   useEffect(() => {
     if (activeRequestId && pendingTopMealsRefreshRef.current) {
       pendingTopMealsRefreshRef.current = false;
-      console.log('[TOP3] Consuming deferred top meals refresh for request:', activeRequestId);
       invalidateCache(['topMeals']);
       loadTopMealsRef.current?.(activeRequestId, true)
         .then(topMealsData => {
           setTopMeals(topMealsData || []);
-          console.log('[TOP3] Deferred top meals refreshed:', topMealsData?.length || 0);
         })
         .catch(err => debugError('COMPONENTS', 'Error in deferred top meals refresh:', err));
       if (onPendingGroupReopenCleared) {
@@ -2360,24 +2498,24 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      console.log('[TOP3-FOCUS] Screen focused. activeRequestId:', activeRequestId, 'expandedGroupId:', expandedGroupId);
+      chatOpenGroupRef.current = null;
       
-      loadSpecialOccasionsIndependent().catch(error => {
-        if (!isActive) return;
-        debugError('COMPONENTS', 'Error refreshing occasions on focus:', error);
-      });
+      if (FEATURE_SPECIAL_OCCASIONS) {
+        loadSpecialOccasionsIndependent().catch(error => {
+          if (!isActive) return;
+          debugError('COMPONENTS', 'Error refreshing occasions on focus:', error);
+        });
+      }
       
       // Refresh group Top 3 when returning from group voting (or any screen)
       // With goBack() from VotingScreen, activeRequestId and expandedGroupId are preserved.
       const refreshGroupTopMeals = async () => {
         let reqId = activeRequestId;
-        console.log('[TOP3-FOCUS] refreshGroupTopMeals - reqId:', reqId, 'expandedGroupId:', expandedGroupId);
         
         // If no activeRequestId but a group is expanded, try to fetch the active request
         // This handles edge cases where state was lost
         if (!reqId && expandedGroupId) {
           try {
-            console.log('[TOP3-FOCUS] No activeRequestId, fetching for group:', expandedGroupId);
             const requestResult = await contextLoadActiveMealRequest(expandedGroupId);
             if (!isActive) return;
             if (requestResult?.hasActiveRequest && requestResult?.request?.id) {
@@ -2385,7 +2523,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               setActiveRequestId(reqId);
               activeRequestIdRef.current = reqId;
               setActiveRecipeType('voting');
-              console.log('[TOP3-FOCUS] Found active request:', reqId);
             }
           } catch (e) {
             if (!isActive) return;
@@ -2399,7 +2536,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             const topMealsData = await loadTopMealsRef.current?.(reqId, true);
             if (!isActive) return;
             setTopMeals(topMealsData || []);
-            console.log('[TOP3-FOCUS] Top meals refreshed:', topMealsData?.length || 0);
           } catch (error) {
             if (!isActive) return;
             debugError('COMPONENTS', 'Error refreshing top meals on focus:', error);
@@ -2519,9 +2655,30 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     };
   }, [expandedGroupId, currentUserId]);
 
+  // Real-time subscription for group chat unread indicators
+  useEffect(() => {
+    if (!currentUserId || !groups.length) return;
+    const channel = supabase
+      .channel(`group-chat-unread-${currentUserId}-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'group_messages' },
+        (payload) => {
+          const msg = payload.new;
+          if (!msg || msg.user_id === currentUserId) return;
+          if (chatOpenGroupRef.current === msg.group_id) return;
+          setUnreadGroups(prev => ({ ...prev, [msg.group_id]: true }));
+        }
+      )
+      .subscribe();
+
+    return () => { try { supabase.removeChannel(channel); } catch (e) {} };
+  }, [currentUserId, groups.length]);
+
   // Real-time subscription for new special occasions (participant invites or own creations)
   useEffect(() => {
     if (!currentUserId) return;
+    if (!FEATURE_SPECIAL_OCCASIONS) return;
     
     let occasionChannel = null;
     let participantChannel = null;
@@ -2754,19 +2911,17 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
 
   // Load special occasions from INDEPENDENT special_occasions table (not tied to groups)
   const loadSpecialOccasionsIndependent = async () => {
+    if (!FEATURE_SPECIAL_OCCASIONS) return;
     setOccasionsLoading(true);
     try {
       const result = await getMySpecialOccasions();
-      // console.log('getMySpecialOccasions result:', result);
 
       if (!result.success) {
-        // console.log('Could not load special occasions:', result.error);
         setSpecialOccasions([]);
         return;
       }
 
       const occasions = result.occasions || [];
-      // console.log('Occasions to display:', occasions.length);
       
       if (occasions.length > 0) {
         // Map to expected format for UI
@@ -2816,7 +2971,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       }
 
       // Load occasions independently (no group dependency)
-      await loadSpecialOccasionsIndependent();
+      if (FEATURE_SPECIAL_OCCASIONS) {
+        await loadSpecialOccasionsIndependent();
+      }
     } finally {
       setRefreshing(false);
     }
@@ -2827,6 +2984,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
 
   // Load past/old occasions
   const loadPastOccasions = async () => {
+    if (!FEATURE_SPECIAL_OCCASIONS) return;
     if (pastOccasions.length > 0) return; // Already loaded
     
     setPastOccasionsLoading(true);
@@ -2979,10 +3137,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         }
         
         // Set top meals and recipe type
-        console.log('📊 Preloaded mealRequest:', preloadedData.mealRequest);
-        console.log('📊 Preloaded topMeals:', preloadedData.topMeals?.length || 0);
         if (preloadedData.mealRequest?.id) {
-          console.log('📊 Setting activeRequestId to:', preloadedData.mealRequest.id);
           setActiveRequestId(preloadedData.mealRequest.id);
           activeRequestIdRef.current = preloadedData.mealRequest.id;
           setTopMeals(preloadedData.topMeals || []);
@@ -2994,7 +3149,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           // Check if we know an active request from a previous expansion or voting session
           const known = knownActiveRequests.current[groupId];
           if (known) {
-            console.log('📊 No mealRequest in preloaded data, but found known request:', known.requestId);
             setActiveRequestId(known.requestId);
             activeRequestIdRef.current = known.requestId;
             setActiveRecipeType(known.recipeType);
@@ -3007,7 +3161,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               }
             }).catch(() => setTopMealsLoading(false));
           } else {
-            console.log('📊 No mealRequest in preloaded data and no known request');
             setTopMeals([]);
             setActiveRequestId(null);
             setActiveRecipeType(null);
@@ -3044,8 +3197,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               }
             }
             
-            console.log('📊 Background refresh - requestResult:', requestResult?.hasActiveRequest, requestResult?.request?.id);
-            
             // Determine the active request ID: from RPC result, or from known requests as fallback
             let bgRequestId = null;
             let bgRecipeType = 'voting';
@@ -3057,7 +3208,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               // RPC returned empty - use known request from this session as fallback
               const known = knownActiveRequests.current[refreshGroupId];
               if (known) {
-                console.log('📊 Background refresh - RPC empty but using known request:', known.requestId);
                 bgRequestId = known.requestId;
                 bgRecipeType = known.recipeType;
               }
@@ -3068,7 +3218,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               if (expandedGroupIdRef.current !== refreshGroupId) {
                 return;
               }
-              console.log('📊 Background refresh - setting activeRequestId:', bgRequestId);
               setActiveRequestId(bgRequestId);
               activeRequestIdRef.current = bgRequestId;
               setActiveRecipeType(bgRecipeType);
@@ -3076,7 +3225,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               knownActiveRequests.current[refreshGroupId] = { requestId: bgRequestId, recipeType: bgRecipeType };
               
               const topMealsData = await contextLoadTopMeals(bgRequestId, true);
-              console.log('📊 Background refresh - topMeals loaded:', topMealsData?.length || 0);
               // Triple-check before setting top meals (using ref)
               if (expandedGroupIdRef.current !== refreshGroupId) {
                 return;
@@ -3084,7 +3232,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               setTopMeals(topMealsData || []);
               setTopMealsLoading(false);
             } else {
-              console.log('📊 Background refresh - NO active meal request found and no known request');
             }
           } catch (error) {
             // Ignore - we already have preloaded data
@@ -3134,7 +3281,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         // Check known requests from this session as fallback
         const known = knownActiveRequests.current[groupId];
         if (known) {
-          console.log('📊 Using known request for group:', groupId, known.requestId);
           setActiveRequestId(known.requestId);
           activeRequestIdRef.current = known.requestId;
           setActiveRecipeType(known.recipeType);
@@ -3181,7 +3327,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         } else {
           const known = knownActiveRequests.current[fetchGroupId];
           if (known) {
-            console.log('📊 Fetch fallback - using known request:', known.requestId);
             fetchReqId = known.requestId;
             fetchRecipeType = known.recipeType;
           }
@@ -3304,13 +3449,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     mediumHaptic(); // Feedback for starting voting
     const groupId = group.group_id || group.id;
     setActionLoading(true);
-    console.log('[TOP3-FLOW] handleStartVoting called for group:', groupId);
     
     try {
       const { getOrCreateDailyMealRequest } = require('../lib/mealRequestService');
       
       const result = await getOrCreateDailyMealRequest(groupId, 10);
-      console.log('[TOP3-FLOW] getOrCreateDailyMealRequest result:', JSON.stringify({ success: result.success, requestId: result.request?.id }));
       
       if (!result.success) {
         toast.error(result.error || t('errors.generic'));
@@ -3323,13 +3466,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       // CRITICAL: Set activeRequestId BEFORE navigating to VotingScreen.
       // Without this, when the user returns from voting, activeRequestId is null,
       // which means no Top 3 button, no polling, and no real-time updates.
-      console.log('[TOP3-FLOW] Setting activeRequestId to:', requestId, '(was:', activeRequestId, ')');
       setActiveRequestId(requestId);
       activeRequestIdRef.current = requestId;
       setActiveRecipeType('voting');
       // Remember this request for the group - survives collapse/expand
       knownActiveRequests.current[groupId] = { requestId, recipeType: 'voting' };
-      console.log('[TOP3-FLOW] Navigating to VotingScreen with requestId:', requestId);
       
       navigation.navigate('VotingScreen', {
         requestId,
@@ -3465,8 +3606,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     ));
     
     try {
-      // Map 'yes'/'no' to 'accepted'/'declined' for database
-      const responseValue = newValue === 'yes' ? 'accepted' : 'declined';
+      const responseValue = newValue === null ? null : (newValue === 'yes' ? 'accepted' : 'declined');
       
       const result = await respondToOccasion(occasionId, responseValue);
 
@@ -3651,8 +3791,17 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         successHaptic();
         toast.success(t('occasions.createdSuccess'));
         setShowCreateOccasionModal(false);
-        // Reload occasions from DB to get fresh list
         await loadSpecialOccasionsIndependent();
+
+        if (result.occasion?.id && result.occasion?.creator_id) {
+          const typeLabel = occasionLabels[newOccasionType]?.label || 'Speciaal moment';
+          const notifTitle = typeLabel;
+          const notifBody = newOccasionMessage?.trim()
+            ? `${userName || 'Iemand'} heeft je uitgenodigd: ${newOccasionMessage.trim()}`
+            : `${userName || 'Iemand'} heeft je uitgenodigd voor een ${typeLabel.toLowerCase()}`;
+          notifyOccasionParticipants(result.occasion.id, result.occasion.creator_id, notifTitle, notifBody)
+            .catch(err => console.error('Notification send error:', err));
+        }
       } else {
         toast.error(result.error || t('occasions.couldNotCreate'));
       }
@@ -3834,7 +3983,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
 
   return (
     <SafeAreaView style={styles.container}>
-    <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
       {/* Background Drawings - 3 layers for depth */}
       <SafeDrawing 
         source={require('../assets/drawing3.png')}
@@ -3853,7 +4001,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>{t('groups.title')}</Text>
-          <Text style={styles.headerSubtitle}>{t('common.whoIsEatingToday')}</Text>
+          <Text style={styles.headerSubtitle}>{(() => {
+            const locale = i18n.language === 'nl' ? 'nl-NL' : 'en-US';
+            const formatted = new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+            return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+          })()}</Text>
         </View>
         <TouchableOpacity 
           style={styles.profileButton}
@@ -3899,7 +4051,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             
             // Diagnostic: log render state for expanded group
             if (isExpanded) {
-              console.log('[TOP3-RENDER] Expanded group:', groupId, 'activeRequestId:', activeRequestId, 'activeRecipeType:', activeRecipeType, 'topMeals:', topMeals?.length, 'onOpenTop3:', activeRequestId ? 'SET' : 'UNDEFINED');
             }
             
             return (
@@ -3923,12 +4074,22 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 onLeaveGroup={() => handleLeaveGroup(group)}
                 onDeleteGroup={() => handleDeleteGroup(group)}
                 isCreator={group.created_by === currentUserId}
+                onOpenChat={() => {
+                  chatOpenGroupRef.current = groupId;
+                  setUnreadGroups(prev => { const n = { ...prev }; delete n[groupId]; return n; });
+                  navigation.navigate('GroupChat', {
+                    groupId,
+                    groupName: group.name || group.group_name,
+                    members: isExpanded ? expandedMembers : [],
+                  });
+                }}
+                hasUnread={!!unreadGroups[groupId]}
               />
             );
           })
         )}
         
-        {/* Special Occasions Section - Always show header, empty state when none */}
+        {FEATURE_SPECIAL_OCCASIONS && (
         <View style={styles.occasionsSection}>
           <View style={styles.occasionsSectionHeader}>
             <View style={[styles.sectionDivider, { flex: 1 }]}>
@@ -4007,7 +4168,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         ]}
                         onPress={(e) => {
                           e.stopPropagation();
-                          handleOccasionResponseChange(occasion.id, 'yes');
+                          handleOccasionResponseChange(occasion.id, myResponse === 'yes' ? null : 'yes');
                         }}
                         delayPressIn={100}
                       >
@@ -4024,7 +4185,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         ]}
                         onPress={(e) => {
                           e.stopPropagation();
-                          handleOccasionResponseChange(occasion.id, 'no');
+                          handleOccasionResponseChange(occasion.id, myResponse === 'no' ? null : 'no');
                         }}
                         delayPressIn={100}
                       >
@@ -4095,9 +4256,10 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               />
             )}
         </View>
-        
+        )}
+
         {/* Old Events Expandable Section - Only show if there are past occasions */}
-        {pastOccasions.length > 0 && (
+        {FEATURE_SPECIAL_OCCASIONS && pastOccasions.length > 0 && (
           <>
             <TouchableOpacity 
               style={styles.sectionDividerTouchable}
@@ -4609,7 +4771,15 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     groups.map(group => {
                       const gid = group.id || group.group_id;
                       const isSelected = occasionSelectedGroups.some(g => (g.id || g.group_id) === gid);
-                      const memberCount = group.member_count || group.members?.length || 0;
+                      const memberCount =
+                        group.member_count ??
+                        group.memberCount ??
+                        group.members_count ??
+                        group.membersCount ??
+                        group.member_total ??
+                        group.memberTotal ??
+                        group.members?.length ??
+                        0;
                       return (
                         <TouchableOpacity
                           key={gid}
@@ -4680,7 +4850,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           </Pressable>
         </View>
       </Modal>
-    </Pressable>
     </SafeAreaView>
   );
 }

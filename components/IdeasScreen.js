@@ -32,10 +32,11 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [recipes, setRecipes] = useState([]);
-  const [allLoadedRecipes, setAllLoadedRecipes] = useState([]); // Store all 100 recipes
-  const [displayedCount, setDisplayedCount] = useState(20); // How many we're currently showing
-  const [isInitialized, setIsInitialized] = useState(false); // Track if data has been loaded
-  const [usedCachedRecipes, setUsedCachedRecipes] = useState(false); // Track if we used cached data
+  const [allLoadedRecipes, setAllLoadedRecipes] = useState([]);
+  const [displayedCount, setDisplayedCount] = useState(20);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [usedCachedRecipes, setUsedCachedRecipes] = useState(false);
+  const [hasMoreFromAPI, setHasMoreFromAPI] = useState(true);
   const [userPreferences, setUserPreferences] = useState({
     cuisines: [],
     dietaryRestrictions: []
@@ -51,6 +52,15 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
   const [modalAnimation] = useState(new Animated.Value(0));
 
   const { width, height } = Dimensions.get('window');
+
+  const shuffleRecipes = (list = []) => {
+    const arr = [...list];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
 
   // Open recipe passed from another tab (e.g. user taps their own recipe in Profile)
   useEffect(() => {
@@ -71,9 +81,10 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
   useEffect(() => {
     if (!usedCachedRecipes && cachedRecipes && cachedRecipes.length > 0) {
       log.cache('INSTANT: Using', cachedRecipes.length, 'cached recipes for immediate display');
-      setAllLoadedRecipes(cachedRecipes);
-      setRecipes(cachedRecipes.slice(0, 20));
-      setDisplayedCount(Math.min(20, cachedRecipes.length));
+      const shuffledCached = shuffleRecipes(cachedRecipes);
+      setAllLoadedRecipes(shuffledCached);
+      setRecipes(shuffledCached.slice(0, 20));
+      setDisplayedCount(Math.min(20, shuffledCached.length));
       setLoading(false);
       setUsedCachedRecipes(true);
     }
@@ -143,18 +154,25 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
       if (isLoadingMore) {
         result = await getAllRecipes(allLoadedRecipes.length, 20);
       } else {
-        result = await getAllRecipes(0, 40);
+        result = await getAllRecipes(0, 120);
       }
       
       if (!result.success) {
         throw new Error(result.error);
       }
 
+      if (!result.hasMore) {
+        setHasMoreFromAPI(false);
+      }
+
       if (!result.recipes || result.recipes.length === 0) {
+        if (isLoadingMore) {
+          setHasMoreFromAPI(false);
+          return;
+        }
         throw new Error('No recipes found in database');
       }
 
-      // Convert database format to our recipe format
       const normalizedRecipes = result.recipes.map(dbRecipe => {
         return {
           id: dbRecipe.id,
@@ -176,18 +194,21 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
       });
 
       if (isLoadingMore) {
-        // Add new recipes to existing ones
-        setAllLoadedRecipes(prev => [...prev, ...normalizedRecipes]);
-        setRecipes(prev => [...prev, ...normalizedRecipes]);
+        const existingIds = new Set(allLoadedRecipes.map(r => r.id));
+        const unseenRecipes = normalizedRecipes.filter(r => !existingIds.has(r.id));
+        const shuffledUnseen = shuffleRecipes(unseenRecipes);
+        const mergedRecipes = [...allLoadedRecipes, ...shuffledUnseen];
+        setAllLoadedRecipes(mergedRecipes);
+        setRecipes(mergedRecipes.slice(0, displayedCount + 20));
+        setDisplayedCount(prev => Math.min(prev + 20, mergedRecipes.length));
       } else {
-        // Initial load - replace all recipes
-        setAllLoadedRecipes(normalizedRecipes);
-        setRecipes(normalizedRecipes.slice(0, 20)); // Show first 20
-        setDisplayedCount(Math.min(20, normalizedRecipes.length));
+        const shuffledRecipes = shuffleRecipes(normalizedRecipes);
+        setAllLoadedRecipes(shuffledRecipes);
+        setRecipes(shuffledRecipes.slice(0, 20));
+        setDisplayedCount(Math.min(20, shuffledRecipes.length));
         
-        // Save to cache for instant display on next app launch
-        log.cache('Saving', normalizedRecipes.length, 'recipes to cache');
-        saveCachedRecipes(normalizedRecipes);
+        log.cache('Saving', shuffledRecipes.length, 'recipes to cache');
+        saveCachedRecipes(shuffledRecipes);
       }
 
     } catch (error) {
@@ -196,8 +217,8 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
       
       // Show alert to user about the database issue
       Alert.alert(
-        'Database Connection Issue', 
-        `Could not load recipes from database: ${error.message}. Showing sample recipes instead.`,
+        t('recipes.databaseError'), 
+        t('recipes.databaseErrorMessage'),
         [{ text: 'OK' }]
       );
       
@@ -412,18 +433,15 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
   };
 
   const refreshRecipes = async () => {
-    const newDisplayCount = displayedCount + 20;
-    
-    if (newDisplayCount <= allLoadedRecipes.length) {
-      // Show more from existing loaded recipes
+    if (displayedCount < allLoadedRecipes.length) {
+      const newDisplayCount = Math.min(displayedCount + 20, allLoadedRecipes.length);
       setLoadingMore(true);
       setTimeout(() => {
         setRecipes(allLoadedRecipes.slice(0, newDisplayCount));
         setDisplayedCount(newDisplayCount);
         setLoadingMore(false);
-      }, 500); // Small delay for UX
-    } else {
-      // Need to load more from API
+      }, 500);
+    } else if (hasMoreFromAPI) {
       await loadFeaturedRecipes(true);
     }
   };
@@ -479,7 +497,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
 
           {activeTab === 'wishlist' && (
             <Text style={styles.dateText}>
-              {wishlist.length} recipe{wishlist.length !== 1 ? 's' : ''} saved
+              {wishlist.length === 1 ? t('recipes.savedRecipes', { count: 1 }) : t('recipes.savedRecipesPlural', { count: wishlist.length })}
             </Text>
           )}
         </View>
@@ -611,7 +629,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
         )}
 
         {/* Bottom Action */}
-        {activeTab === 'meals' && (
+        {activeTab === 'meals' && (displayedCount < allLoadedRecipes.length || hasMoreFromAPI) && (
         <View style={styles.bottomAction}>
           <TouchableOpacity 
             style={[styles.moreRecipesButton, loadingMore && styles.buttonDisabled]}
@@ -622,9 +640,9 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
               <ActivityIndicator size="small" color="#FEFEFE" />
             ) : (
               <Text style={styles.moreRecipesButtonText}>
-                {displayedCount >= allLoadedRecipes.length ? 
-                  'Discover New Recipes' : 
-                  `Show More (${Math.min(20, allLoadedRecipes.length - displayedCount)} more available)`
+                {displayedCount < allLoadedRecipes.length
+                  ? t('recipes.showMore', { count: Math.min(20, allLoadedRecipes.length - displayedCount) })
+                  : t('recipes.discoverNewRecipes')
                 }
               </Text>
             )}
@@ -644,7 +662,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                   [
                     { text: t('common.cancel'), style: 'cancel' },
                     { 
-                      text: 'Clear', 
+                      text: t('recipes.clear'), 
                       style: 'destructive',
                       onPress: () => clearUserWishlist()
                     }
@@ -777,17 +795,34 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                     ) : null}
 
                     {/* Action Buttons — hidden for user-created recipes (already theirs) */}
-                    {selectedRecipe && !selectedRecipe.isUserRecipe && !isRecipeInWishlist(selectedRecipe.id) && (
+                    {selectedRecipe && !selectedRecipe.isUserRecipe && (
                       <View style={styles.modalActions}>
-                        <TouchableOpacity 
-                          style={styles.modalWishlistButton}
-                          onPress={() => addToWishlist(selectedRecipe)}
-                        >
-                          <Text style={styles.modalAddIcon}>+</Text>
-                          <Text style={styles.modalWishlistText}>
-                            {t('recipes.addToList')}
-                          </Text>
-                        </TouchableOpacity>
+                        {isRecipeInWishlist(selectedRecipe.id) ? (
+                          <TouchableOpacity
+                            style={styles.modalRemoveButton}
+                            onPress={async () => {
+                              await removeFromWishlist(selectedRecipe.id);
+                              if (activeTab === 'wishlist') {
+                                closeModal();
+                              }
+                            }}
+                          >
+                            <Text style={styles.modalRemoveIcon}>-</Text>
+                            <Text style={styles.modalRemoveText}>
+                              {t('recipes.removeFromList')}
+                            </Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <TouchableOpacity
+                            style={styles.modalWishlistButton}
+                            onPress={() => addToWishlist(selectedRecipe)}
+                          >
+                            <Text style={styles.modalAddIcon}>+</Text>
+                            <Text style={styles.modalWishlistText}>
+                              {t('recipes.addToList')}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
                     )}
                   </View>
@@ -1375,6 +1410,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
     color: '#8B7355',
+    letterSpacing: 0.2,
+  },
+  modalRemoveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF2F2',
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F3C7C7',
+  },
+  modalRemoveIcon: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#C62828',
+    marginRight: 8,
+    lineHeight: 24,
+  },
+  modalRemoveText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    lineHeight: 20,
+    color: '#C62828',
     letterSpacing: 0.2,
   },
 }); 
