@@ -130,9 +130,17 @@ export default function App() {
     responseListener.current = addNotificationResponseListener(response => {
       const data = response.notification.request.content.data;
       
-      // Navigate based on notification data
-      if (data?.type === 'occasion_response' && data?.occasionId && navigationRef.current) {
-        // Navigate to the groups tab to see the occasion
+      if (data?.type === 'chat' && data?.groupId && navigationRef.current) {
+        navigationRef.current.navigate('GroupChat', {
+          groupId: data.groupId,
+          groupName: data.groupName || 'Chat',
+          members: [],
+        });
+      } else if (data?.type === 'voting_started' && data?.groupId && navigationRef.current) {
+        navigationRef.current.navigate('MainTabs', {
+          switchToGroupsTab: true,
+        });
+      } else if (data?.type === 'occasion_response' && data?.occasionId && navigationRef.current) {
         navigationRef.current.navigate('MainTabs', {
           switchToGroupsTab: true,
         });

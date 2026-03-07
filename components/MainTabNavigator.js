@@ -137,12 +137,13 @@ export default function MainTabNavigator({ navigation, route }) {
     }
   };
 
-  // Create enhanced navigation object once
+  // Create enhanced navigation that intercepts tab-level routes but passes stack routes through
+  const stackNavigate = navigation.navigate.bind(navigation);
   const enhancedNavigation = {
     ...navigation,
     navigate: (routeName, params) => {
       if (routeName === 'Profile') {
-        setCurrentTab('profile');
+        stackNavigate('Profile', params);
       } else if (routeName === 'MainTabs') {
         checkAuthStatus();
         setCurrentTab('groups');

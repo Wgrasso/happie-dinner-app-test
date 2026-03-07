@@ -2219,6 +2219,28 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on mount - callbacks are accessed via refs
 
+  // Auto-expand when the user has exactly 1 group
+  useEffect(() => {
+    if (groups.length === 1 && !expandedGroupId) {
+      const g = groups[0];
+      const gid = g.group_id || g.id;
+      setExpandedGroupId(gid);
+      expandedGroupIdRef.current = gid;
+      const preloaded = getPreloadedExpansionData(gid);
+      if (preloaded) {
+        setExpandedMembers(preloaded.members || []);
+        setExpandedResponses(preloaded.responses || {});
+        setExpandedLoading(false);
+        if (preloaded.mealRequest?.id) {
+          setActiveRequestId(preloaded.mealRequest.id);
+          activeRequestIdRef.current = preloaded.mealRequest.id;
+          setActiveRecipeType(preloaded.mealRequest.recipe_type || 'voting');
+          if (preloaded.topMeals?.length) setTopMeals(preloaded.topMeals);
+        }
+      }
+    }
+  }, [groups.length]);
+
   // Load responses for all groups (for collapsed state display)
   // Update refs when callbacks change
   useEffect(() => {
@@ -3088,6 +3110,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     }
     
     if (expandedGroupId === groupId) {
+      // Don't collapse if this is the only group
+      if (groups.length === 1) return;
       // Collapse
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setExpandedGroupId(null);
@@ -4007,7 +4031,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             return formatted.charAt(0).toUpperCase() + formatted.slice(1);
           })()}</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.profileButton}
           onPress={() => navigation.navigate('Profile')}
         >

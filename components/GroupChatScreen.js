@@ -4,12 +4,19 @@ import {
   TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Feather } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { getGroupMessages, sendGroupMessage, subscribeToGroupMessages, cleanupOldMessages } from '../lib/chatService';
 
 export default function GroupChatScreen({ route, navigation }) {
   const { groupId, groupName, members = [] } = route.params || {};
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const todayFormatted = (() => {
+    const locale = i18n.language === 'nl' ? 'nl-NL' : 'en-US';
+    const f = new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+    return f.charAt(0).toUpperCase() + f.slice(1);
+  })();
 
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,7 +114,7 @@ export default function GroupChatScreen({ route, navigation }) {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} numberOfLines={1}>{groupName || 'Chat'}</Text>
-          <Text style={styles.headerSubtitle}>{t('common.today')}</Text>
+          <Text style={styles.headerSubtitle}>{todayFormatted}</Text>
         </View>
         <View style={styles.backButton} />
       </View>
@@ -123,8 +130,8 @@ export default function GroupChatScreen({ route, navigation }) {
           </View>
         ) : messages.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>💬</Text>
-            <Text style={styles.emptySubtext}>{t('common.today')}</Text>
+            <Feather name="message-circle" size={48} color="#D0CCC7" />
+            <Text style={styles.emptySubtext}>{todayFormatted}</Text>
           </View>
         ) : (
           <FlatList
@@ -216,10 +223,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 48,
-    marginBottom: 8,
+    gap: 12,
   },
   emptySubtext: {
     fontSize: 14,

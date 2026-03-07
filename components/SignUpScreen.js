@@ -104,15 +104,8 @@ export default function SignUpScreen({ navigation }) {
           await createOrUpdateProfile(name, null, selectedLanguage);
         }
         
-        // Show toast instead of alert
-        if (toastRef.current) {
-          toastRef.current.show(t('auth.checkEmailConfirm'), 'success');
-        }
-        
-        // Navigate to sign in after short delay
-        setTimeout(() => {
-          navigation.navigate('SignIn');
-        }, 1500);
+        // Navigate to sign in
+        navigation.navigate('SignIn');
       }
     } catch (error) {
       console.error('❌ Unexpected sign up error:', error);
