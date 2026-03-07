@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Happie Dinner",
+    "name": "Studenten Happie",
     "slug": "happie-dinner",
     "scheme": "happie",
     "version": "1.2.0",
@@ -23,8 +23,8 @@
       "buildNumber": "1.1.6",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "Happie Dinner needs camera access to take recipe photos",
-        "NSPhotoLibraryUsageDescription": "Happie Dinner needs photo library access to select recipe photos",
+        "NSCameraUsageDescription": "Studenten Happie needs camera access to take recipe photos",
+        "NSPhotoLibraryUsageDescription": "Studenten Happie needs photo library access to select recipe photos",
         "UIBackgroundModes": [
           "remote-notification"
         ]
@@ -54,8 +54,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Happie Dinner needs access to your photos to add recipe images",
-          "cameraPermission": "Happie Dinner needs access to your camera to take recipe photos"
+          "photosPermission": "Studenten Happie needs access to your photos to add recipe images",
+          "cameraPermission": "Studenten Happie needs access to your camera to take recipe photos"
         }
       ],
       [

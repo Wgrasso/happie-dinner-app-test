@@ -164,7 +164,7 @@ export default function MainTabNavigator({ navigation, route }) {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <Image 
-            source={require('../assets/happie-logo.png')}
+            source={require('../assets/nieuw_logo_studentenhappie.webp')}
             style={styles.loadingLogo}
             resizeMode="contain"
           />
@@ -279,8 +279,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingLogo: {
-    width: 85,
-    height: 85,
+    width: 170,
+    height: 170,
     marginBottom: 20,
   },
   loadingText: {

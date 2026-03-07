@@ -118,8 +118,8 @@ export default function SignInScreen({ navigation }) {
     return (
       <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Image 
-          source={require('../assets/happie-logo.png')}
-          style={{ width: 120, height: 120 }}
+          source={require('../assets/nieuw_logo_studentenhappie.webp')}
+          style={{ width: 240, height: 240 }}
           resizeMode="contain"
         />
       </SafeAreaView>
@@ -148,7 +148,7 @@ export default function SignInScreen({ navigation }) {
           {/* Header Section with Logo */}
           <View style={styles.header}>
             <Image 
-              source={require('../assets/happie-logo.png')}
+              source={require('../assets/nieuw_logo_studentenhappie.webp')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -239,9 +239,9 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   logo: {
-    width: 180,
-    height: 180,
-    marginBottom: 4,
+    width: 360,
+    height: 360,
+    marginBottom: -80,
     marginTop: 0,
   },
   subtitle: {

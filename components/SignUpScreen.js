@@ -138,12 +138,11 @@ export default function SignUpScreen({ navigation }) {
           {/* Header Section with Logo */}
           <View style={styles.header}>
             <Image 
-              source={require('../assets/happie-logo.png')}
+              source={require('../assets/nieuw_logo_studentenhappie.webp')}
               style={styles.smallLogo}
               resizeMode="contain"
             />
             <Text style={styles.title}>{t('auth.createAccount')}</Text>
-            <Text style={styles.subtitle}>{t('auth.joinCommunity')}</Text>
           </View>
 
           {/* Form Section */}
@@ -216,7 +215,6 @@ export default function SignUpScreen({ navigation }) {
                     saveLanguage('nl');
                   }}
                 >
-                  <Text style={styles.flagEmoji}>🇳🇱</Text>
                   <Text style={[
                     styles.languageButtonText,
                     selectedLanguage === 'nl' && styles.languageButtonTextActive
@@ -234,7 +232,6 @@ export default function SignUpScreen({ navigation }) {
                     saveLanguage('en');
                   }}
                 >
-                  <Text style={styles.flagEmoji}>🇬🇧</Text>
                   <Text style={[
                     styles.languageButtonText,
                     selectedLanguage === 'en' && styles.languageButtonTextActive
@@ -330,8 +327,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 40,
+    paddingTop:-15,
+    paddingBottom: 20,
   },
   backButton: {
     alignSelf: 'flex-start',
@@ -345,13 +342,14 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 8,
     paddingTop: 0,
   },
   smallLogo: {
-    width: 90,
-    height: 90,
-    marginBottom: 10,
+    width: 280,
+    height:280,
+    marginBottom: -60,
+    marginTop:-70,
   },
   title: {
     fontFamily: 'PlayfairDisplay_700Bold',
@@ -360,7 +358,7 @@ const styles = StyleSheet.create({
     color: '#2D2D2D',
     letterSpacing: 0.5,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   subtitle: {
     fontFamily: 'Inter_400Regular',
@@ -374,10 +372,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     alignSelf: 'center',
-    marginBottom: 40,
+    marginBottom: 24,
   },
   inputContainer: {
-    marginBottom: 20, // Slightly tighter spacing for more fields
+    marginBottom: 14,
   },
   label: {
     fontFamily: 'Inter_500Medium',
@@ -411,8 +409,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 16,
+    marginTop: 10,
+    marginBottom: 10,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -431,15 +429,15 @@ const styles = StyleSheet.create({
     color: '#A0A0A0',
     textAlign: 'center',
     letterSpacing: 0.1,
-    marginBottom: 20,
-    paddingHorizontal: 10, // Add padding to prevent text cutoff
+    marginBottom: 10,
+    paddingHorizontal: 10,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 20,
-    flexWrap: 'wrap', // Allow text to wrap if needed
+    paddingTop: 10,
+    flexWrap: 'wrap',
   },
   footerText: {
     fontFamily: 'Inter_400Regular',
@@ -533,8 +531,8 @@ const styles = StyleSheet.create({
 
   // Language selection styles
   languageSection: {
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 6,
   },
   languageLabel: {
     fontFamily: 'Inter_500Medium',
@@ -563,10 +561,6 @@ const styles = StyleSheet.create({
   languageButtonActive: {
     backgroundColor: '#8B7355',
     borderColor: '#8B7355',
-  },
-  flagEmoji: {
-    fontSize: 20,
-    marginRight: 6,
   },
   languageButtonText: {
     fontFamily: 'Inter_500Medium',

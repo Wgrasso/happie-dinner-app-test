@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Happie",
+    "name": "Student Happie",
     "tagline": "Cook, Share, Enjoy Together"
   },
   "auth": {
@@ -266,8 +266,8 @@
     "updateProfileInfo": "Update your profile information",
     "inviteFriends": "Invite Friends",
     "inviteFriendsHint": "Share the app with your housemates",
-    "inviteTitle": "Join me on Happie!",
-    "inviteMessage": "Hey! Join me on Happie - the app that makes planning meals with housemates super easy. Download it here: https://apps.apple.com/app/happie/id6757129676"
+    "inviteTitle": "Join me on Student Happie!",
+    "inviteMessage": "Hey! Join me on Student Happie - the app that makes planning meals with housemates super easy. Download it here: https://apps.apple.com/app/happie/id6757129676"
   },
   "form": {
     "group": "Group",

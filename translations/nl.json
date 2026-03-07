@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Happie",
+    "name": "Studenten Happie",
     "tagline": "Koken, Delen, Samen Genieten"
   },
   "auth": {
@@ -265,8 +265,8 @@
     "updateProfileInfo": "Werk je profielinformatie bij",
     "inviteFriends": "Vrienden uitnodigen",
     "inviteFriendsHint": "Deel de app met je huisgenoten",
-    "inviteTitle": "Doe mee met Happie!",
-    "inviteMessage": "Hey! Doe mee met Happie - de app die maaltijden plannen met huisgenoten super makkelijk maakt. Download hier: https://apps.apple.com/app/happie/id6757129676"
+    "inviteTitle": "Doe mee met Studenten Happie!",
+    "inviteMessage": "Hey! Doe mee met Studenten Happie - de app die maaltijden plannen met huisgenoten super makkelijk maakt. Download hier: https://apps.apple.com/app/happie/id6757129676"
   },
   "form": {
     "group": "Groep",
