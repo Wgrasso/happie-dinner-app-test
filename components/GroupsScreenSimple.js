@@ -241,7 +241,6 @@ const Top3Modal = React.memo(({ visible, onClose, loadMeals, onRecipePress }) =>
   }, [visible, loadMeals]);
   
   const displayMeals = meals?.slice(0, 3) || [];
-  const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
   
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -275,9 +274,6 @@ const Top3Modal = React.memo(({ visible, onClose, loadMeals, onRecipePress }) =>
                     onPress={() => { onRecipePress?.(meal); onClose(); }}
                     activeOpacity={0.7}
                   >
-                    <View style={[top3ModalStyles.rankBadge, { backgroundColor: medalColors[index] || '#8B7355' }]}>
-                      <Text style={top3ModalStyles.rankText}>{index + 1}</Text>
-                    </View>
                     <View style={top3ModalStyles.recipeInfo}>
                       <Text style={top3ModalStyles.recipeName} numberOfLines={1}>{mealName}</Text>
                       <Text style={top3ModalStyles.voteCount}>{voteCount} {voteCount === 1 ? t('meals.vote') : t('meals.votes')}</Text>
@@ -615,7 +611,6 @@ const ExpandableGroupCard = React.memo(({
               {topMeals && topMeals.length > 0 && (
                 <View style={cardStyles.top3Preview}>
                   {topMeals.slice(0, 3).map((meal, idx) => {
-                    const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
                     const name = meal.meal_data?.name || t('meals.recipe');
                     const votes = meal.yes_votes ?? meal.vote_total ?? 0;
                     const thumbnailUrl = meal.meal_data?.thumbnail_url;
@@ -627,9 +622,6 @@ const ExpandableGroupCard = React.memo(({
                         onPress={() => onRecipePress?.(meal)}
                         activeOpacity={0.7}
                       >
-                        <View style={[cardStyles.top3RankBadge, { backgroundColor: medalColors[idx] || '#8B7355' }]}>
-                          <Text style={cardStyles.top3RankText}>{idx + 1}</Text>
-                        </View>
                         {thumbnailUrl ? (
                           <Image 
                             source={{ uri: thumbnailUrl }} 

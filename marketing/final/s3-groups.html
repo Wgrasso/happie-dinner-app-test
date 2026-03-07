@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>S3 – Jouw groep. Jouw avonden.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: 405px 720px; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 405px; height: 720px; overflow: hidden; background: #1C1C1C; }
+    .story {
+      width: 405px; height: 720px;
+      background: #2A2622;
+      display: flex; flex-direction: column; position: relative; overflow: hidden;
+    }
+    .glow-tl { position: absolute; top: -80px; left: -80px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(139,115,85,0.16) 0%, transparent 65%); pointer-events: none; }
+    .glow-br { position: absolute; bottom: -60px; right: -60px; width: 260px; height: 260px; background: radial-gradient(circle, rgba(139,115,85,0.12) 0%, transparent 65%); pointer-events: none; }
+    .frame { position: absolute; inset: 18px; border: 1px solid rgba(139,115,85,0.2); pointer-events: none; }
+    .top { padding: 44px 36px 0; text-align: center; display: flex; flex-direction: column; align-items: center; }
+    .eyebrow { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: #8B7355; margin-bottom: 14px; }
+    .illus { width: 200px; height: 200px; object-fit: contain; margin: 0 auto 22px; display: block; filter: brightness(1.05); }
+    .headline { font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 900; line-height: 0.98; color: #FEFCF8; letter-spacing: -1.5px; margin-bottom: 18px; }
+    .headline em { font-style: italic; color: #C4A882; }
+    .body { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 400; line-height: 1.65; color: rgba(254,252,248,0.58); text-align: center; padding: 0 36px; }
+    .body strong { color: rgba(254,252,248,0.88); font-weight: 600; }
+    .pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; padding: 18px 32px 0; }
+    .pill { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500; color: #C4A882; background: rgba(139,115,85,0.14); border: 1px solid rgba(139,115,85,0.28); padding: 6px 13px; border-radius: 100px; }
+    .bottom { margin-top: auto; padding: 0 36px 40px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .cta { width: 100%; background: #8B7355; color: #FEFEFE; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; padding: 16px 0; border-radius: 100px; border: none; cursor: pointer; }
+    .hint { font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(139,115,85,0.75); font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="story">
+    <div class="glow-tl"></div>
+    <div class="glow-br"></div>
+    <div class="frame"></div>
+    <div class="top">
+      <span class="eyebrow">Samen beter</span>
+      <img src="../../assets/groups.png" class="illus" alt="">
+      <h1 class="headline">Jouw groep.<br><em>Jouw avonden.</em></h1>
+      <p class="body">Maak een groep aan, voeg huisgenoten toe en <strong>organiseer samen jullie avondeten.</strong></p>
+    </div>
+    <div class="pills">
+      <span class="pill">Dinner requests</span>
+      <span class="pill">Groepen</span>
+      <span class="pill">Recepten stemmen</span>
+      <span class="pill">Inspiratie</span>
+    </div>
+    <div class="bottom">
+      <button class="cta">Download gratis — StudentenHapp</button>
+      <span class="hint">↑ swipe up</span>
+    </div>
+  </div>
+</body>
+</html>

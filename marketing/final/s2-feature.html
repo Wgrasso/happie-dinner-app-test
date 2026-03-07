@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>S2 – Een tik. Klaar.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: 405px 720px; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 405px; height: 720px; overflow: hidden; background: #D6CFC4; }
+    .story {
+      width: 405px; height: 720px;
+      background: linear-gradient(168deg, #FEFCF8 0%, #F5EDE0 52%, #EAE0CE 100%);
+      display: flex; flex-direction: column; position: relative; overflow: hidden;
+    }
+    .blob-tr { position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(139,115,85,0.10) 0%, transparent 65%); pointer-events: none; }
+    .frame { position: absolute; inset: 18px; border: 1px solid rgba(139,115,85,0.18); pointer-events: none; }
+    .top { padding: 40px 32px 0; text-align: center; display: flex; flex-direction: column; align-items: center; }
+    .eyebrow { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: #8B7355; margin-bottom: 14px; }
+    .headline { font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 900; line-height: 1.0; color: #2D2D2D; letter-spacing: -1.5px; margin-bottom: 22px; }
+    .headline em { font-style: italic; color: #8B7355; }
+    /* App card mockup */
+    .card { background: #FFFFFF; border-radius: 20px; padding: 22px 20px 18px; width: 100%; max-width: 310px; box-shadow: 0 14px 44px rgba(45,45,45,0.13), 0 0 0 1px rgba(139,115,85,0.09); position: relative; text-align: center; }
+    .card-x { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; background: rgba(107,107,107,0.11); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #6B6B6B; font-family: 'Inter', sans-serif; }
+    .card-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #2D2D2D; margin-bottom: 8px; }
+    .card-body { font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.6; color: #6B6B6B; margin-bottom: 16px; }
+    .card-body strong { color: #2D2D2D; font-weight: 600; }
+    .btns { display: flex; gap: 9px; margin-bottom: 12px; }
+    .btn-y { flex: 1; background: #8B7355; color: #fff; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; padding: 13px 0; border-radius: 10px; border: none; cursor: pointer; }
+    .btn-n { flex: 1; background: #EDE2D0; color: #6B6B6B; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; padding: 13px 0; border-radius: 10px; border: none; cursor: pointer; }
+    .timer { font-family: 'Courier New', monospace; font-size: 12px; color: #8B7355; }
+    .sub { padding: 16px 32px 0; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 400; line-height: 1.65; color: #6B6B6B; text-align: center; }
+    .sub strong { color: #2D2D2D; font-weight: 600; }
+    .bottom { margin-top: auto; padding: 0 32px 40px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .cta { width: 100%; background: #8B7355; color: #FEFEFE; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; padding: 16px 0; border-radius: 100px; border: none; cursor: pointer; }
+    .hint { font-family: 'Inter', sans-serif; font-size: 11px; color: #8B7355; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="story">
+    <div class="blob-tr"></div>
+    <div class="frame"></div>
+    <div class="top">
+      <span class="eyebrow">Hoe het werkt</span>
+      <h1 class="headline"><em>Een tik.</em><br>Klaar.</h1>
+      <div class="card">
+        <div class="card-x">✕</div>
+        <div class="card-title">Dinner Request</div>
+        <p class="card-body">Hey <strong>Sophie</strong>! Uitnodiging voor<br><strong>vrijdag 14 maart</strong> met <strong>Huis Van Gogh</strong></p>
+        <div class="btns">
+          <button class="btn-y">Ja</button>
+          <button class="btn-n">Nee</button>
+        </div>
+        <span class="timer">02h 34m 18s remaining</span>
+      </div>
+    </div>
+    <p class="sub">Ontvang een uitnodiging, tap <strong>ja</strong> of <strong>nee</strong>, en klaar.</p>
+    <div class="bottom">
+      <button class="cta">Download gratis — StudentenHapp</button>
+      <span class="hint">↑ swipe up</span>
+    </div>
+  </div>
+</body>
+</html>

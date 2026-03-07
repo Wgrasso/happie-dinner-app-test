@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>S5 – Chaos vs. App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: 405px 720px; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 405px; height: 720px; overflow: hidden; }
+    .story { width: 405px; height: 720px; display: flex; flex-direction: column; overflow: hidden; }
+    /* Top label bar */
+    .label-bar { display: flex; height: 36px; flex-shrink: 0; }
+    .lb-chaos { flex: 0 0 42%; background: #111; display: flex; align-items: center; justify-content: center; }
+    .lb-sol { flex: 1; background: #8B7355; display: flex; align-items: center; justify-content: center; }
+    .lb-text { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.55); }
+    .lb-text-sol { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(254,252,248,0.8); }
+    /* Split */
+    .split { flex: 1; display: flex; position: relative; }
+    .side-l { width: 42%; background: #1A1A1A; display: flex; flex-direction: column; justify-content: center; padding: 24px 12px 24px 16px; gap: 8px; }
+    .bub { border-radius: 10px 10px 10px 2px; padding: 7px 10px; font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.4; max-width: 96%; }
+    .bub-t { background: #2C2C2E; color: rgba(255,255,255,0.72); }
+    .bub-m { background: #3A6B35; color: rgba(255,255,255,0.82); align-self: flex-end; border-radius: 10px 10px 2px 10px; }
+    .bub-f { font-family: 'Inter', sans-serif; font-size: 9px; color: rgba(255,255,255,0.2); align-self: flex-end; margin-top: -4px; }
+    /* Divider */
+    .div-line { position: absolute; top: 0; bottom: 0; left: 42%; width: 1px; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.1) 20%, rgba(255,255,255,0.1) 80%, transparent); z-index: 5; display: flex; align-items: center; justify-content: center; }
+    .vs { position: absolute; width: 30px; height: 30px; background: #FEFCF8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800; color: #2D2D2D; box-shadow: 0 3px 12px rgba(0,0,0,0.25); }
+    .side-r { flex: 1; background: linear-gradient(155deg, #FEFCF8 0%, #F0E8D8 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px 16px 24px 20px; gap: 14px; }
+    .r-head { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 900; color: #2D2D2D; line-height: 1.08; text-align: center; }
+    .r-head em { font-style: italic; color: #8B7355; }
+    .mini-card { background: #fff; border-radius: 14px; padding: 14px; width: 100%; box-shadow: 0 6px 24px rgba(45,45,45,0.11); text-align: center; }
+    .mc-title { font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #2D2D2D; margin-bottom: 6px; }
+    .mc-body { font-family: 'Inter', sans-serif; font-size: 10px; line-height: 1.5; color: #6B6B6B; margin-bottom: 10px; }
+    .mc-body strong { color: #2D2D2D; font-weight: 600; }
+    .mc-btns { display: flex; gap: 6px; margin-bottom: 8px; }
+    .mc-y { flex: 1; background: #8B7355; color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; padding: 8px 0; border-radius: 8px; border: none; }
+    .mc-n { flex: 1; background: #EDE2D0; color: #6B6B6B; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; padding: 8px 0; border-radius: 8px; border: none; }
+    .mc-timer { font-family: 'Courier New', monospace; font-size: 9px; color: #8B7355; }
+    .r-sub { font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.5; color: #6B6B6B; text-align: center; }
+    .r-sub strong { color: #2D2D2D; font-weight: 600; }
+    /* Bottom */
+    .bot { height: 58px; background: #8B7355; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .bot-t { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(254,252,248,0.9); }
+  </style>
+</head>
+<body>
+  <div class="story">
+    <div class="label-bar">
+      <div class="lb-chaos"><span class="lb-text">Vroeger</span></div>
+      <div class="lb-sol"><span class="lb-text-sol">StudentenHapp</span></div>
+    </div>
+    <div class="split">
+      <div class="side-l">
+        <div class="bub bub-t">Wie kookt er vanavond? 😅</div>
+        <div class="bub bub-m">Weet niet</div>
+        <div class="bub bub-t">Mij maakt het niet uit</div>
+        <div class="bub bub-m">Iemand iets?</div>
+        <div class="bub bub-t">...</div>
+        <div class="bub bub-t">kan iemand</div>
+        <div class="bub bub-m">bestel gewoon wat</div>
+        <div class="bub bub-t">ok fine</div>
+        <span class="bub-f">gelezen 19:47</span>
+      </div>
+      <div class="div-line"><div class="vs">VS</div></div>
+      <div class="side-r">
+        <h2 class="r-head"><em>Eén tap.</em><br>Iedereen weet het.</h2>
+        <div class="mini-card">
+          <div class="mc-title">Dinner Request</div>
+          <p class="mc-body"><strong>Vrijdag 14 maart</strong><br>Huis Van Gogh</p>
+          <div class="mc-btns"><button class="mc-y">Ja</button><button class="mc-n">Nee</button></div>
+          <div class="mc-timer">02h 34m 18s remaining</div>
+        </div>
+        <p class="r-sub"><strong>Geen chaos.</strong><br>Gewoon samen eten.</p>
+      </div>
+    </div>
+    <div class="bot"><span class="bot-t">Download gratis — StudentenHapp</span></div>
+  </div>
+</body>
+</html>

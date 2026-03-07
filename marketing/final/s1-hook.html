@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>S1 – Wie kookt er vanavond?</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: 405px 720px; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 405px; height: 720px; overflow: hidden; background: #D6CFC4; }
+    .story {
+      width: 405px;
+      height: 720px;
+      background: linear-gradient(168deg, #FEFCF8 0%, #F5EDE0 52%, #EAE0CE 100%);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Decorative warm blobs */
+    .blob-tr { position: absolute; top: -60px; right: -60px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(139,115,85,0.10) 0%, transparent 65%); pointer-events: none; }
+    .blob-bl { position: absolute; bottom: -40px; left: -40px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(139,115,85,0.08) 0%, transparent 65%); pointer-events: none; }
+    /* Inner border frame */
+    .frame { position: absolute; inset: 18px; border: 1px solid rgba(139,115,85,0.18); pointer-events: none; }
+    /* Content */
+    .top { padding: 44px 36px 0; text-align: center; display: flex; flex-direction: column; align-items: center; }
+    .eyebrow { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: #8B7355; margin-bottom: 16px; }
+    .headline { font-family: 'Playfair Display', serif; font-size: 60px; font-weight: 900; line-height: 0.96; color: #2D2D2D; letter-spacing: -2.5px; margin-bottom: 6px; }
+    .headline-em { font-style: italic; color: #8B7355; display: block; }
+    .illus { width: 210px; height: 210px; object-fit: contain; margin: 22px auto 0; display: block; }
+    .mid { padding: 18px 36px; text-align: center; }
+    .rule { width: 32px; height: 2px; background: rgba(139,115,85,0.4); border-radius: 1px; margin: 0 auto 16px; }
+    .body { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 400; line-height: 1.7; color: #6B6B6B; }
+    .body strong { color: #2D2D2D; font-weight: 600; }
+    /* Bottom CTA */
+    .bottom { margin-top: auto; padding: 0 36px 40px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .cta { width: 100%; background: #8B7355; color: #FEFEFE; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; padding: 16px 0; border-radius: 100px; border: none; cursor: pointer; letter-spacing: 0.3px; }
+    .hint { font-family: 'Inter', sans-serif; font-size: 11px; color: #8B7355; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="story">
+    <div class="blob-tr"></div>
+    <div class="blob-bl"></div>
+    <div class="frame"></div>
+    <div class="top">
+      <span class="eyebrow">Voor studenten</span>
+      <h1 class="headline">Wie kookt<br>er <span class="headline-em">vanavond?</span></h1>
+      <img src="../../assets/drawing1.png" class="illus" alt="">
+    </div>
+    <div class="mid">
+      <div class="rule"></div>
+      <p class="body">Stop met eindeloos overleggen in de groepschat.<br><strong>StudentenHapp regelt het in seconds.</strong></p>
+    </div>
+    <div class="bottom">
+      <button class="cta">Download gratis — StudentenHapp</button>
+      <span class="hint">↑ swipe up</span>
+    </div>
+  </div>
+</body>
+</html>

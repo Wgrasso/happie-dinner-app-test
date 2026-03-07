@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>S6 – Nooit meer 'wat eten we?'</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: 405px 720px; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 405px; height: 720px; overflow: hidden; background: #D6CFC4; }
+    .story {
+      width: 405px; height: 720px;
+      background: linear-gradient(168deg, #FEFCF8 0%, #F5EDE0 52%, #EAE0CE 100%);
+      display: flex; flex-direction: column; align-items: center;
+      position: relative; overflow: hidden;
+    }
+    /* Scattered food illustrations */
+    .di { position: absolute; pointer-events: none; opacity: 0.48; }
+    .di-1 { top:  -8px; left: -28px; width: 135px; transform: rotate(-16deg); }
+    .di-2 { top:  -4px; right: -18px; width: 115px; transform: rotate(19deg); }
+    .di-3 { top: 264px; left: -22px; width: 125px; transform: rotate(-9deg); }
+    .di-4 { top: 278px; right: -16px; width: 110px; transform: rotate(13deg); }
+    .di-5 { bottom: 54px; left: 4px; width: 105px; transform: rotate(-20deg); }
+    .di-6 { bottom: 48px; right: 0px; width: 120px; transform: rotate(17deg); }
+    .content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px 40px; position: relative; z-index: 2; }
+    .card { background: rgba(254,252,248,0.94); backdrop-filter: blur(10px); border: 1.5px solid rgba(139,115,85,0.15); border-radius: 26px; padding: 32px 28px 28px; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 20px 56px rgba(45,45,45,0.12); width: 100%; }
+    .lb-img { width: 80px; height: 80px; object-fit: contain; }
+    .eyebrow { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: #8B7355; }
+    .head { font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 900; line-height: 1.02; color: #2D2D2D; letter-spacing: -1px; text-align: center; }
+    .head em { font-style: italic; color: #8B7355; }
+    .rule { width: 36px; height: 2px; background: rgba(139,115,85,0.3); border-radius: 1px; }
+    .body { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 400; line-height: 1.7; color: #6B6B6B; text-align: center; }
+    .body strong { color: #2D2D2D; font-weight: 600; }
+    .bottom { padding: 0 36px 40px; display: flex; flex-direction: column; align-items: center; gap: 12px; position: relative; z-index: 2; }
+    .cta { width: 100%; background: #8B7355; color: #FEFEFE; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; padding: 16px 0; border-radius: 100px; border: none; cursor: pointer; max-width: 300px; }
+    .hint { font-family: 'Inter', sans-serif; font-size: 11px; color: #8B7355; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="story">
+    <img src="../../assets/drawing2.png" class="di di-1" alt="">
+    <img src="../../assets/drawing4.png" class="di di-2" alt="">
+    <img src="../../assets/drawing5.png" class="di di-3" alt="">
+    <img src="../../assets/drawing3.png" class="di di-4" alt="">
+    <img src="../../assets/drawing6.jpg" class="di di-5" alt="">
+    <img src="../../assets/drawing8.png" class="di di-6" alt="">
+    <div class="content">
+      <div class="card">
+        <img src="../../assets/inspiration.png" class="lb-img" alt="">
+        <span class="eyebrow">Inspiratie</span>
+        <h1 class="head">Nooit meer<br><em>'wat eten<br>we?'</em></h1>
+        <div class="rule"></div>
+        <p class="body">StudentenHapp geeft je <strong>receptideeën</strong> die passen bij je groep en budget.</p>
+      </div>
+    </div>
+    <div class="bottom">
+      <button class="cta">Download gratis — StudentenHapp</button>
+      <span class="hint">↑ swipe up</span>
+    </div>
+  </div>
+</body>
+</html>

@@ -252,7 +252,7 @@ export default function ProfileScreen({ route, navigation }) {
 
   const handleLogout = () => {
     lightHaptic();
-              Alert.alert(
+    Alert.alert(
       t('profile.logout'),
       t('profile.confirmLogout'),
       [
@@ -262,6 +262,15 @@ export default function ProfileScreen({ route, navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Clear push token from server so next account doesn't get this user's notifications
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await supabase.from('profiles').update({ push_token: null }).eq('id', user.id);
+              }
+              
+              // Clear all local cached data
+              await appState.clearAllCachedData();
+              
               await supabase.auth.signOut();
               navigation.navigate('SignIn');
             } catch (error) {
@@ -299,6 +308,7 @@ export default function ProfileScreen({ route, navigation }) {
                 throw rpcError;
               }
 
+              await appState.clearAllCachedData();
               await supabase.auth.signOut();
               
               Alert.alert(t('profile.accountDeleted'), t('profile.accountDeletedSuccess'), [
