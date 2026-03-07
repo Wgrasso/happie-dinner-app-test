@@ -448,7 +448,6 @@ export default function ProfileScreen({ route, navigation }) {
                   onPress={() => handleLanguageChange('nl')}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.langFlag}>🇳🇱</Text>
                   <Text style={[styles.langText, i18n.language === 'nl' && styles.langTextActive]}>NL</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
@@ -456,7 +455,6 @@ export default function ProfileScreen({ route, navigation }) {
                   onPress={() => handleLanguageChange('en')}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.langFlag}>🇬🇧</Text>
                   <Text style={[styles.langText, i18n.language === 'en' && styles.langTextActive]}>EN</Text>
                 </TouchableOpacity>
               </View>

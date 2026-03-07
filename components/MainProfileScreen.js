@@ -487,10 +487,7 @@ export default function MainProfileScreen({
         >
         {/* Title */}
         <View style={styles.createHeader}>
-          <Text style={styles.createTitle}>{t('userRecipes.newRecipeTitle') || 'Nieuw recept'}</Text>
-          <Text style={styles.createSubtext}>
-            {t('userRecipes.creatingNew') || 'Voeg je eerste recept toe'}
-          </Text>
+          <Text style={styles.createTitle}>{t('userRecipes.newRecipeTitle') || 'Recept Toevoegen'}</Text>
         </View>
 
         {/* ── Photo picker (hero) ── */}
