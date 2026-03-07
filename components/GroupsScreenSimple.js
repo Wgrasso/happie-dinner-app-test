@@ -2583,118 +2583,125 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     }, [activeRequestId, expandedOccasionId, expandedGroupId, contextLoadActiveMealRequest, invalidateCache])
   );
 
-  // Real-time subscription for daily responses (when a group is expanded)
-  // Enables live Yes/No updates when other group members respond
+  // Global real-time subscription for daily responses across ALL groups
+  // Updates both expanded and collapsed cards instantly
+  const responseChannelRef = useRef(null);
   useEffect(() => {
-    if (!expandedGroupId) return;
-    
-    let channel = null;
-    
-    try {
-      log.groups('Setting up real-time daily_responses subscription for group:', expandedGroupId);
-      
-      channel = supabase
-        .channel(`responses-${expandedGroupId}-${Date.now()}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'daily_responses',
-          filter: `group_id=eq.${expandedGroupId}`
-        },
-        async (payload) => {
-          log.groups('Daily response change detected via realtime:', payload?.eventType);
-          
-          // Update expanded responses with the new data
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const newResponse = payload.new;
-            if (newResponse && newResponse.user_id) {
-              // Skip updates for current user if we just did an optimistic update
-              // This prevents the glitching between yes/no
-              const isCurrentUser = newResponse.user_id === currentUserId;
-              if (isCurrentUser && optimisticUpdateInProgress.current) {
-                log.groups('Skipping realtime update for current user (optimistic update in progress)');
+    if (!currentUserId || !groups.length) return;
+
+    let retryTimer = null;
+    const subscribe = () => {
+      if (responseChannelRef.current) {
+        try { supabase.removeChannel(responseChannelRef.current); } catch (_) {}
+      }
+      const channel = supabase
+        .channel(`responses-global-${currentUserId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'daily_responses' },
+          (payload) => {
+            const groupId = payload.new?.group_id || payload.old?.group_id;
+            if (!groupId) return;
+
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              const r = payload.new;
+              if (!r?.user_id) return;
+              const isMe = r.user_id === currentUserId;
+
+              if (isMe && optimisticUpdateInProgress.current) {
+                optimisticUpdateInProgress.current = false;
                 return;
               }
-              
-              setExpandedResponses(prev => ({
-                ...prev,
-                [newResponse.user_id]: newResponse.response
-              }));
-              
-              // Update my response if it's the current user
-              if (isCurrentUser) {
-                setMyResponse(newResponse.response);
-                setAllGroupResponses(prev => ({
-                  ...prev,
-                  [expandedGroupId]: newResponse.response
-                }));
+
+              // Always update collapsed card attendance data
+              if (isMe) {
+                setAllGroupResponses(prev => ({ ...prev, [groupId]: r.response }));
               }
-            }
-          } else if (payload.eventType === 'DELETE') {
-            const oldResponse = payload.old;
-            if (oldResponse && oldResponse.user_id) {
-              // Skip updates for current user if optimistic update in progress
-              if (oldResponse.user_id === currentUserId && optimisticUpdateInProgress.current) {
-                log.groups('Skipping realtime delete for current user (optimistic update in progress)');
+
+              // Update expanded card if this group is currently expanded
+              if (expandedGroupIdRef.current === groupId) {
+                setExpandedResponses(prev => ({ ...prev, [r.user_id]: r.response }));
+                if (isMe) setMyResponse(r.response);
+              }
+            } else if (payload.eventType === 'DELETE') {
+              const r = payload.old;
+              if (!r?.user_id) return;
+              const isMe = r.user_id === currentUserId;
+
+              if (isMe && optimisticUpdateInProgress.current) {
+                optimisticUpdateInProgress.current = false;
                 return;
               }
-              
-              setExpandedResponses(prev => {
-                const newResponses = { ...prev };
-                delete newResponses[oldResponse.user_id];
-                return newResponses;
-              });
-              
-              if (oldResponse.user_id === currentUserId) {
-                setMyResponse(null);
-                setAllGroupResponses(prev => {
-                  const newMap = { ...prev };
-                  delete newMap[expandedGroupId];
-                  return newMap;
-                });
+
+              if (isMe) {
+                setAllGroupResponses(prev => { const n = { ...prev }; delete n[groupId]; return n; });
+              }
+
+              if (expandedGroupIdRef.current === groupId) {
+                setExpandedResponses(prev => { const n = { ...prev }; delete n[r.user_id]; return n; });
+                if (isMe) setMyResponse(null);
               }
             }
           }
-        }
-      )
-      .subscribe((status) => {
-        log.groups('Daily responses subscription status:', status);
-      });
-    } catch (error) {
-      // Realtime might not be configured - fail silently
-      log.groups('Could not set up realtime subscription (may not be configured):', error);
-    }
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            retryTimer = setTimeout(subscribe, 3000);
+          }
+        });
+      responseChannelRef.current = channel;
+    };
+
+    subscribe();
 
     return () => {
-      if (channel) {
-        log.groups('Cleaning up daily responses subscription');
-        try {
-          supabase.removeChannel(channel);
-        } catch (e) {}
+      if (retryTimer) clearTimeout(retryTimer);
+      if (responseChannelRef.current) {
+        try { supabase.removeChannel(responseChannelRef.current); } catch (_) {}
+        responseChannelRef.current = null;
       }
     };
-  }, [expandedGroupId, currentUserId]);
+  }, [currentUserId, groups.length]);
 
   // Real-time subscription for group chat unread indicators
+  const chatUnreadChannelRef = useRef(null);
   useEffect(() => {
     if (!currentUserId || !groups.length) return;
-    const channel = supabase
-      .channel(`group-chat-unread-${currentUserId}-${Date.now()}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'group_messages' },
-        (payload) => {
-          const msg = payload.new;
-          if (!msg || msg.user_id === currentUserId) return;
-          if (chatOpenGroupRef.current === msg.group_id) return;
-          setUnreadGroups(prev => ({ ...prev, [msg.group_id]: true }));
-        }
-      )
-      .subscribe();
 
-    return () => { try { supabase.removeChannel(channel); } catch (e) {} };
+    let retryTimer = null;
+    const subscribe = () => {
+      if (chatUnreadChannelRef.current) {
+        try { supabase.removeChannel(chatUnreadChannelRef.current); } catch (_) {}
+      }
+      const channel = supabase
+        .channel(`chat-unread-${currentUserId}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'group_messages' },
+          (payload) => {
+            const msg = payload.new;
+            if (!msg || msg.user_id === currentUserId) return;
+            if (chatOpenGroupRef.current === msg.group_id) return;
+            setUnreadGroups(prev => ({ ...prev, [msg.group_id]: true }));
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            retryTimer = setTimeout(subscribe, 3000);
+          }
+        });
+      chatUnreadChannelRef.current = channel;
+    };
+
+    subscribe();
+
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      if (chatUnreadChannelRef.current) {
+        try { supabase.removeChannel(chatUnreadChannelRef.current); } catch (_) {}
+        chatUnreadChannelRef.current = null;
+      }
+    };
   }, [currentUserId, groups.length]);
 
   // Real-time subscription for new special occasions (participant invites or own creations)
@@ -3151,11 +3158,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           setMyResponse(preloadedData.responses[currentUserId]);
           setAllGroupResponses(prev => ({ ...prev, [groupId]: preloadedData.responses[currentUserId] }));
           optimisticUpdateInProgress.current = true;
-          setTimeout(() => { optimisticUpdateInProgress.current = false; }, 2000);
+          setTimeout(() => { optimisticUpdateInProgress.current = false; }, 1000);
         } else if (currentUserId && allGroupResponses[groupId]) {
           setMyResponse(allGroupResponses[groupId]);
           optimisticUpdateInProgress.current = true;
-          setTimeout(() => { optimisticUpdateInProgress.current = false; }, 2000);
+          setTimeout(() => { optimisticUpdateInProgress.current = false; }, 1000);
         } else {
           setMyResponse(null);
         }
@@ -3294,7 +3301,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       
       if (knownResponse) {
         optimisticUpdateInProgress.current = true;
-        setTimeout(() => { optimisticUpdateInProgress.current = false; }, 2000);
+        setTimeout(() => { optimisticUpdateInProgress.current = false; }, 1000);
       }
       
       if (cachedRequest?.hasActiveRequest && cachedRequest?.request?.id) {
@@ -3432,11 +3439,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       const result = await setMyResponseToday(groupId, newValue);
       const error = result.success ? null : new Error(result.error);
 
-      // Clear optimistic update flag after a short delay to let realtime settle
-      setTimeout(() => {
-        optimisticUpdateInProgress.current = false;
-      }, 1000);
-      
+      // Realtime callback clears optimisticUpdateInProgress; safety fallback in case realtime is slow
+      setTimeout(() => { optimisticUpdateInProgress.current = false; }, 5000);
+
       if (error) {
         debugError('COMPONENTS', 'Error saving response:', error);
         
@@ -4057,6 +4062,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           />
         }
       >
+        {/* "Eet je mee vanavond?" label above groups, right-aligned */}
+        {groups.length > 0 && (
+          <Text style={styles.eatingLabel}>{i18n.language === 'nl' ? 'Eet je mee vanavond?' : 'Joining dinner tonight?'}</Text>
+        )}
+
         {/* Groups section - shows skeletons while loading, empty state, or actual groups */}
         {/* Show skeleton ONLY if loading AND no groups (cached or fresh) */}
         {(loading || contextGroupsLoading) && groups.length === 0 ? (
@@ -4994,6 +5004,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 120,
+  },
+  eatingLabel: {
+    fontSize: 11,
+    fontFamily: 'Inter_400Regular',
+    color: '#B0A8A0',
+    textAlign: 'right',
+    marginBottom: 6,
+    paddingRight: 4,
   },
   emptyState: {
     alignItems: 'center',
