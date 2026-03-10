@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, View, SafeAreaView, Text, Image } from 'react-native';
+import { StyleSheet, View, SafeAreaView, Text, Image, Animated } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import IdeasScreen from './IdeasScreen';
@@ -15,6 +15,8 @@ export default function MainTabNavigator({ navigation, route }) {
   const [currentTab, setCurrentTab] = useState('groups');
   const [pendingOpenRecipe, setPendingOpenRecipe] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [splashVisible, setSplashVisible] = useState(true);
+  const splashOpacity = useRef(new Animated.Value(1)).current;
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [imagesPreloaded, setImagesPreloaded] = useState(true);
   
@@ -39,6 +41,14 @@ export default function MainTabNavigator({ navigation, route }) {
   // Callback for GroupsScreen to signal it's ready
   const onGroupsReady = useCallback(() => {
     setGroupsReady(true);
+    // Fade out splash overlay
+    Animated.timing(splashOpacity, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setSplashVisible(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -176,8 +186,10 @@ export default function MainTabNavigator({ navigation, route }) {
     );
   }
 
+  const tabBg = currentTab === 'groups' ? '#FAF8F5' : '#FEFEFE';
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tabBg }]}>
       <View style={styles.content}>
         {/* Groups Screen - Always mounted, loads first */}
         <View style={[
@@ -231,11 +243,22 @@ export default function MainTabNavigator({ navigation, route }) {
       </View>
       
       <View style={styles.bottomNavContainer}>
-        <BottomTabNavigation 
+        <BottomTabNavigation
           currentScreen={currentTab}
           onTabPress={handleTabPress}
         />
       </View>
+
+      {/* Splash overlay - covers everything until groups is loaded */}
+      {splashVisible && (
+        <Animated.View style={[styles.splashOverlay, { opacity: splashOpacity }]}>
+          <Image
+            source={require('../assets/nieuw_logo_studentenhappie.webp')}
+            style={{ width: 240, height: 240 }}
+            resizeMode="contain"
+          />
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
@@ -243,7 +266,7 @@ export default function MainTabNavigator({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FEFEFE',
+    backgroundColor: '#FAF8F5',
   },
   content: {
     flex: 1,
@@ -287,5 +310,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Inter_700Bold',
     color: '#8B7355',
+  },
+  splashOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FEFEFE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
   },
 }); 

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, Image, Linking, ActivityIndicator, Modal, Animated, Dimensions, Alert } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { getCurrentUserProfile } from '../lib/profileService';
-import { getUserWishlist, addToWishlist as addToWishlistDB, removeFromWishlist as removeFromWishlistDB, clearWishlist as clearWishlistDB } from '../lib/wishlistService';
 import { getRandomRecipes, getAllRecipes } from '../lib/recipesService';
+import { getAllChefs } from '../lib/chefService';
 import { useTranslation } from 'react-i18next';
 import { formatDateLongNL } from '../lib/dateFormatting';
 import { useAppState } from '../lib/AppStateContext';
@@ -42,9 +42,13 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     dietaryRestrictions: []
   });
   
-  // Tab and wishlist states
-  const [activeTab, setActiveTab] = useState('meals'); // 'meals' or 'wishlist'
-  const [wishlist, setWishlist] = useState([]); // Array of saved recipes
+  // Tab and chefs states
+  const [activeTab, setActiveTab] = useState('meals'); // 'meals' or 'chefs'
+  const [chefs, setChefs] = useState([]);
+  const [chefsLoading, setChefsLoading] = useState(false);
+  const [selectedChef, setSelectedChef] = useState(null);
+  const [chefModalVisible, setChefModalVisible] = useState(false);
+  const [chefModalAnimation] = useState(new Animated.Value(0));
   
   // Modal states
   const [selectedRecipe, setSelectedRecipe] = useState(null);
@@ -70,10 +74,10 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     }
   }, [pendingOpenRecipe, isActive]);
 
-  // Reload wishlist when switching to wishlist tab
+  // Load chefs when switching to chefs tab
   useEffect(() => {
-    if (activeTab === 'wishlist') {
-      loadWishlistFromDB();
+    if (activeTab === 'chefs') {
+      loadChefs();
     }
   }, [activeTab]);
 
@@ -99,13 +103,14 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     const initializeData = async () => {
       if (!isInitialized) {
         await loadUserPreferences();
-        await loadWishlistFromDB();
         
         // Check if cached recipes are fresh enough (< 1 hour)
         const cacheAge = cachedRecipesTimestamp ? Date.now() - cachedRecipesTimestamp : Infinity;
         const RECIPE_CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour
         
-        if (cachedRecipes && cachedRecipes.length > 0 && cacheAge < RECIPE_CACHE_EXPIRY) {
+        // Invalidate cache if recipes don't have chef field at all (old cache format)
+        const cacheHasChefField = cachedRecipes && cachedRecipes.length > 0 && 'chef' in cachedRecipes[0];
+        if (cachedRecipes && cachedRecipes.length > 0 && cacheAge < RECIPE_CACHE_EXPIRY && cacheHasChefField) {
           log.cache('Using fresh cached recipes (age:', Math.round(cacheAge / 1000 / 60), 'min)');
           // Already displayed from cache, just mark initialized
         } else {
@@ -190,6 +195,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
           pricePerServing: null,
           cuisine_type: dbRecipe.cuisine_type,
           steps: dbRecipe.steps,
+          chef: dbRecipe.chef || null,
         };
       });
 
@@ -343,81 +349,41 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     }
   };
 
-  const loadWishlistFromDB = async () => {
+  const loadChefs = async () => {
+    setChefsLoading(true);
     try {
-      const result = await getUserWishlist();
+      const result = await getAllChefs();
       if (result.success) {
-        const recipes = result.wishlist.map(item => {
-          const data = item.recipe_data;
-          return {
-            id: data.id,
-            title: data.name || data.title || 'Unnamed Recipe',
-            image: data.image || 'https://images.unsplash.com/photo-1546548970-71785318a17b?w=400&h=300&fit=crop',
-            readyInMinutes: data.cooking_time_minutes || 30,
-            dietary: data.cuisine_type ? [data.cuisine_type] : [],
-            description: data.description || '',
-            sourceUrl: `#recipe-${data.id}`,
-            tastyId: data.id,
-            ingredients: data.ingredients || [],
-            instructions: Array.isArray(data.steps) ? data.steps.join('\n') : (data.instructions || ''),
-            pricePerServing: null,
-            cuisine_type: data.cuisine_type,
-            steps: data.steps,
-            name: data.name,
-          };
-        });
-        setWishlist(recipes);
+        setChefs(result.chefs);
       }
     } catch (error) {
-      console.error('Error loading list:', error);
+      console.error('Error loading chefs:', error);
+    } finally {
+      setChefsLoading(false);
     }
   };
 
-  const addToWishlist = async (recipe) => {
-    if (!isRecipeInWishlist(recipe.id)) {
-      // Optimistic update
-      setWishlist(prev => [...prev, recipe]);
-      
-      const result = await addToWishlistDB(recipe);
-      if (!result.success) {
-        // Revert on failure
-        setWishlist(prev => prev.filter(r => r.id !== recipe.id));
-        console.error('❌ Failed to add to wishlist:', result.error);
-      }
-    }
+  const openChefProfile = (chef) => {
+    setSelectedChef(chef);
+    setChefModalVisible(true);
+    Animated.spring(chefModalAnimation, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start();
   };
 
-  const removeFromWishlist = async (recipeId) => {
-    // Optimistic update
-    setWishlist(prev => prev.filter(recipe => recipe.id !== recipeId));
-    
-    const result = await removeFromWishlistDB(recipeId);
-    if (!result.success) {
-      // Revert on failure (would need to re-fetch to get the exact recipe back)
-      console.error('Failed to remove from wishlist:', result.error);
-      await loadWishlistFromDB(); // Reload to ensure consistency
-    }
-  };
-
-  const isRecipeInWishlist = (recipeId) => {
-    return wishlist.some(recipe => recipe.id === recipeId);
-  };
-
-  const toggleWishlist = async (recipe) => {
-    if (isRecipeInWishlist(recipe.id)) {
-      await removeFromWishlist(recipe.id);
-    } else {
-      await addToWishlist(recipe);
-    }
-  };
-
-  const clearUserWishlist = async () => {
-    const result = await clearWishlistDB();
-    if (result.success) {
-      setWishlist([]);
-    } else {
-      console.error('Failed to clear list:', result.error);
-    }
+  const closeChefModal = () => {
+    Animated.spring(chefModalAnimation, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start(() => {
+      setChefModalVisible(false);
+      setSelectedChef(null);
+    });
   };
 
   // Transform meals from API format to recipe format
@@ -460,47 +426,42 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
   return (
     <SafeAreaView style={styles.container}>
       {/* Background Watermark */}
-      <SafeDrawing 
+      <SafeDrawing
         source={require('../assets/drawing4.png')}
         style={styles.backgroundWatermark}
       />
-      
-      <ScrollView 
+
+      {/* Fixed Header */}
+      <View style={styles.stickyHeader}>
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'meals' && styles.activeTab]}
+            onPress={() => setActiveTab('meals')}
+          >
+            <Text style={[styles.tabText, activeTab === 'meals' && styles.activeTabText]}>
+              {t('meals.title')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'chefs' && styles.activeTab]}
+            onPress={() => setActiveTab('chefs')}
+          >
+            <Text style={[styles.tabText, activeTab === 'chefs' && styles.activeTabText]}>
+              {t('meals.wishlist')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+      </View>
+
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.tabContainer}>
-            <TouchableOpacity 
-              style={[styles.tab, activeTab === 'meals' && styles.activeTab]}
-              onPress={() => setActiveTab('meals')}
-            >
-              <Text style={[styles.tabText, activeTab === 'meals' && styles.activeTabText]}>
-                {t('meals.title')}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.tab, activeTab === 'wishlist' && styles.activeTab]}
-              onPress={() => setActiveTab('wishlist')}
-            >
-              <Text style={[styles.tabText, activeTab === 'wishlist' && styles.activeTabText]}>
-                {t('meals.wishlist')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          
-          {activeTab === 'meals' && (
+        {activeTab === 'meals' && (
           <Text style={styles.dateText}>{getCurrentDate()}</Text>
-          )}
-
-          {activeTab === 'wishlist' && (
-            <Text style={styles.dateText}>
-              {wishlist.length === 1 ? t('recipes.savedRecipes', { count: 1 }) : t('recipes.savedRecipesPlural', { count: wishlist.length })}
-            </Text>
-          )}
-        </View>
+        )}
 
         {/* Content based on active tab */}
         {activeTab === 'meals' ? (
@@ -522,15 +483,15 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                   transition={200}
                   cachePolicy="memory-disk"
                 />
-                {!isRecipeInWishlist(recipe.id) && (
-                  <TouchableOpacity 
-                    style={styles.wishlistButtonOverlay}
+                {recipe.chef && (
+                  <TouchableOpacity
+                    style={styles.chefTagOverlay}
                     onPress={(e) => {
                       e.stopPropagation();
-                      addToWishlist(recipe);
+                      openChefProfile(recipe.chef);
                     }}
                   >
-                    <Text style={styles.addIcon}>+</Text>
+                    <Text style={styles.chefTagText}>@{recipe.chef.tag}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -567,59 +528,45 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
         </View>
         ) : (
           <View style={styles.recipesContainer}>
-            <Text style={styles.sectionTitle}>{t('recipes.yourWishlist')}</Text>
-            
-            {wishlist.length === 0 ? (
+            <Text style={styles.sectionTitle}>Chefs</Text>
+
+            {chefsLoading ? (
               <View style={styles.emptyWishlist}>
-                <Text style={styles.emptyWishlistIcon}>+</Text>
-                <Text style={styles.emptyWishlistTitle}>{t('recipes.noSavedRecipes')}</Text>
-                <Text style={styles.emptyWishlistText}>
-                  {t('recipes.tapPlusToSave')}
-                </Text>
+                <ActivityIndicator size="large" color="#8B7355" />
+              </View>
+            ) : chefs.length === 0 ? (
+              <View style={styles.emptyWishlist}>
+                <Text style={styles.emptyWishlistTitle}>{t('common.loading')}</Text>
               </View>
             ) : (
-              wishlist.map((recipe) => (
-                <TouchableOpacity 
-                  key={recipe.id} 
+              chefs.map((chef) => (
+                <TouchableOpacity
+                  key={chef.id}
                   style={styles.recipeCard}
-                  onPress={() => openRecipe(recipe)}
+                  onPress={() => openChefProfile(chef)}
                   activeOpacity={0.9}
                 >
                   <View style={styles.imageContainer}>
-                    <ExpoImage 
-                      source={{ uri: recipe.image }} 
-                      style={styles.recipeImage}
-                      contentFit="cover"
-                      transition={200}
-                      cachePolicy="memory-disk"
-                    />
+                    {chef.profile_image ? (
+                      <ExpoImage
+                        source={{ uri: chef.profile_image }}
+                        style={styles.recipeImage}
+                        contentFit="cover"
+                        transition={200}
+                        cachePolicy="memory-disk"
+                      />
+                    ) : (
+                      <View style={[styles.recipeImage, { backgroundColor: '#E8E6E3', justifyContent: 'center', alignItems: 'center' }]}>
+                        <Text style={{ fontSize: 48, color: '#8B7355' }}>{chef.name.charAt(0)}</Text>
+                      </View>
+                    )}
                   </View>
-                  
+
                   <View style={styles.recipeContent}>
-                    <View style={styles.recipeHeader}>
-                      <Text style={styles.recipeTitle}>{recipe.title}</Text>
-                      <View style={styles.recipeMetrics}>
-                        <View style={styles.timeContainer}>
-                          <Text style={styles.timeText}>{formatTime(recipe.readyInMinutes)}</Text>
-                        </View>
-                        {recipe.pricePerServing && (
-                          <View style={styles.priceContainer}>
-                            <Text style={styles.priceText}>€{recipe.pricePerServing.toFixed(2)}</Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                    
-                    <Text style={styles.recipeDescription}>{recipe.description}</Text>
-                    
-                    {recipe.dietary && recipe.dietary.length > 0 && (
-                      <View style={styles.dietaryTags}>
-                        {recipe.dietary.slice(0, 2).map((dietary, index) => (
-                          <View key={index} style={styles.dietaryTag}>
-                            <Text style={styles.dietaryTagText}>{dietary}</Text>
-                          </View>
-                        ))}
-                      </View>
+                    <Text style={styles.recipeTitle}>{chef.name}</Text>
+                    <Text style={[styles.recipeDescription, { color: '#8B7355', marginBottom: 8 }]}>@{chef.tag}</Text>
+                    {chef.description && (
+                      <Text style={styles.recipeDescription} numberOfLines={2}>{chef.description}</Text>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -651,29 +598,6 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
           </View>
         )}
         
-        {activeTab === 'wishlist' && wishlist.length > 0 && (
-          <View style={styles.bottomAction}>
-            <TouchableOpacity 
-              style={styles.clearWishlistButton}
-              onPress={() => {
-                Alert.alert(
-                  t('recipes.clearWishlist'),
-                  t('recipes.confirmClearWishlist'),
-                  [
-                    { text: t('common.cancel'), style: 'cancel' },
-                    { 
-                      text: t('recipes.clear'), 
-                      style: 'destructive',
-                      onPress: () => clearUserWishlist()
-                    }
-                  ]
-                );
-              }}
-            >
-              <Text style={styles.clearWishlistButtonText}>{t('recipes.clearWishlist')}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </ScrollView>
 
       {/* Recipe Details Modal */}
@@ -794,36 +718,19 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                       </View>
                     ) : null}
 
-                    {/* Action Buttons — hidden for user-created recipes (already theirs) */}
-                    {selectedRecipe && !selectedRecipe.isUserRecipe && (
-                      <View style={styles.modalActions}>
-                        {isRecipeInWishlist(selectedRecipe.id) ? (
-                          <TouchableOpacity
-                            style={styles.modalRemoveButton}
-                            onPress={async () => {
-                              await removeFromWishlist(selectedRecipe.id);
-                              if (activeTab === 'wishlist') {
-                                closeModal();
-                              }
-                            }}
-                          >
-                            <Text style={styles.modalRemoveIcon}>-</Text>
-                            <Text style={styles.modalRemoveText}>
-                              {t('recipes.removeFromList')}
-                            </Text>
-                          </TouchableOpacity>
-                        ) : (
-                          <TouchableOpacity
-                            style={styles.modalWishlistButton}
-                            onPress={() => addToWishlist(selectedRecipe)}
-                          >
-                            <Text style={styles.modalAddIcon}>+</Text>
-                            <Text style={styles.modalWishlistText}>
-                              {t('recipes.addToList')}
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
+                    {/* Chef tag in recipe modal */}
+                    {selectedRecipe?.chef && (
+                      <TouchableOpacity
+                        style={styles.modalChefTag}
+                        onPress={() => {
+                          const chef = selectedRecipe.chef;
+                          closeModal();
+                          setTimeout(() => openChefProfile(chef), 400);
+                        }}
+                      >
+                        <Text style={styles.modalChefTagText}>@{selectedRecipe.chef.tag}</Text>
+                        <Text style={styles.modalChefName}>{selectedRecipe.chef.name}</Text>
+                      </TouchableOpacity>
                     )}
                   </View>
                 </>
@@ -832,6 +739,91 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                   <Text style={styles.modalTitle}>{t('recipes.loadingRecipe')}</Text>
                   <Text style={styles.metricValue}>{t('recipes.recipeNotAvailable')}</Text>
                 </View>
+              )}
+            </ScrollView>
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {/* Chef Profile Modal */}
+      <Modal
+        visible={chefModalVisible}
+        transparent={true}
+        animationType="none"
+        onRequestClose={closeChefModal}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackground}
+            activeOpacity={1}
+            onPress={closeChefModal}
+          />
+
+          <Animated.View
+            style={[
+              styles.modalContainer,
+              {
+                transform: [
+                  {
+                    scale: chefModalAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.8, 1],
+                    }),
+                  },
+                ],
+                opacity: chefModalAnimation,
+              },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <TouchableOpacity style={styles.backButton} onPress={closeChefModal}>
+                <Text style={styles.backArrow}>←</Text>
+                <Text style={styles.backText}>{t('common.back')}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+              {selectedChef && (
+                <>
+                  {selectedChef.profile_image ? (
+                    <ExpoImage
+                      source={{ uri: selectedChef.profile_image }}
+                      style={styles.modalImage}
+                      contentFit="cover"
+                      transition={300}
+                      cachePolicy="memory-disk"
+                    />
+                  ) : (
+                    <View style={[styles.modalImage, { backgroundColor: '#E8E6E3', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={{ fontSize: 64, color: '#8B7355' }}>{selectedChef.name.charAt(0)}</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.modalInfo}>
+                    <Text style={styles.modalTitle}>{selectedChef.name}</Text>
+                    <Text style={styles.chefProfileTag}>@{selectedChef.tag}</Text>
+
+                    {selectedChef.description && (
+                      <View style={styles.modalDescription}>
+                        <Text style={styles.descriptionText}>{selectedChef.description}</Text>
+                      </View>
+                    )}
+
+                    {selectedChef.links && Object.keys(selectedChef.links).length > 0 && (
+                      <View style={styles.chefLinksContainer}>
+                        {Object.entries(selectedChef.links).map(([platform, url]) => (
+                          <TouchableOpacity
+                            key={platform}
+                            style={styles.chefLinkButton}
+                            onPress={() => Linking.openURL(url)}
+                          >
+                            <Text style={styles.chefLinkText}>{platform}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </>
               )}
             </ScrollView>
           </Animated.View>
@@ -849,8 +841,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 95, // Adjusted for transparent nav
+    paddingTop: 4,
+    paddingBottom: 95,
   },
   loadingContainer: {
     flex: 1,
@@ -864,6 +856,14 @@ const styles = StyleSheet.create({
     color: '#6B6B6B',
     marginTop: 16,
     textAlign: 'center',
+  },
+  stickyHeader: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 8,
+    backgroundColor: '#FEFEFE',
+    zIndex: 10,
   },
   header: {
     alignItems: 'center',
@@ -885,7 +885,7 @@ const styles = StyleSheet.create({
     color: '#6B6B6B',
     textAlign: 'center',
     letterSpacing: 0.1,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   personalizedText: {
     fontFamily: 'Inter_400Regular',
@@ -1277,7 +1277,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F3F0',
     borderRadius: 8,
     padding: 4,
-    marginBottom: 16,
+    marginBottom: 0,
   },
   tab: {
     flex: 1,
@@ -1436,5 +1436,69 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#C62828',
     letterSpacing: 0.2,
+  },
+  // Chef tag on recipe card (overlay on image)
+  chefTagOverlay: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  chefTagText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#FEFEFE',
+    letterSpacing: 0.1,
+  },
+  // Chef tag in recipe detail modal
+  modalChefTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F3F0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 16,
+    gap: 8,
+  },
+  modalChefTagText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: '#8B7355',
+  },
+  modalChefName: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#6B6B6B',
+  },
+  // Chef profile modal
+  chefProfileTag: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 16,
+    color: '#8B7355',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  chefLinksContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 16,
+  },
+  chefLinkButton: {
+    backgroundColor: '#8B7355',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  chefLinkText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: '#FEFEFE',
+    textTransform: 'capitalize',
   },
 }); 

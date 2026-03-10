@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Easing, Platform } from 'react-native';
+import { Easing, Platform, View, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -8,9 +8,10 @@ import { useFonts, PlayfairDisplay_400Regular, PlayfairDisplay_700Bold } from '@
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 
 import './lib/i18n'; // Initialize i18n
-import { 
-  addNotificationReceivedListener, 
-  addNotificationResponseListener 
+import { supabase } from './lib/supabase';
+import {
+  addNotificationReceivedListener,
+  addNotificationResponseListener
 } from './lib/notificationService';
 import { AppStateProvider } from './lib/AppStateContext';
 import { ToastProvider } from './components/ui/Toast';
@@ -110,6 +111,8 @@ export default function App() {
   const responseListener = useRef();
   const navigationRef = useRef();
 
+  const [initialRoute, setInitialRoute] = useState(null);
+
   let [fontsLoaded] = useFonts({
     PlayfairDisplay_400Regular,
     PlayfairDisplay_700Bold,
@@ -118,6 +121,19 @@ export default function App() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+
+  // Check session before rendering any screen
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setInitialRoute(session ? 'MainTabs' : 'SignIn');
+      } catch (e) {
+        setInitialRoute('SignIn');
+      }
+    };
+    checkSession();
+  }, []);
 
   // Set up notification listeners
   useEffect(() => {
@@ -158,8 +174,16 @@ export default function App() {
     };
   }, []);
 
-  if (!fontsLoaded) {
-    return null;
+  if (!fontsLoaded || !initialRoute) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#FEFEFE', justifyContent: 'center', alignItems: 'center' }}>
+        <Image
+          source={require('./assets/nieuw_logo_studentenhappie.webp')}
+          style={{ width: 240, height: 240 }}
+          resizeMode="contain"
+        />
+      </View>
+    );
   }
 
   return (
@@ -169,7 +193,7 @@ export default function App() {
       <NavigationContainer ref={navigationRef}>
         <StatusBar style="dark" />
         <Stack.Navigator
-          initialRouteName="SignIn"
+          initialRouteName={initialRoute}
           screenOptions={{
             headerShown: false,
             cardStyle: { backgroundColor: '#FEFEFE' },

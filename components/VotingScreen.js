@@ -566,10 +566,10 @@ export default function VotingScreen({ route, navigation }) {
           // Ensure we have all the data we need
           name: data.name || original.name || 'Unknown Recipe',
           description: data.description || original.description || '',
-          ingredients: data.sections?.[0]?.components || original.ingredients || [],
-          instructions: data.instructions || original.steps || [],
+          ingredients: data.ingredients || data.sections?.[0]?.components || original.ingredients || [],
+          instructions: data.steps || data.instructions || original.steps || [],
           cooking_time: data.total_time_minutes || original.cooking_time_minutes,
-          cuisine_type: data.tags?.[0] || original.cuisine_type || '',
+          cuisine_type: data.cuisine_type || data.tags?.[0] || original.cuisine_type || '',
           // Keep original data reference
           originalRecipeData: original
         }
@@ -818,11 +818,17 @@ export default function VotingScreen({ route, navigation }) {
                 <Text style={styles.swipeOverlayText}>{t('voting.dislike')}</Text>
               </Animated.View>
             
+            {currentMeal.meal_data.chef && (
+              <View style={styles.votingChefTag}>
+                <Text style={styles.votingChefTagText}>@{currentMeal.meal_data.chef.tag}</Text>
+              </View>
+            )}
+
             <View style={styles.mealInfo}>
               <Text style={styles.mealTitle} numberOfLines={2}>
                 {currentMeal.meal_data.name || t('recipes.defaultName')}
               </Text>
-              
+
               <View style={styles.mealMeta}>
                 <Text style={styles.mealTime}>
                   {formatTime(currentMeal.meal_data.total_time_minutes)}
@@ -972,6 +978,14 @@ export default function VotingScreen({ route, navigation }) {
                     </View>
                   </View>
                   
+                  {/* Chef tag */}
+                  {selectedRecipe.meal_data.chef && (
+                    <View style={styles.votingModalChefTag}>
+                      <Text style={styles.votingModalChefText}>@{selectedRecipe.meal_data.chef.tag}</Text>
+                      <Text style={styles.votingModalChefName}>{selectedRecipe.meal_data.chef.name}</Text>
+                    </View>
+                  )}
+
                   {/* Description */}
                   {selectedRecipe.meal_data.description && (
                     <View style={styles.modalSection}>
@@ -1759,5 +1773,43 @@ const styles = StyleSheet.create({
   },
   modalBottomSpacer: {
     height: 20,
+  },
+  votingChefTag: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    zIndex: 5,
+  },
+  votingChefTagText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#FEFEFE',
+    letterSpacing: 0.1,
+  },
+  votingModalChefTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F3F0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    gap: 8,
+  },
+  votingModalChefText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: '#8B7355',
+  },
+  votingModalChefName: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#6B6B6B',
   },
 }); 

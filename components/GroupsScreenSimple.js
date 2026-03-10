@@ -85,6 +85,7 @@ const formatTimeDisplay = (t) => {
 // YES/NO TOGGLE COMPONENT
 // ============================================
 const YesNoToggle = ({ value, onChange, disabled = false }) => {
+  const { t } = useTranslation();
   const slideAnimation = useRef(new Animated.Value(value === 'yes' ? 1 : value === 'no' ? 0 : 0.5)).current;
   
   useEffect(() => {
@@ -140,7 +141,7 @@ const YesNoToggle = ({ value, onChange, disabled = false }) => {
             toggleStyles.buttonText,
             isNo && toggleStyles.buttonTextActive
           ]}>
-            Nee
+            {t('dinner.no')}
           </Text>
         </Animated.View>
       </TouchableOpacity>
@@ -161,7 +162,7 @@ const YesNoToggle = ({ value, onChange, disabled = false }) => {
             toggleStyles.buttonText,
             isYes && toggleStyles.buttonTextActive
           ]}>
-            Ja
+            {t('dinner.yes')}
           </Text>
         </Animated.View>
       </TouchableOpacity>
@@ -510,11 +511,11 @@ const ExpandableGroupCard = React.memo(({
               <Text style={[
                 cardStyles.responseBtnText,
                 myResponse === 'yes' && cardStyles.responseBtnTextActive
-              ]}>Ja</Text>
+              ]}>{ t('dinner.yes') }</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                cardStyles.responseBtn, 
+                cardStyles.responseBtn,
                 cardStyles.responseBtnNo,
                 myResponse === 'no' && cardStyles.responseBtnNoActive
               ]}
@@ -526,7 +527,7 @@ const ExpandableGroupCard = React.memo(({
               <Text style={[
                 cardStyles.responseBtnText,
                 myResponse === 'no' && cardStyles.responseBtnTextActive
-              ]}>Nee</Text>
+              ]}>{ t('dinner.no') }</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity
@@ -4021,8 +4022,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       {/* Header - Always visible immediately */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{t('groups.title')}</Text>
-          <Text style={styles.headerSubtitle}>{(() => {
+          <Text style={styles.headerTitle}>{(() => {
             const locale = i18n.language === 'nl' ? 'nl-NL' : 'en-US';
             const formatted = new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
             return formatted.charAt(0).toUpperCase() + formatted.slice(1);
@@ -4054,10 +4054,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           />
         }
       >
-        {/* "Eet je mee vanavond?" label above groups, right-aligned */}
-        {groups.length > 0 && (
-          <Text style={styles.eatingLabel}>{i18n.language === 'nl' ? 'Eet je mee vanavond?' : 'Joining dinner tonight?'}</Text>
-        )}
 
         {/* Groups section - shows skeletons while loading, empty state, or actual groups */}
         {/* Show skeleton ONLY if loading AND no groups (cached or fresh) */}
@@ -4201,11 +4197,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         <Text style={[
                           styles.responseButtonTextSmall,
                           myResponse === 'yes' && styles.responseButtonTextActive
-                        ]}>Ja</Text>
+                        ]}>{ t('dinner.yes') }</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={[
-                          styles.responseButtonSmall, 
+                          styles.responseButtonSmall,
                           styles.responseButtonNo,
                           myResponse === 'no' && styles.responseButtonNoActive
                         ]}
@@ -4218,7 +4214,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         <Text style={[
                           styles.responseButtonTextSmall,
                           myResponse === 'no' && styles.responseButtonTextActive
-                        ]}>Nee</Text>
+                        ]}>{ t('dinner.no') }</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -4432,7 +4428,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
 
       {/* Bottom Actions */}
       <View style={styles.bottomActions}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.actionButton}
           onPress={() => { lightHaptic(); setShowCreateModal(true); }}
         >
@@ -4888,10 +4884,10 @@ const styles = StyleSheet.create({
   // Background Drawings - 2 layers, spread far apart, very subtle
   backgroundDrawingMain: {
     position: 'absolute',
-    top: -screenHeight * 0.05,
-    left: -screenWidth * 0.4,
-    width: screenWidth * 0.6,
-    height: screenWidth * 0.6,
+    top: 90,
+    left: 5,
+    width: screenWidth * 0.35,
+    height: screenWidth * 0.35,
     opacity: 0.04,
     zIndex: -1,
     transform: [{ rotate: '-20deg' }],
@@ -4938,10 +4934,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingTop: 20,
-    paddingBottom: 24,
+    paddingBottom: 8,
     borderBottomWidth: 0,
     borderBottomColor: 'transparent',
-    backgroundColor: '#FAF8F5',
+    backgroundColor: 'transparent',
   },
   headerContent: {
     flex: 1,

@@ -24,25 +24,7 @@ export default function SignInScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
   const [resetLoading, setResetLoading] = useState(false);
-
-  // Check for existing session on mount (real Supabase) or mock session
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          navigation.replace('MainTabs', { screen: 'groups' });
-        }
-      } catch (e) {
-        // Ignore
-      } finally {
-        setCheckingSession(false);
-      }
-    };
-    checkSession();
-  }, [navigation]);
 
   const handleForgotPassword = async () => {
     if (!email) {
@@ -113,27 +95,16 @@ export default function SignInScreen({ navigation }) {
     }
   };
 
-  // Show nothing while checking for existing session
-  if (checkingSession) {
-    return (
-      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Image 
-          source={require('../assets/nieuw_logo_studentenhappie.webp')}
-          style={{ width: 240, height: 240 }}
-          resizeMode="contain"
-        />
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
-      <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
+      <Pressable style={{ flex: 1 }} onPress={Platform.OS !== 'web' ? Keyboard.dismiss : undefined} accessible={false}>
         {/* Custom Drawing Background */}
-        <SafeDrawing 
-          source={require('../assets/drawing1.png')}
-          style={styles.backgroundDrawing}
-        />
+        <View style={styles.backgroundDrawing} pointerEvents="none">
+          <SafeDrawing 
+            source={require('../assets/drawing1.png')}
+            style={{ width: '100%', height: '100%' }}
+          />
+        </View>
         
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
