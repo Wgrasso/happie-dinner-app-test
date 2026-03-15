@@ -1,6 +1,7 @@
 import React from "react";
 import { Composition } from "remotion";
 import { AppDemo } from "./templates/AppDemo";
+import { MemeFormat } from "./templates/MemeFormat";
 import { StatReel } from "./templates/StatReel";
 import { SwipeTinder } from "./templates/SwipeTinder";
 import { TekstStory } from "./templates/TekstStory";
@@ -111,6 +112,24 @@ export const RemotionRoot: React.FC = () => (
         features: ["Gratis", "Budget recepten", "Met je huisgenoten"],
         music: "",
         durationInSeconds: 13,
+      }}
+    />
+    <Composition
+      id="MemeFormat"
+      component={MemeFormat as unknown as React.ComponentType<Record<string, unknown>>}
+      width={1080}
+      height={1920}
+      fps={30}
+      calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
+        durationInFrames: (props.durationInSeconds as number) * 30,
+        props,
+      })}
+      defaultProps={{
+        variant: "split" as const,
+        links: { tekst: "Thuisbezorgd bestellen", emoji: "😩" },
+        rechts: { tekst: "Met Happie koken", emoji: "😎" },
+        music: "",
+        durationInSeconds: 8,
       }}
     />
   </>
