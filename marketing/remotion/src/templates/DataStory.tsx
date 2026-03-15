@@ -6,14 +6,18 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { TransitionSeries } from "@remotion/transitions";
+import { wipe } from "@remotion/transitions/wipe";
+import { fade } from "@remotion/transitions/fade";
+import { springTiming, linearTiming } from "@remotion/transitions";
 import { AnimatedText } from "../components/AnimatedText";
 import { BackgroundMusic } from "../components/BackgroundMusic";
 import { CountUp } from "../components/CountUp";
 import { Logo } from "../components/Logo";
 import { PhotoBackground } from "../components/PhotoBackground";
 import { ProgressBar } from "../components/ProgressBar";
-import { SceneTransition } from "../components/SceneTransition";
 import { VideoBackground } from "../components/VideoBackground";
+import { VoteCounter, FoodEmoji } from "../components/lottie-style";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/fonts";
 
@@ -36,8 +40,7 @@ export interface DataStoryProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: BIG STAT (frames 0-120) ──────────────────────────────────────
-// Dark bg with subtle photo parallax. Massive CountUp. Spring bounce.
+// ─── Scene 1: BIG STAT — VoteCounter with progress ring ─────────────────────
 
 const StatScene: React.FC<{
   bgPhoto: string;
@@ -78,16 +81,15 @@ const StatScene: React.FC<{
           gap: 20,
         }}
       >
-        <div style={{ width: "100%", height: 220 }}>
-          <CountUp
-            target={statNummer}
-            suffix={statSuffix}
-            startFrame={5}
-            durationFrames={80}
-            color={colors.white}
-            fontSize={180}
-          />
-        </div>
+        {/* VoteCounter as the main stat display */}
+        <VoteCounter
+          startFrame={5}
+          current={statNummer}
+          total={Math.ceil(statNummer * 1.25)}
+          label={statSuffix}
+          size={260}
+          accentColor={colors.logoCoral}
+        />
         <AnimatedText
           text={statLabel}
           fontSize={32}
@@ -103,19 +105,18 @@ const StatScene: React.FC<{
   );
 };
 
-// ─── Scene 2: STAT LABEL (frames 120-180) ──────────────────────────────────
-// Zoom blur transition feel
+// ─── Scene 2: STAT LABEL — zoom blur transition ────────────────────────────
 
 const TransitionScene: React.FC<{
   bgPhoto: string;
 }> = ({ bgPhoto }) => {
   const frame = useCurrentFrame();
 
-  const blurAmount = interpolate(frame, [120, 150, 180], [0, 8, 0], {
+  const blurAmount = interpolate(frame, [0, 30, 60], [0, 8, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const scale = interpolate(frame, [120, 150, 180], [1, 1.1, 1], {
+  const scale = interpolate(frame, [0, 30, 60], [1, 1.1, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -152,7 +153,7 @@ const TransitionScene: React.FC<{
           color={colors.logoCoral}
           animation="highlight"
           highlightColor="rgba(244,132,95,0.3)"
-          startFrame={140}
+          startFrame={20}
           shadow
         />
       </AbsoluteFill>
@@ -160,8 +161,7 @@ const TransitionScene: React.FC<{
   );
 };
 
-// ─── Scene 3: CHART — ProgressBar (frames 180-420) ─────────────────────────
-// Horizontal bars, staggered fill, winner glows
+// ─── Scene 3: CHART — ProgressBar ──────────────────────────────────────────
 
 const ChartScene: React.FC<{
   chartData: { label: string; value: number; highlight?: boolean }[];
@@ -174,11 +174,11 @@ const ChartScene: React.FC<{
     color: item.highlight ? colors.logoCoral : undefined,
   }));
 
-  const titleOpacity = interpolate(frame, [180, 200], [0, 1], {
+  const titleOpacity = interpolate(frame, [0, 20], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const titleY = interpolate(frame, [180, 200], [20, 0], {
+  const titleY = interpolate(frame, [0, 20], [20, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -215,13 +215,12 @@ const ChartScene: React.FC<{
           </span>
         </div>
       )}
-      <ProgressBar items={progressItems} startFrame={200} />
+      <ProgressBar items={progressItems} startFrame={20} />
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 4: VIDEO BREAK (frames 420-540) ──────────────────────────────────
-// Cooking pasta close-up, slow-mo, warm. Just vibes then text.
+// ─── Scene 4: VIDEO BREAK + FoodEmoji ───────────────────────────────────────
 
 const VideoBreakScene: React.FC = () => {
   return (
@@ -234,8 +233,10 @@ const VideoBreakScene: React.FC = () => {
       <AbsoluteFill
         style={{
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          gap: 24,
         }}
       >
         <AnimatedText
@@ -244,15 +245,21 @@ const VideoBreakScene: React.FC = () => {
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={480}
+          startFrame={30}
           shadow
+        />
+        <FoodEmoji
+          startFrame={50}
+          emojis={["🍝", "🥘", "🍲", "🥗"]}
+          size={280}
+          emojiSize={42}
         />
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 5: COMPARISON — Split screen (frames 540-690) ────────────────────
+// ─── Scene 5: COMPARISON — Split screen ─────────────────────────────────────
 
 const CompareScene: React.FC<{
   vergelijking: {
@@ -263,30 +270,27 @@ const CompareScene: React.FC<{
   };
 }> = ({ vergelijking }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
-  const relFrame = frame - 540;
-
-  const linksOpacity = interpolate(relFrame, [0, 25], [0, 1], {
+  const linksOpacity = interpolate(frame, [0, 25], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const linksX = interpolate(relFrame, [0, 25], [-80, 0], {
+  const linksX = interpolate(frame, [0, 25], [-80, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const rechtsOpacity = interpolate(relFrame, [15, 40], [0, 1], {
+  const rechtsOpacity = interpolate(frame, [15, 40], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const rechtsX = interpolate(relFrame, [15, 40], [80, 0], {
+  const rechtsX = interpolate(frame, [15, 40], [80, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   // Divider animation
-  const dividerHeight = interpolate(relFrame, [5, 30], [0, 400], {
+  const dividerHeight = interpolate(frame, [5, 30], [0, 400], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -390,7 +394,7 @@ const CompareScene: React.FC<{
   );
 };
 
-// ─── Scene 6: CONCLUSIE (frames 690-780) ────────────────────────────────────
+// ─── Scene 6: CONCLUSIE ─────────────────────────────────────────────────────
 
 const ConclusieScene: React.FC<{
   conclusie: string;
@@ -410,7 +414,7 @@ const ConclusieScene: React.FC<{
         fontFamily="heading"
         color={colors.logoCoral}
         animation="popIn"
-        startFrame={700}
+        startFrame={10}
         shadow
         glow="rgba(244,132,95,0.3)"
         maxWidth={800}
@@ -419,7 +423,7 @@ const ConclusieScene: React.FC<{
   );
 };
 
-// ─── Scene 7: CTA (frames 780-900) ──────────────────────────────────────────
+// ─── Scene 7: CTA ───────────────────────────────────────────────────────────
 
 const CTAScene: React.FC<{
   ctaPhoto: string;
@@ -442,14 +446,14 @@ const CTAScene: React.FC<{
           gap: 36,
         }}
       >
-        <Logo animation="fadeIn" size={650} startFrame={790} />
+        <Logo animation="fadeIn" size={650} startFrame={10} />
         <AnimatedText
           text="Download Happie"
           fontSize={36}
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={820}
+          startFrame={40}
           shadow
         />
       </AbsoluteFill>
@@ -472,45 +476,77 @@ export const DataStory: React.FC<DataStoryProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Scene 1: Big stat (0-120) */}
-      <SceneTransition enterFrame={0} exitFrame={120} fadeFrames={12}>
-        <StatScene
-          bgPhoto={bgPhoto}
-          statNummer={statNummer}
-          statSuffix={statSuffix}
-          statLabel={statLabel}
+      <TransitionSeries>
+        {/* Scene 1: Big stat with VoteCounter (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
+          <StatScene
+            bgPhoto={bgPhoto}
+            statNummer={statNummer}
+            statSuffix={statSuffix}
+            statLabel={statLabel}
+          />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
         />
-      </SceneTransition>
 
-      {/* Scene 2: Transition (120-180) */}
-      <SceneTransition enterFrame={120} exitFrame={180} fadeFrames={10}>
-        <TransitionScene bgPhoto={bgPhoto} />
-      </SceneTransition>
+        {/* Scene 2: Transition text (60 frames) */}
+        <TransitionSeries.Sequence durationInFrames={60}>
+          <TransitionScene bgPhoto={bgPhoto} />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 3: Chart — horizontal ProgressBars (180-420) */}
-      <SceneTransition enterFrame={180} exitFrame={420} fadeFrames={15}>
-        <ChartScene chartData={chartData} chartTitle={chartTitle} />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={wipe()}
+          timing={springTiming({ config: { damping: 12 } })}
+        />
 
-      {/* Scene 4: Video break — cooking, slow-mo (420-540) */}
-      <SceneTransition enterFrame={420} exitFrame={540} fadeFrames={15}>
-        <VideoBreakScene />
-      </SceneTransition>
+        {/* Scene 3: Chart — horizontal ProgressBars (240 frames) */}
+        <TransitionSeries.Sequence durationInFrames={240}>
+          <ChartScene chartData={chartData} chartTitle={chartTitle} />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 5: Comparison split screen (540-690) */}
-      <SceneTransition enterFrame={540} exitFrame={690} fadeFrames={12}>
-        <CompareScene vergelijking={vergelijking} />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
 
-      {/* Scene 6: Conclusie (690-780) */}
-      <SceneTransition enterFrame={690} exitFrame={780} fadeFrames={12}>
-        <ConclusieScene conclusie={vergelijking.conclusie} />
-      </SceneTransition>
+        {/* Scene 4: Video break + FoodEmoji (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
+          <VideoBreakScene />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 7: CTA (780-900) */}
-      <SceneTransition enterFrame={780} exitFrame={900} fadeFrames={15}>
-        <CTAScene ctaPhoto={ctaPhoto} />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 12 })}
+        />
+
+        {/* Scene 5: Comparison split screen (150 frames) */}
+        <TransitionSeries.Sequence durationInFrames={150}>
+          <CompareScene vergelijking={vergelijking} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 12 })}
+        />
+
+        {/* Scene 6: Conclusie (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <ConclusieScene conclusie={vergelijking.conclusie} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
+
+        {/* Scene 7: CTA (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
+          <CTAScene ctaPhoto={ctaPhoto} />
+        </TransitionSeries.Sequence>
+      </TransitionSeries>
 
       <BackgroundMusic src={music} />
     </AbsoluteFill>

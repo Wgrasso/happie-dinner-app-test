@@ -6,14 +6,19 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { TransitionSeries } from "@remotion/transitions";
+import { slide } from "@remotion/transitions/slide";
+import { clockWipe } from "@remotion/transitions/clock-wipe";
+import { fade } from "@remotion/transitions/fade";
+import { springTiming, linearTiming } from "@remotion/transitions";
 import { AnimatedText } from "../components/AnimatedText";
 import { BackgroundMusic } from "../components/BackgroundMusic";
 import { CountUp } from "../components/CountUp";
 import { Logo } from "../components/Logo";
 import { PhotoBackground } from "../components/PhotoBackground";
 import { PriceTag } from "../components/PriceTag";
-import { SceneTransition } from "../components/SceneTransition";
 import { VideoBackground } from "../components/VideoBackground";
+import { CookingPot, FoodEmoji } from "../components/lottie-style";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/fonts";
 
@@ -28,7 +33,7 @@ export interface FoodRevealProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: HOOK — Food photo, massive price glows in (frames 0-90) ──────
+// ─── Scene 1: HOOK — Food photo, massive price glows in ─────────────────────
 
 const HookScene: React.FC<{
   photo: string;
@@ -67,7 +72,7 @@ const HookScene: React.FC<{
   );
 };
 
-// ─── Scene 2: RECIPE NAME over photo (frames 90-120) ───────────────────────
+// ─── Scene 2: RECIPE NAME over photo ────────────────────────────────────────
 
 const RecipeNameScene: React.FC<{
   photo: string;
@@ -108,7 +113,7 @@ const RecipeNameScene: React.FC<{
           fontFamily="heading"
           color="rgba(255,255,255,0.9)"
           animation="popIn"
-          startFrame={95}
+          startFrame={10}
           shadow
         />
       </AbsoluteFill>
@@ -116,7 +121,7 @@ const RecipeNameScene: React.FC<{
   );
 };
 
-// ─── Scene 3: INGREDIENTS over cutting-vegetables video (frames 120-360) ────
+// ─── Scene 3: INGREDIENTS over cutting-vegetables video ─────────────────────
 
 const IngredientsScene: React.FC<{
   ingredients: { naam: string; prijs: string }[];
@@ -126,7 +131,7 @@ const IngredientsScene: React.FC<{
   const { fps } = useVideoConfig();
 
   // Running total
-  const totalProgress = interpolate(frame, [130, 340], [0, 1], {
+  const totalProgress = interpolate(frame, [10, 220], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -150,7 +155,7 @@ const IngredientsScene: React.FC<{
         }}
       >
         {ingredients.slice(0, 6).map((item, i) => {
-          const itemStart = 135 + i * 25;
+          const itemStart = 15 + i * 25;
           const itemProgress = spring({
             frame: Math.max(0, frame - itemStart),
             fps,
@@ -227,7 +232,7 @@ const IngredientsScene: React.FC<{
   );
 };
 
-// ─── Scene 4: COOKING video (frames 360-480) ────────────────────────────────
+// ─── Scene 4: COOKING video + CookingPot animation ─────────────────────────
 
 const CookingScene: React.FC = () => {
   return (
@@ -250,15 +255,26 @@ const CookingScene: React.FC = () => {
           fontFamily="heading"
           color={colors.white}
           animation="slamIn"
-          startFrame={400}
+          startFrame={20}
           shadow
         />
       </AbsoluteFill>
+      {/* Decorative CookingPot in bottom-right corner */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 60,
+          right: 60,
+          opacity: 0.85,
+        }}
+      >
+        <CookingPot startFrame={10} size={140} />
+      </div>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 5: COMPARISON — PriceTag (frames 480-570) ────────────────────────
+// ─── Scene 5: COMPARISON — PriceTag (clockWipe reveal) ──────────────────────
 
 const CompareScene: React.FC<{
   bezorgPrijs: string;
@@ -281,19 +297,19 @@ const CompareScene: React.FC<{
         fontFamily="body"
         color="rgba(255,255,255,0.5)"
         animation="fadeUp"
-        startFrame={485}
+        startFrame={5}
         shadow
       />
       <PriceTag
         price={bezorgPrijs}
         newPrice={`\u20AC${price.toFixed(2)}`}
-        startFrame={490}
+        startFrame={10}
       />
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 6: SAVINGS CountUp (frames 570-660) ──────────────────────────────
+// ─── Scene 6: SAVINGS + FoodEmoji ───────────────────────────────────────────
 
 const SavingsScene: React.FC<{
   besparing: string;
@@ -315,7 +331,7 @@ const SavingsScene: React.FC<{
         fontFamily="heading"
         color={colors.logoCoral}
         animation="countUp"
-        startFrame={580}
+        startFrame={10}
         shadow
         glow="rgba(244,132,95,0.3)"
       />
@@ -325,14 +341,23 @@ const SavingsScene: React.FC<{
         fontFamily="body"
         color="rgba(255,255,255,0.7)"
         animation="fadeUp"
-        startFrame={620}
+        startFrame={50}
         shadow
       />
+      {/* Bouncing food emojis celebrating the savings */}
+      <div style={{ marginTop: 20 }}>
+        <FoodEmoji
+          startFrame={60}
+          emojis={["🍝", "🥗", "🍲", "🌮"]}
+          size={300}
+          emojiSize={44}
+        />
+      </div>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 7: CTA (frames 660-750) ──────────────────────────────────────────
+// ─── Scene 7: CTA ───────────────────────────────────────────────────────────
 
 const CTAScene: React.FC<{
   photo: string;
@@ -355,14 +380,14 @@ const CTAScene: React.FC<{
           gap: 36,
         }}
       >
-        <Logo animation="fadeIn" size={650} startFrame={670} />
+        <Logo animation="fadeIn" size={650} startFrame={10} />
         <AnimatedText
           text="60+ recepten onder \u20AC5"
           fontSize={40}
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={700}
+          startFrame={40}
           shadow
         />
       </AbsoluteFill>
@@ -383,40 +408,72 @@ export const FoodReveal: React.FC<FoodRevealProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Scene 1: Hook — massive price (0-90) */}
-      <SceneTransition enterFrame={0} exitFrame={90} fadeFrames={12}>
-        <HookScene photo={photo} price={price} />
-      </SceneTransition>
+      <TransitionSeries>
+        {/* Scene 1: Hook — massive price (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <HookScene photo={photo} price={price} />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 2: Recipe name (90-120) */}
-      <SceneTransition enterFrame={90} exitFrame={120} fadeFrames={10}>
-        <RecipeNameScene photo={photo} recipeName={recipeName} price={price} />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={slide()}
+          timing={springTiming({ config: { damping: 12 } })}
+        />
 
-      {/* Scene 3: Ingredients over video (120-360) */}
-      <SceneTransition enterFrame={120} exitFrame={360} fadeFrames={15}>
-        <IngredientsScene ingredients={ingredients} price={price} />
-      </SceneTransition>
+        {/* Scene 2: Recipe name (45 frames) */}
+        <TransitionSeries.Sequence durationInFrames={45}>
+          <RecipeNameScene photo={photo} recipeName={recipeName} price={price} />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 4: Cooking video (360-480) */}
-      <SceneTransition enterFrame={360} exitFrame={480} fadeFrames={12}>
-        <CookingScene />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={slide()}
+          timing={springTiming({ config: { damping: 14 } })}
+        />
 
-      {/* Scene 5: Comparison PriceTag (480-570) */}
-      <SceneTransition enterFrame={480} exitFrame={570} fadeFrames={12}>
-        <CompareScene bezorgPrijs={bezorgPrijs} price={price} />
-      </SceneTransition>
+        {/* Scene 3: Ingredients over video (240 frames) */}
+        <TransitionSeries.Sequence durationInFrames={240}>
+          <IngredientsScene ingredients={ingredients} price={price} />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 6: Savings CountUp (570-660) */}
-      <SceneTransition enterFrame={570} exitFrame={660} fadeFrames={12}>
-        <SavingsScene besparing={besparing} />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={slide()}
+          timing={springTiming({ config: { damping: 12 } })}
+        />
 
-      {/* Scene 7: CTA (660-750) */}
-      <SceneTransition enterFrame={660} exitFrame={750} fadeFrames={15}>
-        <CTAScene photo={photo} />
-      </SceneTransition>
+        {/* Scene 4: Cooking video + CookingPot (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
+          <CookingScene />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={clockWipe()}
+          timing={linearTiming({ durationInFrames: 20 })}
+        />
+
+        {/* Scene 5: Comparison PriceTag — clockWipe reveal (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <CompareScene bezorgPrijs={bezorgPrijs} price={price} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
+
+        {/* Scene 6: Savings + FoodEmoji (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
+          <SavingsScene besparing={besparing} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
+
+        {/* Scene 7: CTA (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
+          <CTAScene photo={photo} />
+        </TransitionSeries.Sequence>
+      </TransitionSeries>
 
       <BackgroundMusic src={music} />
     </AbsoluteFill>

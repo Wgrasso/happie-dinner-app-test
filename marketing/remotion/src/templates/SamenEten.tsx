@@ -6,16 +6,25 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { TransitionSeries } from "@remotion/transitions";
+import { slide } from "@remotion/transitions/slide";
+import { wipe } from "@remotion/transitions/wipe";
+import { fade } from "@remotion/transitions/fade";
+import { springTiming, linearTiming } from "@remotion/transitions";
 import { AnimatedText } from "../components/AnimatedText";
 import { BackgroundMusic } from "../components/BackgroundMusic";
 import { Confetti } from "../components/Confetti";
 import { Logo } from "../components/Logo";
 import { PhoneMockup } from "../components/PhoneMockup";
 import { PhotoBackground } from "../components/PhotoBackground";
-import { SceneTransition } from "../components/SceneTransition";
 import { StoreBadges } from "../components/StoreBadges";
 import { SwipeCard } from "../components/SwipeCard";
 import { VideoBackground } from "../components/VideoBackground";
+import {
+  NotificationStack,
+  SwipeGesture,
+  HeartPulse,
+} from "../components/lottie-style";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/fonts";
 
@@ -28,45 +37,7 @@ export interface SamenEtenProps {
   durationInSeconds: number;
 }
 
-// ─── Typing indicator dots ──────────────────────────────────────────────────
-
-const TypingDots: React.FC<{ frame: number }> = ({ frame }) => {
-  const dots = [0, 1, 2].map((i) => {
-    const opacity = interpolate(
-      Math.sin(((frame - i * 4) / 8) * Math.PI),
-      [-1, 1],
-      [0.2, 1]
-    );
-    return (
-      <div
-        key={i}
-        style={{
-          width: 10,
-          height: 10,
-          borderRadius: "50%",
-          backgroundColor: "rgba(255,255,255,0.7)",
-          opacity,
-        }}
-      />
-    );
-  });
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        gap: 6,
-        backgroundColor: "rgba(255,255,255,0.15)",
-        borderRadius: "20px 20px 20px 4px",
-        padding: "12px 20px",
-      }}
-    >
-      {dots}
-    </div>
-  );
-};
-
-// ─── Scene 1: HOOK (frames 0-60) ────────────────────────────────────────────
+// ─── Scene 1: HOOK ──────────────────────────────────────────────────────────
 
 const HookScene: React.FC = () => {
   return (
@@ -92,16 +63,17 @@ const HookScene: React.FC = () => {
   );
 };
 
-// ─── Scene 2: PROBLEM — Chat bubbles (frames 60-210) ────────────────────────
+// ─── Scene 2: PROBLEM — NotificationStack replaces manual chat bubbles ──────
 
 const ProblemScene: React.FC<{
   chatMessages: { tekst: string; isReply: boolean }[];
 }> = ({ chatMessages }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const TYPING_FRAMES = 18;
-  const MSG_TOTAL = 30;
+  // Convert chatMessages to NotificationStack format
+  const notifications = chatMessages.slice(0, 5).map((msg, i) => ({
+    sender: msg.isReply ? "Jij" : i === 0 ? "Lisa" : i === 2 ? "Tom" : "Sarah",
+    message: msg.tekst,
+    color: msg.isReply ? "#4A90D9" : "#25D366",
+  }));
 
   return (
     <AbsoluteFill
@@ -110,8 +82,8 @@ const ProblemScene: React.FC<{
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        padding: "200px 60px",
-        gap: 12,
+        alignItems: "center",
+        gap: 20,
       }}
     >
       {/* Chat header */}
@@ -139,72 +111,17 @@ const ProblemScene: React.FC<{
         </span>
       </div>
 
-      {chatMessages.map((msg, i) => {
-        const msgStart = 70 + i * MSG_TOTAL;
-        const typingEnd = msgStart + TYPING_FRAMES;
-        const isShowingTyping = frame >= msgStart && frame < typingEnd;
-        const isShowingBubble = frame >= typingEnd;
-
-        if (frame < msgStart) return null;
-
-        const bubbleProgress = spring({
-          frame: Math.max(0, frame - typingEnd),
-          fps,
-          config: { damping: 16, stiffness: 220 },
-        });
-        const bubbleY = interpolate(bubbleProgress, [0, 1], [30, 0]);
-        const bubbleOpacity = interpolate(bubbleProgress, [0, 1], [0, 1]);
-
-        const isReply = msg.isReply;
-
-        return (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: isReply ? "flex-end" : "flex-start",
-            }}
-          >
-            {isShowingTyping && <TypingDots frame={frame - msgStart} />}
-
-            {isShowingBubble && (
-              <div
-                style={{
-                  maxWidth: "80%",
-                  backgroundColor: isReply
-                    ? colors.accent
-                    : "rgba(255,255,255,0.12)",
-                  borderRadius: isReply
-                    ? "24px 24px 4px 24px"
-                    : "24px 24px 24px 4px",
-                  padding: "16px 24px",
-                  transform: `translateY(${bubbleY}px)`,
-                  opacity: bubbleOpacity,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: fonts.body,
-                    fontSize: 26,
-                    fontWeight: 400,
-                    color: colors.white,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {msg.tekst}
-                </span>
-              </div>
-            )}
-          </div>
-        );
-      })}
+      <NotificationStack
+        startFrame={10}
+        notifications={notifications}
+        width={420}
+        staggerFrames={18}
+      />
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 3: TENSION BREAK (frames 210-270) ────────────────────────────────
-// VideoBackground(empty-fridge). "Er is een betere manier."
+// ─── Scene 3: TENSION BREAK ────────────────────────────────────────────────
 
 const TensionBreakScene: React.FC = () => {
   return (
@@ -228,7 +145,7 @@ const TensionBreakScene: React.FC = () => {
           color={colors.white}
           animation="highlight"
           highlightColor={colors.logoCoral}
-          startFrame={225}
+          startFrame={15}
           shadow
           maxWidth={700}
         />
@@ -237,8 +154,7 @@ const TensionBreakScene: React.FC = () => {
   );
 };
 
-// ─── Scene 4: APP DEMO (frames 270-420) ─────────────────────────────────────
-// Phone mockup, swipe sequence, vote count
+// ─── Scene 4: APP DEMO — swipe + SwipeGesture overlay ──────────────────────
 
 const AppDemoScene: React.FC<{
   meals: { naam: string; foto: string; liked: boolean }[];
@@ -247,16 +163,16 @@ const AppDemoScene: React.FC<{
   const { fps } = useVideoConfig();
 
   const phoneProgress = spring({
-    frame: Math.max(0, frame - 280),
+    frame: Math.max(0, frame - 10),
     fps,
     config: { damping: 14, stiffness: 100 },
   });
   const phoneY = interpolate(phoneProgress, [0, 1], [600, 0]);
 
-  const swipeFrames = [320, 360, 400];
+  const swipeFrames = [50, 90, 130];
 
   // Background warm transition
-  const warmth = interpolate(frame, [270, 400], [0, 0.6], {
+  const warmth = interpolate(frame, [0, 130], [0, 0.6], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -284,11 +200,11 @@ const AppDemoScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={275}
+          startFrame={5}
           shadow
         />
 
-        <div style={{ transform: `translateY(${phoneY}px)` }}>
+        <div style={{ transform: `translateY(${phoneY}px)`, position: "relative" }}>
           <PhoneMockup scale={0.85}>
             <div
               style={{
@@ -366,19 +282,29 @@ const AppDemoScene: React.FC<{
                     color: colors.white,
                   }}
                 >
-                  {Math.min(3, Math.max(0, Math.floor((frame - 280) / 40) + 1))}/6 gestemd
+                  {Math.min(3, Math.max(0, Math.floor((frame - 10) / 40) + 1))}/6 gestemd
                 </span>
               </div>
             </div>
           </PhoneMockup>
+
+          {/* SwipeGesture overlay next to phone */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 180,
+              right: -100,
+            }}
+          >
+            <SwipeGesture startFrame={30} size={120} color="rgba(255,255,255,0.8)" />
+          </div>
         </div>
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 5: MATCH (frames 420-510) ────────────────────────────────────────
-// Screen flash. Confetti. Match result.
+// ─── Scene 5: MATCH — HeartPulse celebration ────────────────────────────────
 
 const MatchScene: React.FC<{
   matchMeal: string;
@@ -386,7 +312,7 @@ const MatchScene: React.FC<{
 }> = ({ matchMeal, resultPhoto }) => {
   const frame = useCurrentFrame();
 
-  const flashOpacity = interpolate(frame, [420, 423, 430], [0, 0.8, 0], {
+  const flashOpacity = interpolate(frame, [0, 3, 10], [0, 0.8, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -421,23 +347,25 @@ const MatchScene: React.FC<{
           zIndex: 6,
         }}
       >
+        {/* HeartPulse during match celebration */}
+        <HeartPulse startFrame={5} color={colors.logoCoral} size={100} />
         <AnimatedText
           text={`${matchMeal} wint!`}
           fontSize={56}
           fontFamily="heading"
           color={colors.white}
           animation="popIn"
-          startFrame={428}
+          startFrame={8}
           shadow
         />
       </AbsoluteFill>
 
-      <Confetti startFrame={425} particleCount={60} />
+      <Confetti startFrame={5} particleCount={60} />
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 6: COOKING video (frames 510-600) ────────────────────────────────
+// ─── Scene 6: COOKING video ─────────────────────────────────────────────────
 
 const CookingScene: React.FC = () => {
   return (
@@ -461,7 +389,7 @@ const CookingScene: React.FC = () => {
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={540}
+          startFrame={20}
           shadow
         />
       </AbsoluteFill>
@@ -469,8 +397,7 @@ const CookingScene: React.FC = () => {
   );
 };
 
-// ─── Scene 7: THE FEELING (frames 600-720) ──────────────────────────────────
-// Three lines staggered in
+// ─── Scene 7: THE FEELING ───────────────────────────────────────────────────
 
 const FeelingScene: React.FC<{
   resultPhoto: string;
@@ -497,7 +424,7 @@ const FeelingScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={620}
+          startFrame={20}
           shadow
         />
         <AnimatedText
@@ -506,7 +433,7 @@ const FeelingScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={660}
+          startFrame={60}
           shadow
         />
         <AnimatedText
@@ -515,7 +442,7 @@ const FeelingScene: React.FC<{
           fontFamily="heading"
           color={colors.logoCoral}
           animation="popIn"
-          startFrame={700}
+          startFrame={100}
           shadow
         />
       </AbsoluteFill>
@@ -523,7 +450,7 @@ const FeelingScene: React.FC<{
   );
 };
 
-// ─── Scene 8: CTA (frames 720-900) ──────────────────────────────────────────
+// ─── Scene 8: CTA ───────────────────────────────────────────────────────────
 
 const CTAScene: React.FC<{
   resultPhoto: string;
@@ -546,17 +473,17 @@ const CTAScene: React.FC<{
           gap: 36,
         }}
       >
-        <Logo animation="bounce" size={650} startFrame={730} />
+        <Logo animation="bounce" size={650} startFrame={10} />
         <AnimatedText
           text="Download Happie"
           fontSize={36}
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={760}
+          startFrame={40}
           shadow
         />
-        <StoreBadges startFrame={780} />
+        <StoreBadges startFrame={60} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -573,45 +500,82 @@ export const SamenEten: React.FC<SamenEtenProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#0d1117" }}>
-      {/* Scene 1: Hook (0-60) */}
-      <SceneTransition enterFrame={0} exitFrame={60} fadeFrames={10}>
-        <HookScene />
-      </SceneTransition>
+      <TransitionSeries>
+        {/* Scene 1: Hook (60 frames) */}
+        <TransitionSeries.Sequence durationInFrames={60}>
+          <HookScene />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 2: Problem — chat bubbles (60-210) */}
-      <SceneTransition enterFrame={60} exitFrame={210} fadeFrames={12}>
-        <ProblemScene chatMessages={chatMessages} />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={slide()}
+          timing={springTiming({ config: { damping: 14 } })}
+        />
 
-      {/* Scene 3: Tension break — video (210-270) */}
-      <SceneTransition enterFrame={210} exitFrame={270} fadeFrames={12}>
-        <TensionBreakScene />
-      </SceneTransition>
+        {/* Scene 2: Problem — NotificationStack (150 frames) */}
+        <TransitionSeries.Sequence durationInFrames={150}>
+          <ProblemScene chatMessages={chatMessages} />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 4: App demo — swipe (270-420) */}
-      <SceneTransition enterFrame={270} exitFrame={420} fadeFrames={15}>
-        <AppDemoScene meals={meals} />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={slide()}
+          timing={springTiming({ config: { damping: 12 } })}
+        />
 
-      {/* Scene 5: Match celebration (420-510) */}
-      <SceneTransition enterFrame={420} exitFrame={510} fadeFrames={10}>
-        <MatchScene matchMeal={matchMeal} resultPhoto={resultPhoto} />
-      </SceneTransition>
+        {/* Scene 3: Tension break — video (60 frames) */}
+        <TransitionSeries.Sequence durationInFrames={60}>
+          <TensionBreakScene />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 6: Cooking video (510-600) */}
-      <SceneTransition enterFrame={510} exitFrame={600} fadeFrames={12}>
-        <CookingScene />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={slide()}
+          timing={springTiming({ config: { damping: 14 } })}
+        />
 
-      {/* Scene 7: The feeling (600-720) */}
-      <SceneTransition enterFrame={600} exitFrame={720} fadeFrames={15}>
-        <FeelingScene resultPhoto={resultPhoto} />
-      </SceneTransition>
+        {/* Scene 4: App demo — swipe + SwipeGesture (150 frames) */}
+        <TransitionSeries.Sequence durationInFrames={150}>
+          <AppDemoScene meals={meals} />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 8: CTA (720-900) */}
-      <SceneTransition enterFrame={720} exitFrame={900} fadeFrames={15}>
-        <CTAScene resultPhoto={resultPhoto} />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 12 })}
+        />
+
+        {/* Scene 5: Match celebration — HeartPulse (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <MatchScene matchMeal={matchMeal} resultPhoto={resultPhoto} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={wipe()}
+          timing={springTiming({ config: { damping: 12 } })}
+        />
+
+        {/* Scene 6: Cooking video (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <CookingScene />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
+
+        {/* Scene 7: The feeling (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
+          <FeelingScene resultPhoto={resultPhoto} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
+
+        {/* Scene 8: CTA (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
+          <CTAScene resultPhoto={resultPhoto} />
+        </TransitionSeries.Sequence>
+      </TransitionSeries>
 
       <BackgroundMusic src={music} />
     </AbsoluteFill>

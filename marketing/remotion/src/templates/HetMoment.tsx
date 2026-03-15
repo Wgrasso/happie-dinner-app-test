@@ -7,13 +7,16 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { TransitionSeries } from "@remotion/transitions";
+import { fade } from "@remotion/transitions/fade";
+import { linearTiming } from "@remotion/transitions";
 import { AnimatedText } from "../components/AnimatedText";
 import { BackgroundMusic } from "../components/BackgroundMusic";
 import { Logo } from "../components/Logo";
 import { PhoneMockup } from "../components/PhoneMockup";
 import { PhotoBackground } from "../components/PhotoBackground";
-import { SceneTransition } from "../components/SceneTransition";
 import { VideoBackground } from "../components/VideoBackground";
+import { CookingPot, HeartPulse } from "../components/lottie-style";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/fonts";
 
@@ -27,7 +30,7 @@ export interface HetMomentProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: PHOTO 1 — Ken Burns zoom IN (frames 0-90) ────────────────────
+// ─── Scene 1: PHOTO 1 — Ken Burns zoom IN ──────────────────────────────────
 
 const Photo1Scene: React.FC<{
   photo: string;
@@ -45,7 +48,7 @@ const Photo1Scene: React.FC<{
   );
 };
 
-// ─── Scene 2: PHOTO 2 — Ken Burns zoom OUT (frames 90-180) ─────────────────
+// ─── Scene 2: PHOTO 2 — Ken Burns zoom OUT ─────────────────────────────────
 
 const Photo2Scene: React.FC<{
   photo: string;
@@ -63,7 +66,7 @@ const Photo2Scene: React.FC<{
   );
 };
 
-// ─── Scene 3: PHOTO 3 — subtle zoom (frames 180-270) ───────────────────────
+// ─── Scene 3: PHOTO 3 — subtle zoom ────────────────────────────────────────
 
 const Photo3Scene: React.FC<{
   photo: string;
@@ -81,8 +84,7 @@ const Photo3Scene: React.FC<{
   );
 };
 
-// ─── Scene 4: VIDEO — slow-mo food serving (frames 270-360) ────────────────
-// First text appears: recipe name
+// ─── Scene 4: VIDEO — slow-mo food serving + CookingPot ────────────────────
 
 const VideoScene: React.FC<{
   recipeName: string;
@@ -107,16 +109,26 @@ const VideoScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={300}
+          startFrame={20}
           shadow
         />
       </AbsoluteFill>
+      {/* Atmospheric CookingPot in bottom-left corner */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 50,
+          left: 50,
+          opacity: 0.75,
+        }}
+      >
+        <CookingPot startFrame={10} size={120} />
+      </div>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 5: DETAILS (frames 360-450) ──────────────────────────────────────
-// Continue video bg. "20 min . €3,50" fades in.
+// ─── Scene 5: DETAILS ───────────────────────────────────────────────────────
 
 const DetailsScene: React.FC<{
   recipeName: string;
@@ -146,7 +158,7 @@ const DetailsScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={365}
+          startFrame={5}
           shadow
         />
         <AnimatedText
@@ -155,7 +167,7 @@ const DetailsScene: React.FC<{
           fontFamily="body"
           color="rgba(255,255,255,0.85)"
           animation="fadeUp"
-          startFrame={390}
+          startFrame={30}
           shadow
         />
       </AbsoluteFill>
@@ -163,8 +175,7 @@ const DetailsScene: React.FC<{
   );
 };
 
-// ─── Scene 6: THE QUESTION (frames 450-540) ────────────────────────────────
-// Best photo bg. Big elegant text.
+// ─── Scene 6: THE QUESTION + HeartPulse ─────────────────────────────────────
 
 const QuestionScene: React.FC<{
   photo: string;
@@ -181,8 +192,10 @@ const QuestionScene: React.FC<{
       <AbsoluteFill
         style={{
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          gap: 20,
         }}
       >
         <AnimatedText
@@ -191,24 +204,25 @@ const QuestionScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={465}
+          startFrame={15}
           shadow
           maxWidth={800}
         />
+        {/* HeartPulse for emotional moment */}
+        <HeartPulse startFrame={40} color={colors.logoCoral} size={80} pulseRate={1} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 7: APP PEEK (frames 540-660) ────────────────────────────────────
-// Small phone mockup at 20% opacity behind text
+// ─── Scene 7: APP PEEK ──────────────────────────────────────────────────────
 
 const AppPeekScene: React.FC<{
   photo: string;
 }> = ({ photo }) => {
   const frame = useCurrentFrame();
 
-  const phoneOpacity = interpolate(frame, [550, 580], [0, 0.2], {
+  const phoneOpacity = interpolate(frame, [10, 40], [0, 0.2], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -264,7 +278,7 @@ const AppPeekScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={560}
+          startFrame={20}
           shadow
         />
       </AbsoluteFill>
@@ -272,7 +286,7 @@ const AppPeekScene: React.FC<{
   );
 };
 
-// ─── Scene 8: CTA (frames 660-750) ──────────────────────────────────────────
+// ─── Scene 8: CTA ───────────────────────────────────────────────────────────
 
 const CTAScene: React.FC = () => {
   return (
@@ -286,14 +300,14 @@ const CTAScene: React.FC = () => {
         gap: 30,
       }}
     >
-      <Logo animation="bounce" size={650} startFrame={665} />
+      <Logo animation="bounce" size={650} startFrame={5} />
       <AnimatedText
         text="Swipe je avondeten."
         fontSize={32}
         fontFamily="body"
         color={colors.white}
         animation="fadeUp"
-        startFrame={700}
+        startFrame={40}
         shadow
       />
     </AbsoluteFill>
@@ -312,49 +326,86 @@ export const HetMoment: React.FC<HetMomentProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Scene 1: Photo 1 — zoom in (0-90) */}
-      <SceneTransition enterFrame={0} exitFrame={90} fadeFrames={15}>
-        <Photo1Scene photo={photos[0]} />
-      </SceneTransition>
+      <TransitionSeries>
+        {/* Scene 1: Photo 1 — zoom in (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <Photo1Scene photo={photos[0]} />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 2: Photo 2 — zoom out, crossfade (90-180) */}
-      <SceneTransition enterFrame={75} exitFrame={180} fadeFrames={15}>
-        <Photo2Scene photo={photos[1]} />
-      </SceneTransition>
-
-      {/* Scene 3: Photo 3 — subtle zoom (180-270) */}
-      <SceneTransition enterFrame={165} exitFrame={270} fadeFrames={15}>
-        <Photo3Scene photo={photos[2]} />
-      </SceneTransition>
-
-      {/* Scene 4: Video — slow-mo serving (270-360) */}
-      <SceneTransition enterFrame={270} exitFrame={360} fadeFrames={15}>
-        <VideoScene recipeName={recipeName} />
-      </SceneTransition>
-
-      {/* Scene 5: Details (360-450) */}
-      <SceneTransition enterFrame={360} exitFrame={450} fadeFrames={12}>
-        <DetailsScene
-          recipeName={recipeName}
-          cookingTime={cookingTime}
-          price={price}
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 20 })}
         />
-      </SceneTransition>
 
-      {/* Scene 6: The question (450-540) */}
-      <SceneTransition enterFrame={450} exitFrame={540} fadeFrames={15}>
-        <QuestionScene photo={photos[0]} />
-      </SceneTransition>
+        {/* Scene 2: Photo 2 — zoom out (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <Photo2Scene photo={photos[1]} />
+        </TransitionSeries.Sequence>
 
-      {/* Scene 7: App peek (540-660) */}
-      <SceneTransition enterFrame={540} exitFrame={660} fadeFrames={15}>
-        <AppPeekScene photo={photos[2]} />
-      </SceneTransition>
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 20 })}
+        />
 
-      {/* Scene 8: CTA (660-750) */}
-      <SceneTransition enterFrame={660} exitFrame={750} fadeFrames={15}>
-        <CTAScene />
-      </SceneTransition>
+        {/* Scene 3: Photo 3 — subtle zoom (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <Photo3Scene photo={photos[2]} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
+
+        {/* Scene 4: Video — slow-mo serving + CookingPot (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <VideoScene recipeName={recipeName} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
+
+        {/* Scene 5: Details (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <DetailsScene
+            recipeName={recipeName}
+            cookingTime={cookingTime}
+            price={price}
+          />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
+
+        {/* Scene 6: The question + HeartPulse (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <QuestionScene photo={photos[0]} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
+
+        {/* Scene 7: App peek (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
+          <AppPeekScene photo={photos[2]} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
+        />
+
+        {/* Scene 8: CTA (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <CTAScene />
+        </TransitionSeries.Sequence>
+      </TransitionSeries>
 
       <BackgroundMusic src={music} />
     </AbsoluteFill>
