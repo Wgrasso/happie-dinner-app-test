@@ -1,4 +1,6 @@
+import React from "react";
 import { Composition } from "remotion";
+import { SwipeTinder } from "./templates/SwipeTinder";
 import { colors } from "./theme/colors";
 import { fonts } from "./theme/fonts";
 
@@ -18,6 +20,27 @@ export const RemotionRoot: React.FC = () => (
       height={1920}
       fps={30}
       durationInFrames={300}
+    />
+
+    <Composition
+      id="SwipeTinder"
+      component={SwipeTinder as unknown as React.ComponentType<Record<string, unknown>>}
+      width={1080}
+      height={1920}
+      fps={30}
+      durationInFrames={300}
+      defaultProps={{
+        hookText: "POV: Tinder maar dan voor eten 🍝",
+        meals: [
+          { naam: "Nasi Goreng", foto: "test.jpg", liked: false },
+          { naam: "Shoarma Bowl", foto: "test.jpg", liked: false },
+          { naam: "Pasta Carbonara", foto: "test.jpg", liked: true },
+        ],
+        matchMeal: "Pasta Carbonara",
+        ctaText: "Download gratis",
+        music: "",
+        durationInSeconds: 10,
+      }}
     />
   </>
 );
