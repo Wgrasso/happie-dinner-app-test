@@ -1,8 +1,11 @@
 import { Composition } from "remotion";
+import { colors } from "./theme/colors";
+import { fonts } from "./theme/fonts";
 
 const Placeholder: React.FC = () => (
-  <div style={{ flex: 1, background: "#F8F6F3", display: "flex", alignItems: "center", justifyContent: "center" }}>
-    <h1 style={{ fontFamily: "sans-serif", color: "#8B7355" }}>Studenten Happie</h1>
+  <div style={{ flex: 1, background: colors.background, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <h1 style={{ fontFamily: fonts.heading, color: colors.accent }}>Studenten Happie</h1>
+    <p style={{ fontFamily: fonts.body, color: colors.textMuted }}>Videos coming soon</p>
   </div>
 );
 
