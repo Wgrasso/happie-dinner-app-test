@@ -166,12 +166,10 @@ const AppIntroScene: React.FC<{
 
   return (
     <AbsoluteFill>
-      <PhotoBackground
-        src={solutionPhoto}
+      <VideoBackground
+        src="food-preparation-kitchen.mp4"
         overlay="rgba(0,0,0,0.35)"
-        kenBurns
-        kenBurnsScale={[1, 1.08]}
-        warmth={0.4}
+        playbackRate={0.8}
       />
       <AbsoluteFill
         style={{

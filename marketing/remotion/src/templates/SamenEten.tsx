@@ -443,7 +443,7 @@ const CookingScene: React.FC = () => {
   return (
     <AbsoluteFill>
       <VideoBackground
-        src="cooking-stir-fry.mp4"
+        src="boiling-water-pasta.mp4"
         overlay="rgba(0,0,0,0.3)"
         playbackRate={1}
       />
@@ -477,12 +477,10 @@ const FeelingScene: React.FC<{
 }> = ({ resultPhoto }) => {
   return (
     <AbsoluteFill>
-      <PhotoBackground
-        src={resultPhoto}
+      <VideoBackground
+        src="friends-eating-dinner-table.mp4"
         overlay="rgba(0,0,0,0.4)"
-        kenBurns
-        kenBurnsScale={[1, 1.12]}
-        warmth={0.7}
+        playbackRate={0.8}
       />
       <AbsoluteFill
         style={{
