@@ -1,5 +1,6 @@
 import React from "react";
 import { Composition } from "remotion";
+import { StatReel } from "./templates/StatReel";
 import { SwipeTinder } from "./templates/SwipeTinder";
 import { TekstStory } from "./templates/TekstStory";
 import { colors } from "./theme/colors";
@@ -60,6 +61,37 @@ export const RemotionRoot: React.FC = () => (
         mode: "dark" as const,
         music: "",
         durationInSeconds: 8,
+      }}
+    />
+    <Composition
+      id="StatReel"
+      component={StatReel as unknown as React.ComponentType<Record<string, unknown>>}
+      width={1080}
+      height={1920}
+      fps={30}
+      calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
+        durationInFrames: (props.durationInSeconds as number) * 30,
+        props,
+      })}
+      defaultProps={{
+        statNummer: 87,
+        statSuffix: "%",
+        statLabel: "van studenten kookt max 2x per week",
+        chartData: [
+          { label: "bezorgen", value: 60 },
+          { label: "zelf", value: 40 },
+          { label: "afhaal", value: 50 },
+          { label: "happie", value: 85, highlight: true },
+        ],
+        vergelijking: {
+          linksLabel: "Thuisbezorgd",
+          linksWaarde: "€12",
+          rechtsLabel: "Happie",
+          rechtsWaarde: "€3",
+          conclusie: "Bespaar €270/maand",
+        },
+        music: "",
+        durationInSeconds: 10,
       }}
     />
   </>
