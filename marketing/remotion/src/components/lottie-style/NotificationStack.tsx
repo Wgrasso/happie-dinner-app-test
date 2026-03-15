@@ -15,10 +15,10 @@ interface NotificationStackProps {
 }
 
 const DEFAULT_NOTIFICATIONS: Notification[] = [
-  { sender: "Lisa", message: "Wat eten we vanavond? 🤷", color: "#25D366" },
-  { sender: "Tom", message: "Geen idee… pizza misschien?", color: "#25D366" },
-  { sender: "Sarah", message: "Pasta!! 🍝🍝🍝", color: "#25D366" },
-  { sender: "Groep 💬", message: "Gebruik gewoon Happie 😂", color: "#4A90D9" },
+  { sender: "Lisa", message: "Wat eten we vanavond?", color: "#25D366" },
+  { sender: "Tom", message: "Geen idee... pizza misschien?", color: "#25D366" },
+  { sender: "Sarah", message: "Pasta!! Alweer?!", color: "#25D366" },
+  { sender: "Groep", message: "Gebruik gewoon Happie", color: "#4A90D9" },
 ];
 
 export const NotificationStack: React.FC<NotificationStackProps> = ({

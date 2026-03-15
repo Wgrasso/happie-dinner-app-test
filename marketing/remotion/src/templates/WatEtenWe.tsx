@@ -16,15 +16,19 @@ import { BackgroundMusic } from "../components/BackgroundMusic";
 import { Logo } from "../components/Logo";
 import { PhotoBackground } from "../components/PhotoBackground";
 import { PhoneMockup } from "../components/PhoneMockup";
-import { SceneTransition } from "../components/SceneTransition";
 import { StoreBadges } from "../components/StoreBadges";
-import { SwipeCard } from "../components/SwipeCard";
 import { VideoBackground } from "../components/VideoBackground";
+import { NotificationStack, Checkmark } from "../components/lottie-style";
 import {
-  NotificationStack,
-  SwipeCards,
-  Checkmark,
-} from "../components/lottie-style";
+  GradientBackground,
+  GradientWave,
+  RevealMask,
+  ScreenWipe,
+  AnimatedUnderline,
+  AnimatedAppUI,
+  AnimatedCounter,
+  ParallaxLayer,
+} from "../components/motion";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/fonts";
 
@@ -40,135 +44,17 @@ export interface WatEtenWeProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: HOOK ──────────────────────────────────────────────────────────
-// Dark bg, bold text slams in. "Het is 17:00."
+// --- Scene 1: HOOK --- GradientBackground + bold text + AnimatedUnderline ---
 
 const HookScene: React.FC = () => {
-  return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: "#0a0a0a",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 20,
-      }}
-    >
-      <AnimatedText
-        text="Het is 17:00."
-        fontSize={80}
-        fontFamily="heading"
-        color={colors.white}
-        animation="slamIn"
-        startFrame={5}
-        shadow
-      />
-      <AnimatedText
-        text="Niemand weet het."
-        fontSize={40}
-        fontFamily="body"
-        color="rgba(255,255,255,0.6)"
-        animation="fadeUp"
-        startFrame={40}
-        shadow
-      />
-    </AbsoluteFill>
-  );
-};
-
-// ─── Scene 2: PROBLEM — NotificationStack with escalating messages ──────────
-
-const ProblemScene: React.FC = () => {
-  return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: "#0a0a0a",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 30,
-      }}
-    >
-      <NotificationStack
-        startFrame={10}
-        notifications={[
-          { sender: "Lisa", message: "Wat eten we vanavond? 🍕", color: "#25D366" },
-          { sender: "Tom", message: "Weet niet 🤷", color: "#25D366" },
-          { sender: "Sarah", message: "NIET WEER PASTA", color: "#25D366" },
-          { sender: "Groep 💬", message: "Elke. Avond. Hetzelfde.", color: "#E74C3C" },
-        ]}
-        width={380}
-        staggerFrames={20}
-      />
-      <AnimatedText
-        text="Elke. Avond. Hetzelfde."
-        fontSize={48}
-        fontFamily="heading"
-        color={colors.logoCoral}
-        animation="glitch"
-        startFrame={90}
-        shadow
-      />
-    </AbsoluteFill>
-  );
-};
-
-// ─── Scene 3: SWIPE CARDS — standalone card swipe animation ─────────────────
-
-const SwipeCardsScene: React.FC = () => {
-  return (
-    <AbsoluteFill
-      style={{
-        background: "linear-gradient(180deg, #1a1a2e 0%, #0d1117 100%)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 30,
-      }}
-    >
-      <AnimatedText
-        text="Swipe samen."
-        fontSize={56}
-        fontFamily="heading"
-        color={colors.white}
-        animation="highlight"
-        highlightColor={colors.logoCoral}
-        startFrame={5}
-        shadow
-      />
-      <SwipeCards startFrame={20} width={320} height={200} />
-    </AbsoluteFill>
-  );
-};
-
-// ─── Scene 4: APP — Phone mockup with swipe demo ───────────────────────────
-
-const AppScene: React.FC<{
-  solutionPhoto: string;
-  meals: { naam: string; foto: string; liked: boolean }[];
-}> = ({ solutionPhoto, meals }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const phoneScale = spring({
-    frame: Math.max(0, frame - 10),
-    fps,
-    config: { damping: 14, stiffness: 120 },
-  });
-
-  const swipeFrames = [40, 90, 130];
 
   return (
     <AbsoluteFill>
-      <PhotoBackground
-        src={solutionPhoto}
-        overlay="rgba(0,0,0,0.3)"
-        kenBurns
-        kenBurnsScale={[1.05, 1.12]}
-        warmth={0.5}
+      <GradientBackground
+        colors={["#0a0a1a", "#1a1a2e", "#0d1117"]}
+        animate
+        angle={135}
       />
       <AbsoluteFill
         style={{
@@ -179,113 +65,125 @@ const AppScene: React.FC<{
           gap: 20,
         }}
       >
-        <div
-          style={{
-            transform: `scale(${phoneScale}) rotate(-2deg)`,
-          }}
-        >
-          <PhoneMockup scale={0.85}>
-            <div
-              style={{
-                width: 300,
-                height: 620,
-                backgroundColor: colors.background,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ position: "relative", width: 260, height: 340 }}>
-                {meals.slice(0, 3).map((meal, i) => {
-                  const swipeStart = swipeFrames[i];
-                  const localFrame = frame - swipeStart;
-                  const isSwiping = localFrame >= 0;
-                  const direction = meal.liked ? 1 : -1;
-
-                  const translateX = isSwiping
-                    ? interpolate(localFrame, [0, 15], [0, direction * 400], {
-                        extrapolateLeft: "clamp",
-                        extrapolateRight: "clamp",
-                      })
-                    : 0;
-
-                  const rotation = isSwiping
-                    ? interpolate(localFrame, [0, 15], [0, direction * 12], {
-                        extrapolateLeft: "clamp",
-                        extrapolateRight: "clamp",
-                      })
-                    : 0;
-
-                  const overlayOpacity = isSwiping
-                    ? interpolate(localFrame, [0, 10], [0, 0.8], {
-                        extrapolateLeft: "clamp",
-                        extrapolateRight: "clamp",
-                      })
-                    : 0;
-
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        position: "absolute",
-                        zIndex: 3 - i,
-                        transform: `translateX(${translateX}px) rotate(${rotation}deg) scale(${1 - i * 0.04})`,
-                        top: i * 8,
-                        left: 0,
-                        width: 260,
-                        height: 340,
-                      }}
-                    >
-                      <SwipeCard
-                        meal={meal}
-                        style={{ width: 260, height: 340 }}
-                      />
-                      {isSwiping && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            inset: 0,
-                            borderRadius: 20,
-                            backgroundColor: meal.liked
-                              ? colors.likeGreen
-                              : colors.dislikeRed,
-                            opacity: overlayOpacity,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontFamily: fonts.heading,
-                              fontSize: 36,
-                              fontWeight: 700,
-                              color: colors.white,
-                              border: `4px solid ${colors.white}`,
-                              padding: "6px 16px",
-                              borderRadius: 8,
-                              transform: `rotate(${meal.liked ? -12 : 12}deg)`,
-                            }}
-                          >
-                            {meal.liked ? "HAPPIE!" : "NEE"}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </PhoneMockup>
+        <AnimatedText
+          text="Het is 17:00."
+          fontSize={80}
+          fontFamily="heading"
+          color={colors.white}
+          animation="slamIn"
+          startFrame={5}
+          shadow
+        />
+        <div style={{ marginTop: 8 }}>
+          <AnimatedUnderline startFrame={35} width={420} color={colors.logoCoral} strokeWidth={5} />
         </div>
+        <AnimatedText
+          text="Niemand weet het."
+          fontSize={40}
+          fontFamily="body"
+          color="rgba(255,255,255,0.6)"
+          animation="fadeUp"
+          startFrame={40}
+          shadow
+        />
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 5: FOOD REVEAL — photo + Checkmark animation ────────────────────
+// --- Scene 2: PROBLEM --- ScreenWipe + NotificationStack --------------------
+
+const ProblemScene: React.FC = () => {
+  return (
+    <AbsoluteFill>
+      <GradientBackground colors={["#0d1117", "#1a1a2e"]} angle={180} />
+      <ScreenWipe startFrame={0} durationFrames={18} color={colors.logoCoral} direction="right" />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 30,
+        }}
+      >
+        <NotificationStack
+          startFrame={10}
+          notifications={[
+            { sender: "Lisa", message: "Wat eten we vanavond?", color: "#25D366" },
+            { sender: "Tom", message: "Weet niet...", color: "#25D366" },
+            { sender: "Sarah", message: "NIET WEER PASTA", color: "#25D366" },
+            { sender: "Groep", message: "Elke. Avond. Hetzelfde.", color: "#E74C3C" },
+          ]}
+          width={380}
+          staggerFrames={20}
+        />
+        <AnimatedText
+          text="Elke. Avond. Hetzelfde."
+          fontSize={48}
+          fontFamily="heading"
+          color={colors.logoCoral}
+          animation="glitch"
+          startFrame={90}
+          shadow
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// --- Scene 3: APP SOLUTION --- ScreenWipe + AnimatedAppUI -------------------
+
+const AppScene: React.FC<{
+  recipeName: string;
+}> = ({ recipeName }) => {
+  return (
+    <AbsoluteFill>
+      <GradientWave
+        colors={["#1a1a2e", "#0d1117", "#16213e"]}
+        speed={0.8}
+        direction="diagonal"
+      />
+      <ScreenWipe startFrame={0} durationFrames={18} color="#8B7355" direction="left" />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20,
+        }}
+      >
+        <div style={{ position: "relative" }}>
+          <AnimatedText
+            text="Swipe samen."
+            fontSize={48}
+            fontFamily="heading"
+            color={colors.white}
+            animation="fadeUp"
+            startFrame={10}
+            shadow
+          />
+          <AnimatedUnderline startFrame={40} width={320} color={colors.logoCoral} strokeWidth={4} y={60} />
+        </div>
+        <AnimatedAppUI
+          startFrame={20}
+          sequence="swipe-three"
+          recipe={{
+            name: recipeName,
+            image: "carbonara.jpg",
+            cookingTime: 25,
+            description: "Romige Italiaanse klassieker met pancetta en parmezaan.",
+            ingredients: ["Spaghetti", "Pancetta", "Eieren", "Parmezaan", "Peper"],
+          }}
+          swipeResults={["like", "dislike", "like"]}
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// --- Scene 4: FOOD REVEAL --- RevealMask circle + AnimatedCounter -----------
 
 const FoodRevealScene: React.FC<{
   resultPhoto: string;
@@ -302,97 +200,63 @@ const FoodRevealScene: React.FC<{
         kenBurnsScale={[1, 1.15]}
         warmth={0.6}
       />
-      <AbsoluteFill
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 20,
-        }}
-      >
-        <div style={{ marginBottom: 10 }}>
-          <Checkmark startFrame={5} color="#4CAF50" size={120} />
-        </div>
-        <AnimatedText
-          text={recipeName}
-          fontSize={60}
-          fontFamily="heading"
-          color={colors.white}
-          animation="popIn"
-          startFrame={30}
-          shadow
-          glow="rgba(255,255,255,0.2)"
-        />
-        <AnimatedText
-          text={`${cookingTime} min \u2022 \u20AC${price.toFixed(2)}`}
-          fontSize={28}
-          fontFamily="body"
-          color="rgba(255,255,255,0.85)"
-          animation="fadeUp"
-          startFrame={60}
-          shadow
-        />
-      </AbsoluteFill>
+      <RevealMask startFrame={0} durationFrames={20} shape="circle">
+        <AbsoluteFill
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+          }}
+        >
+          <AnimatedText
+            text={recipeName}
+            fontSize={60}
+            fontFamily="heading"
+            color={colors.white}
+            animation="popIn"
+            startFrame={20}
+            shadow
+            glow="rgba(255,255,255,0.2)"
+          />
+          <AnimatedText
+            text={`${cookingTime} min`}
+            fontSize={28}
+            fontFamily="body"
+            color="rgba(255,255,255,0.85)"
+            animation="fadeUp"
+            startFrame={50}
+            shadow
+          />
+          <AnimatedCounter
+            from={0}
+            to={price}
+            startFrame={60}
+            durationFrames={30}
+            prefix={"\u20AC"}
+            fontSize={56}
+            color={colors.logoCoral}
+            showUnderline
+            underlineColor={colors.logoCoral}
+          />
+        </AbsoluteFill>
+      </RevealMask>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 6: RESULT — friends eating ───────────────────────────────────────
-
-const ResultScene: React.FC = () => {
-  return (
-    <AbsoluteFill>
-      <VideoBackground
-        src="friends-eating-dinner-table.mp4"
-        overlay="rgba(0,0,0,0.4)"
-        playbackRate={0.8}
-      />
-      <AbsoluteFill
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 20,
-        }}
-      >
-        <AnimatedText
-          text="Samen gekozen."
-          fontSize={48}
-          fontFamily="heading"
-          color={colors.white}
-          animation="fadeUp"
-          startFrame={20}
-          shadow
-        />
-        <AnimatedText
-          text="Samen gegeten."
-          fontSize={52}
-          fontFamily="heading"
-          color={colors.logoCoral}
-          animation="popIn"
-          startFrame={60}
-          shadow
-        />
-      </AbsoluteFill>
-    </AbsoluteFill>
-  );
-};
-
-// ─── Scene 7: CTA ───────────────────────────────────────────────────────────
+// --- Scene 5: CTA -----------------------------------------------------------
 
 const CTAScene: React.FC<{
   resultPhoto: string;
 }> = ({ resultPhoto }) => {
   return (
     <AbsoluteFill>
-      <PhotoBackground
-        src={resultPhoto}
-        overlay="rgba(0,0,0,0.6)"
-        blur={8}
-        kenBurns={false}
-        warmth={0.3}
+      <GradientBackground
+        colors={["#1a1a2e", "#2d1b12", "#0d1117"]}
+        animate
+        angle={135}
       />
       <AbsoluteFill
         style={{
@@ -419,7 +283,7 @@ const CTAScene: React.FC<{
   );
 };
 
-// ─── Main Template ──────────────────────────────────────────────────────────
+// --- Main Template -----------------------------------------------------------
 
 export const WatEtenWe: React.FC<WatEtenWeProps> = ({
   hookPhoto,
@@ -434,7 +298,7 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
-        {/* Scene 1: Hook — dark bg, bold text (90 frames) */}
+        {/* Scene 1: Hook --- GradientBg, bold text, underline (90 frames) */}
         <TransitionSeries.Sequence durationInFrames={90}>
           <HookScene />
         </TransitionSeries.Sequence>
@@ -444,7 +308,7 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
           timing={springTiming({ config: { damping: 12 } })}
         />
 
-        {/* Scene 2: Problem — NotificationStack with escalating messages (150 frames) */}
+        {/* Scene 2: Problem --- ScreenWipe + NotificationStack (150 frames) */}
         <TransitionSeries.Sequence durationInFrames={150}>
           <ProblemScene />
         </TransitionSeries.Sequence>
@@ -454,19 +318,9 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
           timing={springTiming({ config: { damping: 14 } })}
         />
 
-        {/* Scene 3: SwipeCards standalone animation (100 frames) */}
-        <TransitionSeries.Sequence durationInFrames={100}>
-          <SwipeCardsScene />
-        </TransitionSeries.Sequence>
-
-        <TransitionSeries.Transition
-          presentation={slide()}
-          timing={springTiming({ config: { damping: 14 } })}
-        />
-
-        {/* Scene 4: App — Phone mockup + swipe demo (200 frames) */}
-        <TransitionSeries.Sequence durationInFrames={200}>
-          <AppScene solutionPhoto={solutionPhoto} meals={meals} />
+        {/* Scene 3: App Solution --- ScreenWipe + AnimatedAppUI swipe (240 frames) */}
+        <TransitionSeries.Sequence durationInFrames={240}>
+          <AppScene recipeName={recipeName} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
@@ -474,8 +328,8 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
           timing={linearTiming({ durationInFrames: 15 })}
         />
 
-        {/* Scene 5: Food Reveal — photo + Checkmark (120 frames) */}
-        <TransitionSeries.Sequence durationInFrames={120}>
+        {/* Scene 4: Food Reveal --- RevealMask + AnimatedCounter (180 frames) */}
+        <TransitionSeries.Sequence durationInFrames={180}>
           <FoodRevealScene
             resultPhoto={resultPhoto}
             recipeName={recipeName}
@@ -489,17 +343,7 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
           timing={linearTiming({ durationInFrames: 15 })}
         />
 
-        {/* Scene 6: Result — friends eating (120 frames) */}
-        <TransitionSeries.Sequence durationInFrames={120}>
-          <ResultScene />
-        </TransitionSeries.Sequence>
-
-        <TransitionSeries.Transition
-          presentation={fade()}
-          timing={linearTiming({ durationInFrames: 15 })}
-        />
-
-        {/* Scene 7: CTA (180 frames) */}
+        {/* Scene 5: CTA (180 frames) */}
         <TransitionSeries.Sequence durationInFrames={180}>
           <CTAScene resultPhoto={resultPhoto} />
         </TransitionSeries.Sequence>

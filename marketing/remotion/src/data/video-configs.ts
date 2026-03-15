@@ -186,7 +186,7 @@ export const videos: VideoConfig[] = [
     music: "",
     props: {
       chatMessages: [
-        { tekst: "Maakt me niet uit 🤷", isReply: true },
+        { tekst: "Maakt me niet uit", isReply: true },
         { tekst: "Oké, pasta!", isReply: false },
         { tekst: "Ugh pasta WEER??", isReply: true },
         { tekst: "JE ZEI MAAKT NIET UIT", isReply: false },
@@ -210,7 +210,7 @@ export const videos: VideoConfig[] = [
     music: "",
     props: {
       chatMessages: [
-        { tekst: "Laten we sushi maken! 🍣", isReply: false },
+        { tekst: "Laten we sushi maken!", isReply: false },
         { tekst: "Bro we hebben \u20AC2 pp", isReply: true },
         { tekst: "Dan doen we 'budget sushi'", isReply: false },
         { tekst: "Dat heet rijst met sojasaus", isReply: true },

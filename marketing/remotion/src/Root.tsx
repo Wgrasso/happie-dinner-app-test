@@ -128,7 +128,7 @@ export const RemotionRoot: React.FC = () => (
       })}
       defaultProps={{
         chatMessages: [
-          { tekst: "Maakt me niet uit \uD83E\uDD37", isReply: true },
+          { tekst: "Maakt me niet uit", isReply: true },
           { tekst: "Oké, pasta!", isReply: false },
           { tekst: "Ugh pasta WEER??", isReply: true },
           { tekst: "JE ZEI MAAKT NIET UIT", isReply: false },

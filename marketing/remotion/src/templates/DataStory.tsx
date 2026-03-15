@@ -12,12 +12,20 @@ import { fade } from "@remotion/transitions/fade";
 import { springTiming, linearTiming } from "@remotion/transitions";
 import { AnimatedText } from "../components/AnimatedText";
 import { BackgroundMusic } from "../components/BackgroundMusic";
-import { CountUp } from "../components/CountUp";
 import { Logo } from "../components/Logo";
 import { PhotoBackground } from "../components/PhotoBackground";
 import { ProgressBar } from "../components/ProgressBar";
 import { VideoBackground } from "../components/VideoBackground";
-import { VoteCounter, FoodEmoji } from "../components/lottie-style";
+import {
+  AnimatedCounter,
+  AnimatedUnderline,
+  GradientBackground,
+  GradientWave,
+  RevealMask,
+  ScreenWipe,
+  AnimatedLine,
+  AnimatedAppUI,
+} from "../components/motion";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/fonts";
 
@@ -40,7 +48,7 @@ export interface DataStoryProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: BIG STAT — VoteCounter with progress ring ─────────────────────
+// --- Scene 1: BIG STAT --- AnimatedCounter -----------------------------------
 
 const StatScene: React.FC<{
   bgPhoto: string;
@@ -81,14 +89,16 @@ const StatScene: React.FC<{
           gap: 20,
         }}
       >
-        {/* VoteCounter as the main stat display */}
-        <VoteCounter
+        <AnimatedCounter
+          from={0}
+          to={statNummer}
           startFrame={5}
-          current={statNummer}
-          total={Math.ceil(statNummer * 1.25)}
-          label={statSuffix}
-          size={260}
-          accentColor={colors.logoCoral}
+          durationFrames={70}
+          suffix={` ${statSuffix}`}
+          fontSize={80}
+          color={colors.logoCoral}
+          showUnderline
+          underlineColor={colors.logoCoral}
         />
         <AnimatedText
           text={statLabel}
@@ -105,63 +115,7 @@ const StatScene: React.FC<{
   );
 };
 
-// ─── Scene 2: STAT LABEL — zoom blur transition ────────────────────────────
-
-const TransitionScene: React.FC<{
-  bgPhoto: string;
-}> = ({ bgPhoto }) => {
-  const frame = useCurrentFrame();
-
-  const blurAmount = interpolate(frame, [0, 30, 60], [0, 8, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const scale = interpolate(frame, [0, 30, 60], [1, 1.1, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  return (
-    <AbsoluteFill>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          overflow: "hidden",
-          filter: `blur(${blurAmount}px)`,
-          transform: `scale(${scale})`,
-        }}
-      >
-        <PhotoBackground
-          src={bgPhoto}
-          overlay="rgba(0,0,0,0.7)"
-          kenBurns={false}
-          blur={5}
-        />
-      </div>
-      <AbsoluteFill
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <AnimatedText
-          text="De cijfers spreken."
-          fontSize={48}
-          fontFamily="heading"
-          color={colors.logoCoral}
-          animation="highlight"
-          highlightColor="rgba(244,132,95,0.3)"
-          startFrame={20}
-          shadow
-        />
-      </AbsoluteFill>
-    </AbsoluteFill>
-  );
-};
-
-// ─── Scene 3: CHART — ProgressBar ──────────────────────────────────────────
+// --- Scene 2: CHART --- ProgressBar ------------------------------------------
 
 const ChartScene: React.FC<{
   chartData: { label: string; value: number; highlight?: boolean }[];
@@ -184,43 +138,50 @@ const ChartScene: React.FC<{
   });
 
   return (
-    <AbsoluteFill
-      style={{
-        background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 32,
-      }}
-    >
-      {chartTitle && (
-        <div
-          style={{
-            opacity: titleOpacity,
-            transform: `translateY(${titleY}px)`,
-          }}
-        >
-          <span
+    <AbsoluteFill>
+      <GradientBackground
+        colors={["#1a1a2e", "#16213e", "#0f3460"]}
+        animate
+        angle={135}
+      />
+      <ScreenWipe startFrame={0} durationFrames={16} color={colors.logoCoral} direction="right" />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 32,
+        }}
+      >
+        {chartTitle && (
+          <div
             style={{
-              fontFamily: fonts.heading,
-              fontSize: 36,
-              fontWeight: 700,
-              color: "rgba(255,255,255,0.85)",
-              textShadow: "0 4px 30px rgba(0,0,0,0.8)",
-              textAlign: "center",
+              opacity: titleOpacity,
+              transform: `translateY(${titleY}px)`,
             }}
           >
-            {chartTitle}
-          </span>
-        </div>
-      )}
-      <ProgressBar items={progressItems} startFrame={20} />
+            <span
+              style={{
+                fontFamily: fonts.heading,
+                fontSize: 36,
+                fontWeight: 700,
+                color: "rgba(255,255,255,0.85)",
+                textShadow: "0 4px 30px rgba(0,0,0,0.8)",
+                textAlign: "center",
+              }}
+            >
+              {chartTitle}
+            </span>
+          </div>
+        )}
+        <ProgressBar items={progressItems} startFrame={20} />
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 4: VIDEO BREAK + FoodEmoji ───────────────────────────────────────
+// --- Scene 3: VIDEO BREAK + reveal mask --------------------------------------
 
 const VideoBreakScene: React.FC = () => {
   return (
@@ -239,27 +200,32 @@ const VideoBreakScene: React.FC = () => {
           gap: 24,
         }}
       >
-        <AnimatedText
-          text="Lekker. En goedkoop."
-          fontSize={48}
-          fontFamily="heading"
-          color={colors.white}
-          animation="fadeUp"
-          startFrame={30}
-          shadow
-        />
-        <FoodEmoji
-          startFrame={50}
-          emojis={["🍝", "🥘", "🍲", "🥗"]}
-          size={280}
-          emojiSize={42}
-        />
+        <RevealMask startFrame={10} durationFrames={25} shape="diagonal">
+          <AbsoluteFill
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <AnimatedText
+              text="Lekker. En goedkoop."
+              fontSize={48}
+              fontFamily="heading"
+              color={colors.white}
+              animation="fadeUp"
+              startFrame={30}
+              shadow
+            />
+          </AbsoluteFill>
+        </RevealMask>
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 5: COMPARISON — Split screen ─────────────────────────────────────
+// --- Scene 4: COMPARISON --- Split screen ------------------------------------
 
 const CompareScene: React.FC<{
   vergelijking: {
@@ -289,7 +255,6 @@ const CompareScene: React.FC<{
     extrapolateRight: "clamp",
   });
 
-  // Divider animation
   const dividerHeight = interpolate(frame, [5, 30], [0, 400], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -394,48 +359,100 @@ const CompareScene: React.FC<{
   );
 };
 
-// ─── Scene 6: CONCLUSIE ─────────────────────────────────────────────────────
+// --- Scene 5: CONCLUSIE -----------------------------------------------------
 
 const ConclusieScene: React.FC<{
   conclusie: string;
 }> = ({ conclusie }) => {
   return (
-    <AbsoluteFill
-      style={{
-        background: "linear-gradient(180deg, #0f3460 0%, #1a1a2e 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <AnimatedText
-        text={conclusie}
-        fontSize={52}
-        fontFamily="heading"
-        color={colors.logoCoral}
-        animation="popIn"
-        startFrame={10}
-        shadow
-        glow="rgba(244,132,95,0.3)"
-        maxWidth={800}
+    <AbsoluteFill>
+      <GradientBackground
+        colors={["#0f3460", "#1a1a2e", "#16213e"]}
+        animate
+        angle={180}
       />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 16,
+        }}
+      >
+        <AnimatedText
+          text={conclusie}
+          fontSize={52}
+          fontFamily="heading"
+          color={colors.logoCoral}
+          animation="popIn"
+          startFrame={10}
+          shadow
+          glow="rgba(244,132,95,0.3)"
+          maxWidth={800}
+        />
+        <AnimatedUnderline startFrame={30} width={400} color={colors.logoCoral} strokeWidth={4} />
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 7: CTA ───────────────────────────────────────────────────────────
+// --- Scene 6: APP DEMO --- AnimatedAppUI ------------------------------------
+
+const AppDemoScene: React.FC = () => {
+  return (
+    <AbsoluteFill>
+      <GradientWave
+        colors={["#1a1a2e", "#0d1117", "#16213e"]}
+        speed={0.8}
+        direction="diagonal"
+      />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20,
+        }}
+      >
+        <AnimatedText
+          text="Zo werkt Happie"
+          fontSize={36}
+          fontFamily="heading"
+          color={colors.white}
+          animation="fadeUp"
+          startFrame={5}
+          shadow
+        />
+        <AnimatedAppUI
+          startFrame={15}
+          sequence="swipe-three"
+          recipe={{
+            name: "Pasta Carbonara",
+            image: "carbonara.jpg",
+            cookingTime: 25,
+            description: "Romige Italiaanse klassieker met pancetta en parmezaan.",
+            ingredients: ["Spaghetti", "Pancetta", "Eieren", "Parmezaan", "Peper"],
+          }}
+          swipeResults={["like", "dislike", "like"]}
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// --- Scene 7: CTA ------------------------------------------------------------
 
 const CTAScene: React.FC<{
   ctaPhoto: string;
 }> = ({ ctaPhoto }) => {
   return (
     <AbsoluteFill>
-      <PhotoBackground
-        src={ctaPhoto}
-        overlay="rgba(0,0,0,0.5)"
-        kenBurns
-        kenBurnsScale={[1, 1.08]}
-        warmth={0.5}
+      <GradientBackground
+        colors={["#1a1a2e", "#2d1b12", "#0d1117"]}
+        animate
+        angle={135}
       />
       <AbsoluteFill
         style={{
@@ -461,7 +478,7 @@ const CTAScene: React.FC<{
   );
 };
 
-// ─── Main Template ──────────────────────────────────────────────────────────
+// --- Main Template -----------------------------------------------------------
 
 export const DataStory: React.FC<DataStoryProps> = ({
   bgPhoto,
@@ -477,7 +494,7 @@ export const DataStory: React.FC<DataStoryProps> = ({
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
-        {/* Scene 1: Big stat with VoteCounter (120 frames) */}
+        {/* Scene 1: Big stat with AnimatedCounter (120 frames) */}
         <TransitionSeries.Sequence durationInFrames={120}>
           <StatScene
             bgPhoto={bgPhoto}
@@ -488,21 +505,11 @@ export const DataStory: React.FC<DataStoryProps> = ({
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
-          presentation={fade()}
-          timing={linearTiming({ durationInFrames: 15 })}
-        />
-
-        {/* Scene 2: Transition text (60 frames) */}
-        <TransitionSeries.Sequence durationInFrames={60}>
-          <TransitionScene bgPhoto={bgPhoto} />
-        </TransitionSeries.Sequence>
-
-        <TransitionSeries.Transition
           presentation={wipe()}
           timing={springTiming({ config: { damping: 12 } })}
         />
 
-        {/* Scene 3: Chart — horizontal ProgressBars (240 frames) */}
+        {/* Scene 2: Chart --- horizontal ProgressBars (240 frames) */}
         <TransitionSeries.Sequence durationInFrames={240}>
           <ChartScene chartData={chartData} chartTitle={chartTitle} />
         </TransitionSeries.Sequence>
@@ -512,7 +519,7 @@ export const DataStory: React.FC<DataStoryProps> = ({
           timing={linearTiming({ durationInFrames: 15 })}
         />
 
-        {/* Scene 4: Video break + FoodEmoji (120 frames) */}
+        {/* Scene 3: Video break + reveal mask (120 frames) */}
         <TransitionSeries.Sequence durationInFrames={120}>
           <VideoBreakScene />
         </TransitionSeries.Sequence>
@@ -522,7 +529,7 @@ export const DataStory: React.FC<DataStoryProps> = ({
           timing={linearTiming({ durationInFrames: 12 })}
         />
 
-        {/* Scene 5: Comparison split screen (150 frames) */}
+        {/* Scene 4: Comparison split screen (150 frames) */}
         <TransitionSeries.Sequence durationInFrames={150}>
           <CompareScene vergelijking={vergelijking} />
         </TransitionSeries.Sequence>
@@ -532,9 +539,19 @@ export const DataStory: React.FC<DataStoryProps> = ({
           timing={linearTiming({ durationInFrames: 12 })}
         />
 
-        {/* Scene 6: Conclusie (90 frames) */}
+        {/* Scene 5: Conclusie (90 frames) */}
         <TransitionSeries.Sequence durationInFrames={90}>
           <ConclusieScene conclusie={vergelijking.conclusie} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 12 })}
+        />
+
+        {/* Scene 6: App demo with AnimatedAppUI (210 frames) */}
+        <TransitionSeries.Sequence durationInFrames={210}>
+          <AppDemoScene />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition

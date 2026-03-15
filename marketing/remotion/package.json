@@ -8,17 +8,24 @@
     "render:one": "npx ts-node render.ts",
     "fetch-data": "npx ts-node fetch-supabase-data.ts",
     "build-data": "npx ts-node build-data.ts",
-    "fetch-videos": "npx ts-node fetch-pexels-videos.ts"
+    "fetch-videos": "npx ts-node fetch-pexels-videos.ts",
+    "generate-illustrations": "npx ts-node generate-illustrations.ts"
   },
   "dependencies": {
     "@remotion/bundler": "^4.0.0",
     "@remotion/cli": "^4.0.0",
     "@remotion/google-fonts": "^4.0.0",
+    "@remotion/lottie": "^4.0.435",
+    "@remotion/paths": "^4.0.435",
     "@remotion/renderer": "^4.0.0",
+    "@remotion/transitions": "^4.0.435",
     "@supabase/supabase-js": "^2.99.1",
+    "lottie-web": "^5.13.0",
+    "openai": "^4.104.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "remotion": "^4.0.0"
+    "remotion": "^4.0.0",
+    "remotion-animated": "^2.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",

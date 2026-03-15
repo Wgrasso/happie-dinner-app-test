@@ -16,12 +16,22 @@ import { Logo } from "../components/Logo";
 import { PhoneMockup } from "../components/PhoneMockup";
 import { PhotoBackground } from "../components/PhotoBackground";
 import { VideoBackground } from "../components/VideoBackground";
-import { CookingPot, HeartPulse } from "../components/lottie-style";
+import { HeartPulse } from "../components/lottie-style";
+import {
+  GradientBackground,
+  GradientWave,
+  RevealMask,
+  ScreenWipe,
+  AnimatedUnderline,
+  ParallaxLayer,
+  AnimatedAppUI,
+  AnimatedLine,
+} from "../components/motion";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/fonts";
 
 export interface HetMomentProps {
-  photos: [string, string, string]; // 3 food photos
+  photos: [string, string, string];
   recipeName: string;
   cookingTime: number;
   price: number;
@@ -30,7 +40,7 @@ export interface HetMomentProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: PHOTO 1 — Ken Burns zoom IN ──────────────────────────────────
+// --- Scene 1: PHOTO 1 --- Ken Burns zoom IN ----------------------------------
 
 const Photo1Scene: React.FC<{
   photo: string;
@@ -48,7 +58,7 @@ const Photo1Scene: React.FC<{
   );
 };
 
-// ─── Scene 2: PHOTO 2 — Ken Burns zoom OUT ─────────────────────────────────
+// --- Scene 2: PHOTO 2 --- Ken Burns zoom OUT ---------------------------------
 
 const Photo2Scene: React.FC<{
   photo: string;
@@ -66,25 +76,27 @@ const Photo2Scene: React.FC<{
   );
 };
 
-// ─── Scene 3: PHOTO 3 — subtle zoom ────────────────────────────────────────
+// --- Scene 3: PHOTO 3 --- diagonal reveal ------------------------------------
 
 const Photo3Scene: React.FC<{
   photo: string;
 }> = ({ photo }) => {
   return (
     <AbsoluteFill>
-      <PhotoBackground
-        src={photo}
-        overlay="rgba(0,0,0,0.25)"
-        kenBurns
-        kenBurnsScale={[1.02, 1.1]}
-        warmth={0.5}
-      />
+      <RevealMask startFrame={0} durationFrames={25} shape="diagonal">
+        <PhotoBackground
+          src={photo}
+          overlay="rgba(0,0,0,0.25)"
+          kenBurns
+          kenBurnsScale={[1.02, 1.1]}
+          warmth={0.5}
+        />
+      </RevealMask>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 4: VIDEO — slow-mo food serving + CookingPot ────────────────────
+// --- Scene 4: VIDEO --- slow-mo food serving ---------------------------------
 
 const VideoScene: React.FC<{
   recipeName: string;
@@ -96,11 +108,14 @@ const VideoScene: React.FC<{
         overlay="rgba(0,0,0,0.35)"
         playbackRate={0.5}
       />
+      <ScreenWipe startFrame={0} durationFrames={16} color="#8B7355" direction="up" />
       <AbsoluteFill
         style={{
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          gap: 12,
         }}
       >
         <AnimatedText
@@ -112,23 +127,13 @@ const VideoScene: React.FC<{
           startFrame={20}
           shadow
         />
+        <AnimatedUnderline startFrame={45} width={300} color={colors.logoCoral} strokeWidth={4} />
       </AbsoluteFill>
-      {/* Atmospheric CookingPot in bottom-left corner */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 50,
-          left: 50,
-          opacity: 0.75,
-        }}
-      >
-        <CookingPot startFrame={10} size={120} />
-      </div>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 5: DETAILS ───────────────────────────────────────────────────────
+// --- Scene 5: DETAILS --------------------------------------------------------
 
 const DetailsScene: React.FC<{
   recipeName: string;
@@ -175,7 +180,7 @@ const DetailsScene: React.FC<{
   );
 };
 
-// ─── Scene 6: THE QUESTION + HeartPulse ─────────────────────────────────────
+// --- Scene 6: THE QUESTION + HeartPulse --------------------------------------
 
 const QuestionScene: React.FC<{
   photo: string;
@@ -208,33 +213,23 @@ const QuestionScene: React.FC<{
           shadow
           maxWidth={800}
         />
-        {/* HeartPulse for emotional moment */}
         <HeartPulse startFrame={40} color={colors.logoCoral} size={80} pulseRate={1} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 7: APP PEEK ──────────────────────────────────────────────────────
+// --- Scene 7: APP DEMO --- AnimatedAppUI -------------------------------------
 
-const AppPeekScene: React.FC<{
-  photo: string;
-}> = ({ photo }) => {
-  const frame = useCurrentFrame();
-
-  const phoneOpacity = interpolate(frame, [10, 40], [0, 0.2], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
+const AppDemoScene: React.FC<{
+  recipeName: string;
+}> = ({ recipeName }) => {
   return (
     <AbsoluteFill>
-      <PhotoBackground
-        src={photo}
-        overlay="rgba(0,0,0,0.45)"
-        kenBurns
-        kenBurnsScale={[1.02, 1.08]}
-        warmth={0.5}
+      <GradientWave
+        colors={["#1a1a2e", "#0d1117", "#16213e"]}
+        speed={0.8}
+        direction="diagonal"
       />
       <AbsoluteFill
         style={{
@@ -242,43 +237,63 @@ const AppPeekScene: React.FC<{
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 40,
+          gap: 20,
         }}
       >
-        {/* Subtle phone behind text */}
-        <div style={{ opacity: phoneOpacity, position: "absolute" }}>
-          <PhoneMockup scale={0.6}>
-            <div
-              style={{
-                width: 300,
-                height: 620,
-                backgroundColor: colors.background,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: fonts.heading,
-                  fontSize: 24,
-                  fontWeight: 700,
-                  color: colors.logoCoral,
-                }}
-              >
-                Swipe
-              </span>
-            </div>
-          </PhoneMockup>
-        </div>
-
         <AnimatedText
           text="Swipe je avondeten."
-          fontSize={48}
+          fontSize={36}
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={20}
+          startFrame={5}
+          shadow
+        />
+        <AnimatedAppUI
+          startFrame={15}
+          sequence="wie-eet-mee"
+          recipe={{
+            name: recipeName,
+            image: "carbonara.jpg",
+            cookingTime: 25,
+            description: "Romige Italiaanse klassieker.",
+            ingredients: ["Spaghetti", "Pancetta", "Eieren", "Parmezaan"],
+          }}
+          membersEating={6}
+          totalMembers={8}
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// --- Scene 8: CTA ------------------------------------------------------------
+
+const CTAScene: React.FC = () => {
+  return (
+    <AbsoluteFill>
+      <GradientBackground
+        colors={["#1a1a2e", "#2d1b12", "#0f3460"]}
+        animate
+        angle={135}
+      />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 30,
+        }}
+      >
+        <Logo animation="bounce" size={650} startFrame={5} />
+        <AnimatedText
+          text="Swipe je avondeten."
+          fontSize={32}
+          fontFamily="body"
+          color={colors.white}
+          animation="fadeUp"
+          startFrame={40}
           shadow
         />
       </AbsoluteFill>
@@ -286,35 +301,7 @@ const AppPeekScene: React.FC<{
   );
 };
 
-// ─── Scene 8: CTA ───────────────────────────────────────────────────────────
-
-const CTAScene: React.FC = () => {
-  return (
-    <AbsoluteFill
-      style={{
-        background: "linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 30,
-      }}
-    >
-      <Logo animation="bounce" size={650} startFrame={5} />
-      <AnimatedText
-        text="Swipe je avondeten."
-        fontSize={32}
-        fontFamily="body"
-        color={colors.white}
-        animation="fadeUp"
-        startFrame={40}
-        shadow
-      />
-    </AbsoluteFill>
-  );
-};
-
-// ─── Main Template ──────────────────────────────────────────────────────────
+// --- Main Template -----------------------------------------------------------
 
 export const HetMoment: React.FC<HetMomentProps> = ({
   photos,
@@ -327,7 +314,7 @@ export const HetMoment: React.FC<HetMomentProps> = ({
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
-        {/* Scene 1: Photo 1 — zoom in (90 frames) */}
+        {/* Scene 1: Photo 1 --- zoom in (90 frames) */}
         <TransitionSeries.Sequence durationInFrames={90}>
           <Photo1Scene photo={photos[0]} />
         </TransitionSeries.Sequence>
@@ -337,7 +324,7 @@ export const HetMoment: React.FC<HetMomentProps> = ({
           timing={linearTiming({ durationInFrames: 20 })}
         />
 
-        {/* Scene 2: Photo 2 — zoom out (90 frames) */}
+        {/* Scene 2: Photo 2 --- zoom out (90 frames) */}
         <TransitionSeries.Sequence durationInFrames={90}>
           <Photo2Scene photo={photos[1]} />
         </TransitionSeries.Sequence>
@@ -347,7 +334,7 @@ export const HetMoment: React.FC<HetMomentProps> = ({
           timing={linearTiming({ durationInFrames: 20 })}
         />
 
-        {/* Scene 3: Photo 3 — subtle zoom (90 frames) */}
+        {/* Scene 3: Photo 3 --- diagonal reveal (90 frames) */}
         <TransitionSeries.Sequence durationInFrames={90}>
           <Photo3Scene photo={photos[2]} />
         </TransitionSeries.Sequence>
@@ -357,7 +344,7 @@ export const HetMoment: React.FC<HetMomentProps> = ({
           timing={linearTiming({ durationInFrames: 15 })}
         />
 
-        {/* Scene 4: Video — slow-mo serving + CookingPot (90 frames) */}
+        {/* Scene 4: Video --- slow-mo serving (90 frames) */}
         <TransitionSeries.Sequence durationInFrames={90}>
           <VideoScene recipeName={recipeName} />
         </TransitionSeries.Sequence>
@@ -391,9 +378,9 @@ export const HetMoment: React.FC<HetMomentProps> = ({
           timing={linearTiming({ durationInFrames: 15 })}
         />
 
-        {/* Scene 7: App peek (120 frames) */}
+        {/* Scene 7: App demo --- AnimatedAppUI (120 frames) */}
         <TransitionSeries.Sequence durationInFrames={120}>
-          <AppPeekScene photo={photos[2]} />
+          <AppDemoScene recipeName={recipeName} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
