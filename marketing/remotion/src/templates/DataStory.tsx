@@ -33,7 +33,7 @@ export interface DataStoryProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: BIG STAT (frames 0-90) ───────────────────────────────────────
+// ─── Scene 1: BIG STAT (frames 0-150) ──────────────────────────────────────
 
 const StatScene: React.FC<{
   bgPhoto: string;
@@ -44,16 +44,16 @@ const StatScene: React.FC<{
   const frame = useCurrentFrame();
 
   // Subtle parallax: background moves slightly
-  const parallaxY = interpolate(frame, [0, 90], [0, -20], {
+  const parallaxY = interpolate(frame, [0, 150], [0, -20], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const labelOpacity = interpolate(frame, [40, 60], [0, 1], {
+  const labelOpacity = interpolate(frame, [70, 100], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const labelY = interpolate(frame, [40, 60], [20, 0], {
+  const labelY = interpolate(frame, [70, 100], [20, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -89,7 +89,7 @@ const StatScene: React.FC<{
             target={statNummer}
             suffix={statSuffix}
             startFrame={5}
-            durationFrames={60}
+            durationFrames={90}
             color={colors.white}
             fontSize={180}
           />
@@ -118,7 +118,7 @@ const StatScene: React.FC<{
   );
 };
 
-// ─── Scene 2: ANIMATED CHART (frames 90-210) ───────────────────────────────
+// ─── Scene 2: ANIMATED CHART (frames 150-420) ──────────────────────────────
 
 const ChartScene: React.FC<{
   bgPhoto: string;
@@ -130,8 +130,8 @@ const ChartScene: React.FC<{
   const BAR_WIDTH = 100;
   const BAR_GAP = 24;
   const MAX_BAR_HEIGHT = 500;
-  const STAGGER = 12;
-  const SCENE_START = 90;
+  const STAGGER = 20;
+  const SCENE_START = 150;
 
   return (
     <AbsoluteFill>
@@ -254,7 +254,7 @@ const ChartScene: React.FC<{
   );
 };
 
-// ─── Scene 3: VERGELIJKING + CTA (frames 210-300/360) ───────────────────────
+// ─── Scene 3: VERGELIJKING + CTA (frames 420-900) ──────────────────────────
 
 const CompareCtaScene: React.FC<{
   ctaPhoto: string;
@@ -269,29 +269,29 @@ const CompareCtaScene: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const SCENE_START = 210;
+  const SCENE_START = 420;
   const relFrame = frame - SCENE_START;
 
-  const linksOpacity = interpolate(relFrame, [0, 20], [0, 1], {
+  const linksOpacity = interpolate(relFrame, [0, 30], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const linksX = interpolate(relFrame, [0, 20], [-60, 0], {
+  const linksX = interpolate(relFrame, [0, 30], [-60, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const rechtsOpacity = interpolate(relFrame, [10, 30], [0, 1], {
+  const rechtsOpacity = interpolate(relFrame, [20, 50], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const rechtsX = interpolate(relFrame, [10, 30], [60, 0], {
+  const rechtsX = interpolate(relFrame, [20, 50], [60, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   const conclusieScale = spring({
-    frame: Math.max(0, relFrame - 35),
+    frame: Math.max(0, relFrame - 70),
     fps,
     config: { damping: 10, stiffness: 160 },
   });
@@ -427,7 +427,7 @@ const CompareCtaScene: React.FC<{
         </div>
 
         {/* Logo */}
-        <Logo animation="fadeIn" size={180} startFrame={SCENE_START + 55} />
+        <Logo animation="fadeIn" size={180} startFrame={SCENE_START + 120} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -447,7 +447,7 @@ export const DataStory: React.FC<DataStoryProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      <SceneTransition enterFrame={0} exitFrame={80} fadeFrames={10}>
+      <SceneTransition enterFrame={0} exitFrame={150} fadeFrames={15}>
         <StatScene
           bgPhoto={bgPhoto}
           statNummer={statNummer}
@@ -456,11 +456,11 @@ export const DataStory: React.FC<DataStoryProps> = ({
         />
       </SceneTransition>
 
-      <SceneTransition enterFrame={80} exitFrame={200} fadeFrames={10}>
+      <SceneTransition enterFrame={150} exitFrame={420} fadeFrames={15}>
         <ChartScene bgPhoto={bgPhoto} chartData={chartData} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={200} exitFrame={360} fadeFrames={10}>
+      <SceneTransition enterFrame={420} exitFrame={900} fadeFrames={15}>
         <CompareCtaScene ctaPhoto={ctaPhoto} vergelijking={vergelijking} />
       </SceneTransition>
 

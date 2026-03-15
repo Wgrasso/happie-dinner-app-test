@@ -24,8 +24,8 @@ export interface HetMomentProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: FOOD SEQUENCE (frames 0-90) ──────────────────────────────────
-// 3 photos, each 30 frames, crossfading, alternating ken burns direction
+// ─── Scene 1: FOOD SEQUENCE (frames 0-240) ─────────────────────────────────
+// 3 photos, each 80 frames, crossfading, alternating ken burns direction
 
 const FoodSequenceScene: React.FC<{
   photos: [string, string, string];
@@ -33,7 +33,7 @@ const FoodSequenceScene: React.FC<{
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
 
-  const PHOTO_DURATION = 30;
+  const PHOTO_DURATION = 80;
 
   return (
     <AbsoluteFill>
@@ -44,13 +44,13 @@ const FoodSequenceScene: React.FC<{
         // Opacity: fade in over first 8 frames, fade out over last 8 frames
         const fadeIn = interpolate(
           frame,
-          [start, start + 8],
+          [start, start + 15],
           [0, 1],
           { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
         );
         const fadeOut = interpolate(
           frame,
-          [end - 8, end],
+          [end - 15, end],
           [1, 0],
           { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
         );
@@ -118,7 +118,7 @@ const FoodSequenceScene: React.FC<{
   );
 };
 
-// ─── Scene 2: THE RECIPE (frames 90-150) ───────────────────────────────────
+// ─── Scene 2: THE RECIPE (frames 240-450) ──────────────────────────────────
 
 const RecipeScene: React.FC<{
   photos: [string, string, string];
@@ -151,7 +151,7 @@ const RecipeScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="popIn"
-          startFrame={95}
+          startFrame={260}
           shadow
         />
         <AnimatedText
@@ -160,7 +160,7 @@ const RecipeScene: React.FC<{
           fontFamily="body"
           color="rgba(255,255,255,0.85)"
           animation="fadeUp"
-          startFrame={108}
+          startFrame={290}
           shadow
         />
       </AbsoluteFill>
@@ -168,7 +168,7 @@ const RecipeScene: React.FC<{
   );
 };
 
-// ─── Scene 3: THE QUESTION (frames 150-240/300) ────────────────────────────
+// ─── Scene 3: THE QUESTION (frames 450-750) ────────────────────────────────
 
 const QuestionScene: React.FC<{
   photos: [string, string, string];
@@ -197,11 +197,11 @@ const QuestionScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={158}
+          startFrame={470}
           shadow
           maxWidth={800}
         />
-        <Logo animation="fadeIn" size={200} startFrame={185} />
+        <Logo animation="fadeIn" size={200} startFrame={550} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -219,11 +219,11 @@ export const HetMoment: React.FC<HetMomentProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      <SceneTransition enterFrame={0} exitFrame={82} fadeFrames={8}>
+      <SceneTransition enterFrame={0} exitFrame={240} fadeFrames={12}>
         <FoodSequenceScene photos={photos} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={82} exitFrame={142} fadeFrames={8}>
+      <SceneTransition enterFrame={240} exitFrame={450} fadeFrames={12}>
         <RecipeScene
           photos={photos}
           recipeName={recipeName}
@@ -233,7 +233,7 @@ export const HetMoment: React.FC<HetMomentProps> = ({
         />
       </SceneTransition>
 
-      <SceneTransition enterFrame={142} exitFrame={300} fadeFrames={10}>
+      <SceneTransition enterFrame={450} exitFrame={750} fadeFrames={15}>
         <QuestionScene photos={photos} />
       </SceneTransition>
 

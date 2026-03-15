@@ -65,7 +65,7 @@ const TypingDots: React.FC<{ frame: number }> = ({ frame }) => {
   );
 };
 
-// ─── Scene 1: THE PROBLEM (frames 0-90) ────────────────────────────────────
+// ─── Scene 1: THE PROBLEM (frames 0-210) ───────────────────────────────────
 
 const ProblemScene: React.FC<{
   chatMessages: { tekst: string; isReply: boolean }[];
@@ -73,8 +73,8 @@ const ProblemScene: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const TYPING_FRAMES = 12;
-  const MSG_TOTAL = 18;
+  const TYPING_FRAMES = 20;
+  const MSG_TOTAL = 35;
 
   return (
     <AbsoluteFill
@@ -176,7 +176,7 @@ const ProblemScene: React.FC<{
   );
 };
 
-// ─── Scene 2: THE SOLUTION (frames 90-240) ─────────────────────────────────
+// ─── Scene 2: THE SOLUTION (frames 210-480) ────────────────────────────────
 
 const SolutionScene: React.FC<{
   meals: { naam: string; foto: string; liked: boolean }[];
@@ -187,26 +187,26 @@ const SolutionScene: React.FC<{
 
   // Phone slides in
   const phoneProgress = spring({
-    frame: Math.max(0, frame - 95),
+    frame: Math.max(0, frame - 220),
     fps,
     config: { damping: 14, stiffness: 100 },
   });
   const phoneY = interpolate(phoneProgress, [0, 1], [600, 0]);
 
-  // Swipe animations at frames 130, 155, 180
-  const swipeFrames = [130, 155, 180];
+  // Swipe animations at frames 280, 330, 380
+  const swipeFrames = [280, 330, 380];
 
-  // Match happens at ~185
-  const matchFrame = 190;
+  // Match happens at ~400
+  const matchFrame = 400;
   const showConfetti = frame >= matchFrame;
 
-  const matchTextOpacity = interpolate(frame, [matchFrame + 5, matchFrame + 20], [0, 1], {
+  const matchTextOpacity = interpolate(frame, [matchFrame + 5, matchFrame + 25], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   // Background transition: dark to warm
-  const warmth = interpolate(frame, [90, 180], [0, 0.6], {
+  const warmth = interpolate(frame, [210, 400], [0, 0.6], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -314,7 +314,7 @@ const SolutionScene: React.FC<{
   );
 };
 
-// ─── Scene 3: THE FEELING (frames 240-360) ─────────────────────────────────
+// ─── Scene 3: THE FEELING (frames 480-720) ─────────────────────────────────
 
 const FeelingScene: React.FC<{
   resultPhoto: string;
@@ -343,7 +343,7 @@ const FeelingScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={250}
+          startFrame={500}
           shadow
         />
         <AnimatedText
@@ -352,7 +352,7 @@ const FeelingScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={270}
+          startFrame={550}
           shadow
         />
         <AnimatedText
@@ -361,7 +361,7 @@ const FeelingScene: React.FC<{
           fontFamily="heading"
           color={colors.logoCoral}
           animation="popIn"
-          startFrame={295}
+          startFrame={610}
           shadow
         />
       </AbsoluteFill>
@@ -369,7 +369,7 @@ const FeelingScene: React.FC<{
   );
 };
 
-// ─── Scene 4: CTA (frames 360-450) ─────────────────────────────────────────
+// ─── Scene 4: CTA (frames 720-900) ─────────────────────────────────────────
 
 const CTAScene: React.FC<{
   resultPhoto: string;
@@ -392,17 +392,17 @@ const CTAScene: React.FC<{
           gap: 36,
         }}
       >
-        <Logo animation="bounce" size={220} startFrame={365} />
+        <Logo animation="bounce" size={220} startFrame={730} />
         <AnimatedText
           text="Download gratis"
           fontSize={32}
           fontFamily="body"
           color={colors.white}
           animation="fadeUp"
-          startFrame={380}
+          startFrame={760}
           shadow
         />
-        <StoreBadges startFrame={390} />
+        <StoreBadges startFrame={780} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -419,19 +419,19 @@ export const SamenEten: React.FC<SamenEtenProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#0d1117" }}>
-      <SceneTransition enterFrame={0} exitFrame={80} fadeFrames={10}>
+      <SceneTransition enterFrame={0} exitFrame={210} fadeFrames={15}>
         <ProblemScene chatMessages={chatMessages} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={80} exitFrame={230} fadeFrames={10}>
+      <SceneTransition enterFrame={210} exitFrame={480} fadeFrames={15}>
         <SolutionScene meals={meals} matchMeal={matchMeal} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={230} exitFrame={350} fadeFrames={10}>
+      <SceneTransition enterFrame={480} exitFrame={720} fadeFrames={15}>
         <FeelingScene resultPhoto={resultPhoto} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={350} exitFrame={450} fadeFrames={10}>
+      <SceneTransition enterFrame={720} exitFrame={900} fadeFrames={15}>
         <CTAScene resultPhoto={resultPhoto} />
       </SceneTransition>
 

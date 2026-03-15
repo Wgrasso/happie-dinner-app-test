@@ -25,7 +25,7 @@ export interface FoodRevealProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: THE DISH (frames 0-60) ───────────────────────────────────────
+// ─── Scene 1: THE DISH (frames 0-120) ──────────────────────────────────────
 
 const DishScene: React.FC<{
   photo: string;
@@ -76,7 +76,7 @@ const DishScene: React.FC<{
   );
 };
 
-// ─── Scene 2: INGREDIENTS + PRICE (frames 60-150) ──────────────────────────
+// ─── Scene 2: INGREDIENTS + PRICE (frames 120-360) ─────────────────────────
 
 const IngredientsScene: React.FC<{
   photo: string;
@@ -87,7 +87,7 @@ const IngredientsScene: React.FC<{
   const { fps } = useVideoConfig();
 
   // Running total animation
-  const totalProgress = interpolate(frame, [60, 140], [0, 1], {
+  const totalProgress = interpolate(frame, [130, 340], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -113,7 +113,7 @@ const IngredientsScene: React.FC<{
       >
         {/* Ingredients list */}
         {ingredients.slice(0, 6).map((item, i) => {
-          const itemStart = 65 + i * 8;
+          const itemStart = 135 + i * 20;
           const itemProgress = spring({
             frame: Math.max(0, frame - itemStart),
             fps,
@@ -190,7 +190,7 @@ const IngredientsScene: React.FC<{
   );
 };
 
-// ─── Scene 3: VERGELIJKING (frames 150-210) ─────────────────────────────────
+// ─── Scene 3: VERGELIJKING (frames 360-540) ─────────────────────────────────
 
 const CompareScene: React.FC<{
   bezorgPrijs: string;
@@ -200,17 +200,17 @@ const CompareScene: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const leftOpacity = interpolate(frame, [155, 170], [0, 1], {
+  const leftOpacity = interpolate(frame, [370, 400], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const rightOpacity = interpolate(frame, [165, 180], [0, 1], {
+  const rightOpacity = interpolate(frame, [400, 430], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   const besparingScale = spring({
-    frame: Math.max(0, frame - 185),
+    frame: Math.max(0, frame - 460),
     fps,
     config: { damping: 10, stiffness: 160 },
   });
@@ -336,7 +336,7 @@ const CompareScene: React.FC<{
   );
 };
 
-// ─── Scene 4: CTA (frames 210-300) ─────────────────────────────────────────
+// ─── Scene 4: CTA (frames 540-750) ─────────────────────────────────────────
 
 const CTAScene: React.FC<{
   photo: string;
@@ -365,10 +365,10 @@ const CTAScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={215}
+          startFrame={560}
           shadow
         />
-        <Logo animation="fadeIn" size={200} startFrame={230} />
+        <Logo animation="fadeIn" size={200} startFrame={600} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -387,19 +387,19 @@ export const FoodReveal: React.FC<FoodRevealProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      <SceneTransition enterFrame={0} exitFrame={50} fadeFrames={10}>
+      <SceneTransition enterFrame={0} exitFrame={120} fadeFrames={15}>
         <DishScene photo={photo} price={price} recipeName={recipeName} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={50} exitFrame={140} fadeFrames={10}>
+      <SceneTransition enterFrame={120} exitFrame={360} fadeFrames={15}>
         <IngredientsScene photo={photo} ingredients={ingredients} price={price} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={140} exitFrame={200} fadeFrames={10}>
+      <SceneTransition enterFrame={360} exitFrame={540} fadeFrames={15}>
         <CompareScene bezorgPrijs={bezorgPrijs} price={price} besparing={besparing} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={200} exitFrame={300} fadeFrames={10}>
+      <SceneTransition enterFrame={540} exitFrame={750} fadeFrames={15}>
         <CTAScene photo={photo} />
       </SceneTransition>
 

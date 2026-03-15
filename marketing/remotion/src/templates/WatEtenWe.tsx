@@ -29,7 +29,7 @@ export interface WatEtenWeProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: HOOK + PROBLEM (frames 0-60) ─────────────────────────────────
+// ─── Scene 1: HOOK + PROBLEM (frames 0-90) ──────────────────────────────────
 
 const HookScene: React.FC<{
   hookPhoto: string;
@@ -66,7 +66,7 @@ const HookScene: React.FC<{
           fontFamily="heading"
           color={colors.logoCoral}
           animation="slamIn"
-          startFrame={20}
+          startFrame={30}
           shadow
         />
         <AnimatedText
@@ -75,7 +75,7 @@ const HookScene: React.FC<{
           fontFamily="body"
           color={colors.white}
           animation="fadeUp"
-          startFrame={40}
+          startFrame={55}
           shadow
           maxWidth={800}
         />
@@ -84,7 +84,7 @@ const HookScene: React.FC<{
   );
 };
 
-// ─── Scene 2: APP SOLUTION (frames 60-150) ──────────────────────────────────
+// ─── Scene 2: APP SOLUTION (frames 90-540) ──────────────────────────────────
 
 const SolutionScene: React.FC<{
   solutionPhoto: string;
@@ -95,19 +95,19 @@ const SolutionScene: React.FC<{
   const { fps } = useVideoConfig();
 
   const phoneScale = spring({
-    frame: frame - 70,
+    frame: frame - 110,
     fps,
     config: { damping: 14, stiffness: 120 },
   });
 
-  // Animate 2 swipes at frames 85 and 105
-  const swipeFrames = [85, 105];
+  // Animate 2 swipes at frames 180 and 260
+  const swipeFrames = [180, 260];
 
-  const resultOpacity = interpolate(frame, [120, 135], [0, 1], {
+  const resultOpacity = interpolate(frame, [340, 370], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const resultY = interpolate(frame, [120, 135], [20, 0], {
+  const resultY = interpolate(frame, [340, 370], [20, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -259,7 +259,7 @@ const SolutionScene: React.FC<{
   );
 };
 
-// ─── Scene 3: FOOD REVEAL + CTA (frames 150-240) ───────────────────────────
+// ─── Scene 3: FOOD REVEAL + CTA (frames 540-720) ───────────────────────────
 
 const RevealScene: React.FC<{
   resultPhoto: string;
@@ -291,7 +291,7 @@ const RevealScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={150}
+          startFrame={550}
           shadow
         />
         <AnimatedText
@@ -300,7 +300,7 @@ const RevealScene: React.FC<{
           fontFamily="body"
           color="rgba(255,255,255,0.85)"
           animation="fadeUp"
-          startFrame={160}
+          startFrame={580}
           shadow
         />
         <AnimatedText
@@ -309,7 +309,7 @@ const RevealScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="popIn"
-          startFrame={180}
+          startFrame={630}
           shadow
         />
       </AbsoluteFill>
@@ -317,7 +317,7 @@ const RevealScene: React.FC<{
   );
 };
 
-// ─── Scene 4: END CARD (frames 240-300) ─────────────────────────────────────
+// ─── Scene 4: END CARD (frames 720-900) ─────────────────────────────────────
 
 const EndScene: React.FC<{
   resultPhoto: string;
@@ -340,17 +340,17 @@ const EndScene: React.FC<{
           gap: 36,
         }}
       >
-        <Logo animation="bounce" size={220} startFrame={240} />
+        <Logo animation="bounce" size={220} startFrame={730} />
         <AnimatedText
           text="Download gratis"
           fontSize={32}
           fontFamily="body"
           color={colors.white}
           animation="fadeUp"
-          startFrame={255}
+          startFrame={760}
           shadow
         />
-        <StoreBadges startFrame={265} />
+        <StoreBadges startFrame={780} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -370,13 +370,13 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Scene 1: Hook + Problem */}
-      <SceneTransition enterFrame={0} exitFrame={50} fadeFrames={10}>
+      {/* Scene 1: Hook + Problem (0-90) */}
+      <SceneTransition enterFrame={0} exitFrame={90} fadeFrames={15}>
         <HookScene hookPhoto={hookPhoto} />
       </SceneTransition>
 
-      {/* Scene 2: App Solution */}
-      <SceneTransition enterFrame={50} exitFrame={140} fadeFrames={10}>
+      {/* Scene 2: App Solution (90-540) */}
+      <SceneTransition enterFrame={90} exitFrame={540} fadeFrames={15}>
         <SolutionScene
           solutionPhoto={solutionPhoto}
           meals={meals}
@@ -384,8 +384,8 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
         />
       </SceneTransition>
 
-      {/* Scene 3: Food Reveal */}
-      <SceneTransition enterFrame={140} exitFrame={230} fadeFrames={10}>
+      {/* Scene 3: Food Reveal (540-720) */}
+      <SceneTransition enterFrame={540} exitFrame={720} fadeFrames={15}>
         <RevealScene
           resultPhoto={resultPhoto}
           recipeName={recipeName}
@@ -394,8 +394,8 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
         />
       </SceneTransition>
 
-      {/* Scene 4: End Card */}
-      <SceneTransition enterFrame={230} exitFrame={300} fadeFrames={10}>
+      {/* Scene 4: End Card (720-900) */}
+      <SceneTransition enterFrame={720} exitFrame={900} fadeFrames={15}>
         <EndScene resultPhoto={resultPhoto} />
       </SceneTransition>
 

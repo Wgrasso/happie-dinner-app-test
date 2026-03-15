@@ -41,7 +41,7 @@ export const Logo: React.FC<LogoProps> = ({
       }}
     >
       <Img
-        src={staticFile("logo.png")}
+        src={staticFile("logo-transparent.png")}
         style={{
           width: size,
           height: "auto",

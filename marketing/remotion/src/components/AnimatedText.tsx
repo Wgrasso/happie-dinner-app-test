@@ -12,7 +12,7 @@ interface AnimatedTextProps {
   fontSize?: number;
   fontFamily?: "heading" | "body";
   color?: string;
-  animation?: "fadeUp" | "popIn" | "typewriter" | "slamIn";
+  animation?: "fadeUp" | "popIn" | "typewriter" | "slamIn" | "countUp" | "splitReveal";
   startFrame?: number;
   shadow?: boolean; // text shadow for readability
   glow?: string; // glow color
@@ -88,6 +88,84 @@ export const AnimatedText: React.FC<AnimatedTextProps> = ({
         extrapolateRight: "clamp",
       });
       transform = `scale(${scaleValue})`;
+      break;
+    }
+    case "countUp": {
+      // Parse number from text: supports €80, 60+, 22, 270%, etc.
+      const match = text.match(/^([^\d]*)(\d+(?:[.,]\d+)?)(.*)$/);
+      if (match) {
+        const prefix = match[1]; // e.g. "€"
+        const targetNum = parseFloat(match[2].replace(",", "."));
+        const suffix = match[3]; // e.g. "+", "%", "/maand"
+
+        const countDuration = 30; // frames to count up
+        const progress = interpolate(relFrame, [0, countDuration], [0, 1], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        });
+        const currentVal = Math.round(progress * targetNum);
+
+        // Subtle scale bounce when reaching the target
+        const bounceScale = relFrame >= countDuration
+          ? interpolate(relFrame, [countDuration, countDuration + 6, countDuration + 10], [1, 1.08, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            })
+          : 1;
+
+        opacity = interpolate(relFrame, [0, 5], [0, 1], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        });
+        transform = `scale(${bounceScale})`;
+        displayText = `${prefix}${currentVal}${suffix}`;
+      }
+      break;
+    }
+    case "splitReveal": {
+      // Text splits: left half from left, right half from right, meet in center
+      const midPoint = Math.ceil(text.length / 2);
+      const leftPart = text.slice(0, midPoint);
+      const rightPart = text.slice(midPoint);
+
+      const slideProgress = interpolate(relFrame, [0, 18], [0, 1], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+      });
+      const leftX = interpolate(slideProgress, [0, 1], [-200, 0]);
+      const rightX = interpolate(slideProgress, [0, 1], [200, 0]);
+
+      opacity = interpolate(relFrame, [0, 8], [0, 1], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+      });
+
+      // Flash effect when halves meet
+      const flashOpacity = interpolate(relFrame, [16, 18, 22], [0, 0.6, 0], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+      });
+
+      displayText = (
+        <>
+          <span style={{ display: "inline-block", transform: `translateX(${leftX}px)` }}>
+            {leftPart}
+          </span>
+          <span style={{ display: "inline-block", transform: `translateX(${rightX}px)` }}>
+            {rightPart}
+          </span>
+          {flashOpacity > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: `radial-gradient(circle, rgba(255,255,255,${flashOpacity}) 0%, transparent 70%)`,
+                pointerEvents: "none",
+              }}
+            />
+          )}
+        </>
+      );
       break;
     }
   }

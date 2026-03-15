@@ -26,7 +26,7 @@ export const RemotionRoot: React.FC = () => (
       width={1080}
       height={1920}
       fps={30}
-      durationInFrames={300}
+      durationInFrames={900}
       defaultProps={{
         hookPhoto: bolognese.localImage,
         solutionPhoto: pestoP.localImage,
@@ -40,7 +40,7 @@ export const RemotionRoot: React.FC = () => (
           { naam: carbonara.name, foto: carbonara.localImage, liked: true },
         ],
         music: "",
-        durationInSeconds: 10,
+        durationInSeconds: 30,
       }}
     />
 
@@ -51,7 +51,7 @@ export const RemotionRoot: React.FC = () => (
       width={1080}
       height={1920}
       fps={30}
-      durationInFrames={300}
+      durationInFrames={750}
       defaultProps={{
         photo: carbonara.localImage,
         recipeName: carbonara.name,
@@ -65,7 +65,7 @@ export const RemotionRoot: React.FC = () => (
         bezorgPrijs: "\u20AC14,50",
         besparing: "\u20AC11,50",
         music: "",
-        durationInSeconds: 10,
+        durationInSeconds: 25,
       }}
     />
 
@@ -100,7 +100,7 @@ export const RemotionRoot: React.FC = () => (
         },
         ctaPhoto: tikka.localImage,
         music: "",
-        durationInSeconds: 10,
+        durationInSeconds: 30,
       }}
     />
 
@@ -130,7 +130,7 @@ export const RemotionRoot: React.FC = () => (
         matchMeal: ramen.name,
         resultPhoto: ramen.localImage,
         music: "",
-        durationInSeconds: 15,
+        durationInSeconds: 30,
       }}
     />
 
@@ -156,7 +156,7 @@ export const RemotionRoot: React.FC = () => (
         price: gnocchi.estimatedPrice,
         servings: 4,
         music: "",
-        durationInSeconds: 8,
+        durationInSeconds: 25,
       }}
     />
   </>
