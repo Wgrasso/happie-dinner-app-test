@@ -1,5 +1,6 @@
 import React from "react";
 import { Composition } from "remotion";
+import { AppDemo } from "./templates/AppDemo";
 import { StatReel } from "./templates/StatReel";
 import { SwipeTinder } from "./templates/SwipeTinder";
 import { TekstStory } from "./templates/TekstStory";
@@ -92,6 +93,24 @@ export const RemotionRoot: React.FC = () => (
         },
         music: "",
         durationInSeconds: 10,
+      }}
+    />
+    <Composition
+      id="AppDemo"
+      component={AppDemo as unknown as React.ComponentType<Record<string, unknown>>}
+      width={1080}
+      height={1920}
+      fps={30}
+      calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
+        durationInFrames: (props.durationInSeconds as number) * 30,
+        props,
+      })}
+      defaultProps={{
+        probleem: "Wat eten we vanavond?",
+        schermen: ["home", "swipe", "result"] as const,
+        features: ["Gratis", "Budget recepten", "Met je huisgenoten"],
+        music: "",
+        durationInSeconds: 13,
       }}
     />
   </>
