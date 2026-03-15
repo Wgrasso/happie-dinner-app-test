@@ -4,7 +4,7 @@ import {
   StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, 
   TextInput, ActivityIndicator, Image, Modal, Animated, RefreshControl,
   Dimensions, LayoutAnimation, Platform, UIManager, Alert, Clipboard,
-  Keyboard, Pressable
+  Keyboard, Pressable, InteractionManager
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { createGroupInSupabase, joinGroupByCode, leaveGroup, deleteGroup } from '../lib/groupsService';
@@ -1859,6 +1859,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     getPreloadedExpansionData,
     preloadAllGroupData,
     invalidateCache,
+    refreshTrigger,
   } = appState;
 
   // Keep stable references to context functions so effects don't retrigger
@@ -1928,6 +1929,25 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   
   // Track my response for each group (for collapsed state display)
   const [allGroupResponses, setAllGroupResponses] = useState({});
+
+  // When midnight reset fires (refreshTrigger changes), clear all local response state
+  // so stale yesterday's responses don't linger in the UI
+  const initialRefreshTrigger = useRef(refreshTrigger);
+  useEffect(() => {
+    if (refreshTrigger === initialRefreshTrigger.current) return; // skip initial mount
+    log.groups('Midnight reset detected (refreshTrigger changed) - clearing local response state');
+    setAllGroupResponses({});
+    setExpandedResponses({});
+    setMyResponse(null);
+    // Re-fetch responses for collapsed cards
+    if (groups?.length && fetchResponsesRef.current && currentUserId) {
+      fetchResponsesRef.current(groups, currentUserId).then(responses => {
+        if (responses && applyResponsesRef.current) {
+          applyResponsesRef.current(responses, '');
+        }
+      }).catch(() => {});
+    }
+  }, [refreshTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Unread chat messages per group
   const [unreadGroups, setUnreadGroups] = useState({});
@@ -2579,6 +2599,10 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // Global real-time subscription for daily responses across ALL groups
   // Updates both expanded and collapsed cards instantly
   const responseChannelRef = useRef(null);
+  const userGroupIdsRef = useRef(new Set());
+  useEffect(() => {
+    userGroupIdsRef.current = new Set(groups.map(g => g.group_id || g.id).filter(Boolean));
+  }, [groups]);
   useEffect(() => {
     if (!currentUserId || !groups.length) return;
 
@@ -2595,6 +2619,14 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           (payload) => {
             const groupId = payload.new?.group_id || payload.old?.group_id;
             if (!groupId) return;
+
+            // Ignore events for groups the user doesn't belong to
+            if (!userGroupIdsRef.current.has(groupId)) return;
+
+            // Ignore events for other dates (e.g. stale rows from yesterday)
+            const today = new Date().toISOString().split('T')[0];
+            const eventDate = payload.new?.response_date || payload.old?.response_date;
+            if (eventDate && eventDate !== today) return;
 
             if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
               const r = payload.new;
@@ -2629,6 +2661,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               if (isMe) {
                 setAllGroupResponses(prev => { const n = { ...prev }; delete n[groupId]; return n; });
               }
+
+              // Clear the context cache so stale data doesn't reappear on next expand
+              updateCachedResponse(groupId, r.user_id, null);
 
               if (expandedGroupIdRef.current === groupId) {
                 setExpandedResponses(prev => { const n = { ...prev }; delete n[r.user_id]; return n; });
@@ -2674,6 +2709,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           (payload) => {
             const msg = payload.new;
             if (!msg || msg.user_id === currentUserId) return;
+            // Ignore messages for groups the user doesn't belong to
+            if (!userGroupIdsRef.current.has(msg.group_id)) return;
             if (chatOpenGroupRef.current === msg.group_id) return;
             setUnreadGroups(prev => ({ ...prev, [msg.group_id]: true }));
           }
