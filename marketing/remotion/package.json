@@ -6,7 +6,9 @@
     "start": "npx remotion studio",
     "render": "npx ts-node render.ts",
     "render:one": "npx ts-node render.ts",
-    "fetch-data": "npx ts-node fetch-supabase-data.ts"
+    "fetch-data": "npx ts-node fetch-supabase-data.ts",
+    "build-data": "npx ts-node build-data.ts",
+    "fetch-videos": "npx ts-node fetch-pexels-videos.ts"
   },
   "dependencies": {
     "@remotion/bundler": "^4.0.0",
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
+    "sharp": "^0.34.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.0"
   }
