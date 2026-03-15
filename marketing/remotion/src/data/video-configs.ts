@@ -6,7 +6,7 @@ export const videos: VideoConfig[] = [
     id: "swipe-pasta",
     template: "SwipeTinder",
     durationInSeconds: 10,
-    music: "upbeat-1.mp3",
+    music: "",
     props: {
       hookText: "POV: Tinder maar dan voor eten 🍝",
       meals: [
@@ -22,7 +22,7 @@ export const videos: VideoConfig[] = [
     id: "swipe-huisgenoten",
     template: "SwipeTinder",
     durationInSeconds: 10,
-    music: "upbeat-1.mp3",
+    music: "",
     props: {
       hookText: "Mijn huisgenoten en ik swipen voor het avondeten",
       meals: [
@@ -38,7 +38,7 @@ export const videos: VideoConfig[] = [
     id: "tekst-budget",
     template: "TekstStory",
     durationInSeconds: 8,
-    music: "chill-1.mp3",
+    music: "",
     props: {
       hookText: "Je hebt €3 voor avondeten",
       antwoord: "Happie zegt: Pasta Aglio e Olio — €2,80 • 15 min",
@@ -50,7 +50,7 @@ export const videos: VideoConfig[] = [
     id: "tekst-inspiratie",
     template: "TekstStory",
     durationInSeconds: 10,
-    music: "chill-1.mp3",
+    music: "",
     props: {
       hookText: "Geen inspiratie om te koken?",
       antwoord: "Swipe door 100+ recepten in 30 seconden",
@@ -62,7 +62,7 @@ export const videos: VideoConfig[] = [
     id: "stat-bezorging",
     template: "StatReel",
     durationInSeconds: 10,
-    music: "upbeat-1.mp3",
+    music: "",
     props: {
       statNummer: 87,
       statSuffix: "%",
@@ -87,7 +87,7 @@ export const videos: VideoConfig[] = [
     id: "stat-bespaar",
     template: "StatReel",
     durationInSeconds: 12,
-    music: "upbeat-1.mp3",
+    music: "",
     props: {
       statNummer: 270,
       statSuffix: "€",
@@ -112,7 +112,7 @@ export const videos: VideoConfig[] = [
     id: "demo-swipe",
     template: "AppDemo",
     durationInSeconds: 13,
-    music: "upbeat-1.mp3",
+    music: "",
     props: {
       probleem: "Wat eten we vanavond?",
       schermen: ["home", "swipe", "result"],
@@ -124,7 +124,7 @@ export const videos: VideoConfig[] = [
     id: "demo-samen",
     template: "AppDemo",
     durationInSeconds: 15,
-    music: "chill-1.mp3",
+    music: "",
     props: {
       probleem: "Samen koken met je huisgenoten",
       schermen: ["home", "swipe", "result", "boodschappen"],
@@ -136,7 +136,7 @@ export const videos: VideoConfig[] = [
     id: "meme-split",
     template: "MemeFormat",
     durationInSeconds: 8,
-    music: "upbeat-1.mp3",
+    music: "",
     props: {
       variant: "split",
       links: { tekst: "Thuisbezorgd bestellen", emoji: "😩" },
@@ -148,7 +148,7 @@ export const videos: VideoConfig[] = [
     id: "meme-chat",
     template: "MemeFormat",
     durationInSeconds: 10,
-    music: "chill-1.mp3",
+    music: "",
     props: {
       variant: "chat",
       berichten: [
