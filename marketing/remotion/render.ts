@@ -39,7 +39,7 @@ const render = async () => {
         outputLocation: path.join(outDir, `${config.id}.mp4`),
         inputProps: { ...config.props, music: config.music, durationInSeconds: config.durationInSeconds },
         jpegQuality: 100,
-        crf: 18,
+        crf: 15,
       });
 
       console.log(`[${config.id}] Done → out/${config.id}.mp4`);

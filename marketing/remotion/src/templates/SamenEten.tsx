@@ -15,6 +15,7 @@ import { PhotoBackground } from "../components/PhotoBackground";
 import { SceneTransition } from "../components/SceneTransition";
 import { StoreBadges } from "../components/StoreBadges";
 import { SwipeCard } from "../components/SwipeCard";
+import { VideoBackground } from "../components/VideoBackground";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/fonts";
 
@@ -65,7 +66,33 @@ const TypingDots: React.FC<{ frame: number }> = ({ frame }) => {
   );
 };
 
-// ─── Scene 1: THE PROBLEM (frames 0-210) ───────────────────────────────────
+// ─── Scene 1: HOOK (frames 0-60) ────────────────────────────────────────────
+
+const HookScene: React.FC = () => {
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: "#0a0a0a",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <AnimatedText
+        text="Vanavond koken we samen."
+        fontSize={52}
+        fontFamily="heading"
+        color={colors.white}
+        animation="fadeUp"
+        startFrame={5}
+        shadow
+        maxWidth={800}
+      />
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 2: PROBLEM — Chat bubbles (frames 60-210) ────────────────────────
 
 const ProblemScene: React.FC<{
   chatMessages: { tekst: string; isReply: boolean }[];
@@ -73,8 +100,8 @@ const ProblemScene: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const TYPING_FRAMES = 20;
-  const MSG_TOTAL = 35;
+  const TYPING_FRAMES = 18;
+  const MSG_TOTAL = 30;
 
   return (
     <AbsoluteFill
@@ -105,7 +132,7 @@ const ProblemScene: React.FC<{
             fontSize: 28,
             fontWeight: 700,
             color: "rgba(255,255,255,0.5)",
-            textShadow: "0 2px 10px rgba(0,0,0,0.3)",
+            textShadow: "0 4px 30px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.5)",
           }}
         >
           Groepsapp
@@ -113,7 +140,7 @@ const ProblemScene: React.FC<{
       </div>
 
       {chatMessages.map((msg, i) => {
-        const msgStart = i * MSG_TOTAL;
+        const msgStart = 70 + i * MSG_TOTAL;
         const typingEnd = msgStart + TYPING_FRAMES;
         const isShowingTyping = frame >= msgStart && frame < typingEnd;
         const isShowingBubble = frame >= typingEnd;
@@ -176,37 +203,60 @@ const ProblemScene: React.FC<{
   );
 };
 
-// ─── Scene 2: THE SOLUTION (frames 210-480) ────────────────────────────────
+// ─── Scene 3: TENSION BREAK (frames 210-270) ────────────────────────────────
+// VideoBackground(empty-fridge). "Er is een betere manier."
 
-const SolutionScene: React.FC<{
+const TensionBreakScene: React.FC = () => {
+  return (
+    <AbsoluteFill>
+      <VideoBackground
+        src="empty-fridge.mp4"
+        overlay="rgba(0,0,0,0.55)"
+        playbackRate={0.6}
+      />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <AnimatedText
+          text="Er is een betere manier."
+          fontSize={44}
+          fontFamily="heading"
+          color={colors.white}
+          animation="highlight"
+          highlightColor={colors.logoCoral}
+          startFrame={225}
+          shadow
+          maxWidth={700}
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 4: APP DEMO (frames 270-420) ─────────────────────────────────────
+// Phone mockup, swipe sequence, vote count
+
+const AppDemoScene: React.FC<{
   meals: { naam: string; foto: string; liked: boolean }[];
-  matchMeal: string;
-}> = ({ meals, matchMeal }) => {
+}> = ({ meals }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Phone slides in
   const phoneProgress = spring({
-    frame: Math.max(0, frame - 220),
+    frame: Math.max(0, frame - 280),
     fps,
     config: { damping: 14, stiffness: 100 },
   });
   const phoneY = interpolate(phoneProgress, [0, 1], [600, 0]);
 
-  // Swipe animations at frames 280, 330, 380
-  const swipeFrames = [280, 330, 380];
+  const swipeFrames = [320, 360, 400];
 
-  // Match happens at ~400
-  const matchFrame = 400;
-  const showConfetti = frame >= matchFrame;
-
-  const matchTextOpacity = interpolate(frame, [matchFrame + 5, matchFrame + 25], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Background transition: dark to warm
-  const warmth = interpolate(frame, [210, 400], [0, 0.6], {
+  // Background warm transition
+  const warmth = interpolate(frame, [270, 400], [0, 0.6], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -225,11 +275,21 @@ const SolutionScene: React.FC<{
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 30,
+          gap: 20,
         }}
       >
+        <AnimatedText
+          text="Swipe samen."
+          fontSize={40}
+          fontFamily="heading"
+          color={colors.white}
+          animation="fadeUp"
+          startFrame={275}
+          shadow
+        />
+
         <div style={{ transform: `translateY(${phoneY}px)` }}>
-          <PhoneMockup scale={0.9}>
+          <PhoneMockup scale={0.85}>
             <div
               style={{
                 width: 300,
@@ -242,7 +302,6 @@ const SolutionScene: React.FC<{
                 overflow: "hidden",
               }}
             >
-              {/* Mini swipe cards inside phone */}
               <div style={{ position: "relative", width: 260, height: 340 }}>
                 {meals.map((meal, i) => {
                   const swipeStart = swipeFrames[i];
@@ -286,35 +345,132 @@ const SolutionScene: React.FC<{
                   );
                 })}
               </div>
+
+              {/* Vote count overlay */}
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 20,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  backgroundColor: "rgba(139,115,85,0.9)",
+                  borderRadius: 20,
+                  padding: "6px 16px",
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: fonts.body,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: colors.white,
+                  }}
+                >
+                  {Math.min(3, Math.max(0, Math.floor((frame - 280) / 40) + 1))}/6 gestemd
+                </span>
+              </div>
             </div>
           </PhoneMockup>
         </div>
-
-        {/* Match text */}
-        {frame >= matchFrame && (
-          <div style={{ opacity: matchTextOpacity, textAlign: "center" }}>
-            <span
-              style={{
-                fontFamily: fonts.heading,
-                fontSize: 40,
-                fontWeight: 700,
-                color: colors.white,
-                textShadow: "0 2px 20px rgba(0,0,0,0.5)",
-              }}
-            >
-              {matchMeal}!
-            </span>
-          </div>
-        )}
       </AbsoluteFill>
-
-      {/* Confetti on match */}
-      {showConfetti && <Confetti startFrame={matchFrame} particleCount={50} />}
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 3: THE FEELING (frames 480-720) ─────────────────────────────────
+// ─── Scene 5: MATCH (frames 420-510) ────────────────────────────────────────
+// Screen flash. Confetti. Match result.
+
+const MatchScene: React.FC<{
+  matchMeal: string;
+  resultPhoto: string;
+}> = ({ matchMeal, resultPhoto }) => {
+  const frame = useCurrentFrame();
+
+  const flashOpacity = interpolate(frame, [420, 423, 430], [0, 0.8, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill>
+      <PhotoBackground
+        src={resultPhoto}
+        overlay="rgba(0,0,0,0.35)"
+        kenBurns
+        kenBurnsScale={[1, 1.1]}
+        warmth={0.5}
+      />
+
+      {/* Flash overlay */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: `rgba(255,255,255,${flashOpacity})`,
+          zIndex: 5,
+        }}
+      />
+
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20,
+          zIndex: 6,
+        }}
+      >
+        <AnimatedText
+          text={`${matchMeal} wint!`}
+          fontSize={56}
+          fontFamily="heading"
+          color={colors.white}
+          animation="popIn"
+          startFrame={428}
+          shadow
+        />
+      </AbsoluteFill>
+
+      <Confetti startFrame={425} particleCount={60} />
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 6: COOKING video (frames 510-600) ────────────────────────────────
+
+const CookingScene: React.FC = () => {
+  return (
+    <AbsoluteFill>
+      <VideoBackground
+        src="cooking-stir-fry.mp4"
+        overlay="rgba(0,0,0,0.3)"
+        playbackRate={1}
+      />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "center",
+          paddingBottom: 200,
+        }}
+      >
+        <AnimatedText
+          text="Samen koken."
+          fontSize={44}
+          fontFamily="heading"
+          color={colors.white}
+          animation="fadeUp"
+          startFrame={540}
+          shadow
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 7: THE FEELING (frames 600-720) ──────────────────────────────────
+// Three lines staggered in
 
 const FeelingScene: React.FC<{
   resultPhoto: string;
@@ -343,7 +499,7 @@ const FeelingScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={500}
+          startFrame={620}
           shadow
         />
         <AnimatedText
@@ -352,7 +508,7 @@ const FeelingScene: React.FC<{
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={550}
+          startFrame={660}
           shadow
         />
         <AnimatedText
@@ -361,7 +517,7 @@ const FeelingScene: React.FC<{
           fontFamily="heading"
           color={colors.logoCoral}
           animation="popIn"
-          startFrame={610}
+          startFrame={700}
           shadow
         />
       </AbsoluteFill>
@@ -369,7 +525,7 @@ const FeelingScene: React.FC<{
   );
 };
 
-// ─── Scene 4: CTA (frames 720-900) ─────────────────────────────────────────
+// ─── Scene 8: CTA (frames 720-900) ──────────────────────────────────────────
 
 const CTAScene: React.FC<{
   resultPhoto: string;
@@ -394,9 +550,9 @@ const CTAScene: React.FC<{
       >
         <Logo animation="bounce" size={220} startFrame={730} />
         <AnimatedText
-          text="Download gratis"
-          fontSize={32}
-          fontFamily="body"
+          text="Download Happie"
+          fontSize={36}
+          fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
           startFrame={760}
@@ -419,18 +575,42 @@ export const SamenEten: React.FC<SamenEtenProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#0d1117" }}>
-      <SceneTransition enterFrame={0} exitFrame={210} fadeFrames={15}>
+      {/* Scene 1: Hook (0-60) */}
+      <SceneTransition enterFrame={0} exitFrame={60} fadeFrames={10}>
+        <HookScene />
+      </SceneTransition>
+
+      {/* Scene 2: Problem — chat bubbles (60-210) */}
+      <SceneTransition enterFrame={60} exitFrame={210} fadeFrames={12}>
         <ProblemScene chatMessages={chatMessages} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={210} exitFrame={480} fadeFrames={15}>
-        <SolutionScene meals={meals} matchMeal={matchMeal} />
+      {/* Scene 3: Tension break — video (210-270) */}
+      <SceneTransition enterFrame={210} exitFrame={270} fadeFrames={12}>
+        <TensionBreakScene />
       </SceneTransition>
 
-      <SceneTransition enterFrame={480} exitFrame={720} fadeFrames={15}>
+      {/* Scene 4: App demo — swipe (270-420) */}
+      <SceneTransition enterFrame={270} exitFrame={420} fadeFrames={15}>
+        <AppDemoScene meals={meals} />
+      </SceneTransition>
+
+      {/* Scene 5: Match celebration (420-510) */}
+      <SceneTransition enterFrame={420} exitFrame={510} fadeFrames={10}>
+        <MatchScene matchMeal={matchMeal} resultPhoto={resultPhoto} />
+      </SceneTransition>
+
+      {/* Scene 6: Cooking video (510-600) */}
+      <SceneTransition enterFrame={510} exitFrame={600} fadeFrames={12}>
+        <CookingScene />
+      </SceneTransition>
+
+      {/* Scene 7: The feeling (600-720) */}
+      <SceneTransition enterFrame={600} exitFrame={720} fadeFrames={15}>
         <FeelingScene resultPhoto={resultPhoto} />
       </SceneTransition>
 
+      {/* Scene 8: CTA (720-900) */}
       <SceneTransition enterFrame={720} exitFrame={900} fadeFrames={15}>
         <CTAScene resultPhoto={resultPhoto} />
       </SceneTransition>

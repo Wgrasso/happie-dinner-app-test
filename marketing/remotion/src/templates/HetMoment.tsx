@@ -10,9 +10,12 @@ import {
 import { AnimatedText } from "../components/AnimatedText";
 import { BackgroundMusic } from "../components/BackgroundMusic";
 import { Logo } from "../components/Logo";
+import { PhoneMockup } from "../components/PhoneMockup";
 import { PhotoBackground } from "../components/PhotoBackground";
 import { SceneTransition } from "../components/SceneTransition";
+import { VideoBackground } from "../components/VideoBackground";
 import { colors } from "../theme/colors";
+import { fonts } from "../theme/fonts";
 
 export interface HetMomentProps {
   photos: [string, string, string]; // 3 food photos
@@ -24,125 +27,78 @@ export interface HetMomentProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: FOOD SEQUENCE (frames 0-240) ─────────────────────────────────
-// 3 photos, each 80 frames, crossfading, alternating ken burns direction
+// ─── Scene 1: PHOTO 1 — Ken Burns zoom IN (frames 0-90) ────────────────────
 
-const FoodSequenceScene: React.FC<{
-  photos: [string, string, string];
-}> = ({ photos }) => {
-  const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
-
-  const PHOTO_DURATION = 80;
-
+const Photo1Scene: React.FC<{
+  photo: string;
+}> = ({ photo }) => {
   return (
     <AbsoluteFill>
-      {photos.map((photo, i) => {
-        const start = i * PHOTO_DURATION;
-        const end = start + PHOTO_DURATION;
-
-        // Opacity: fade in over first 8 frames, fade out over last 8 frames
-        const fadeIn = interpolate(
-          frame,
-          [start, start + 15],
-          [0, 1],
-          { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-        const fadeOut = interpolate(
-          frame,
-          [end - 15, end],
-          [1, 0],
-          { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-        const opacity = i === photos.length - 1
-          ? fadeIn // Last photo doesn't fade out
-          : Math.min(fadeIn, fadeOut);
-
-        // Alternating Ken Burns: even = zoom in, odd = zoom out
-        const localProgress = interpolate(
-          frame,
-          [start, end],
-          [0, 1],
-          { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-        const scale = i % 2 === 0
-          ? interpolate(localProgress, [0, 1], [1, 1.15], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            })
-          : interpolate(localProgress, [0, 1], [1.15, 1], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            });
-
-        return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              inset: 0,
-              opacity,
-              overflow: "hidden",
-            }}
-          >
-            <Img
-              src={staticFile(`meals/${photo}`)}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                transform: `scale(${scale})`,
-              }}
-            />
-            {/* Warm amber overlay */}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                backgroundColor: "rgba(255, 165, 0, 0.1)",
-              }}
-            />
-            {/* Subtle dark overlay for depth */}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 100%)",
-              }}
-            />
-          </div>
-        );
-      })}
+      <PhotoBackground
+        src={photo}
+        overlay="rgba(0,0,0,0.15)"
+        kenBurns
+        kenBurnsScale={[1, 1.15]}
+        warmth={0.4}
+      />
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 2: THE RECIPE (frames 240-450) ──────────────────────────────────
+// ─── Scene 2: PHOTO 2 — Ken Burns zoom OUT (frames 90-180) ─────────────────
 
-const RecipeScene: React.FC<{
-  photos: [string, string, string];
-  recipeName: string;
-  cookingTime: number;
-  price: number;
-  servings: number;
-}> = ({ photos, recipeName, cookingTime, price, servings }) => {
+const Photo2Scene: React.FC<{
+  photo: string;
+}> = ({ photo }) => {
   return (
     <AbsoluteFill>
       <PhotoBackground
-        src={photos[0]}
-        overlay="rgba(0,0,0,0.35)"
+        src={photo}
+        overlay="rgba(0,0,0,0.15)"
         kenBurns
-        kenBurnsScale={[1.05, 1.12]}
+        kenBurnsScale={[1.15, 1]}
+        warmth={0.3}
+      />
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 3: PHOTO 3 — subtle zoom (frames 180-270) ───────────────────────
+
+const Photo3Scene: React.FC<{
+  photo: string;
+}> = ({ photo }) => {
+  return (
+    <AbsoluteFill>
+      <PhotoBackground
+        src={photo}
+        overlay="rgba(0,0,0,0.25)"
+        kenBurns
+        kenBurnsScale={[1.02, 1.1]}
         warmth={0.5}
+      />
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 4: VIDEO — slow-mo food serving (frames 270-360) ────────────────
+// First text appears: recipe name
+
+const VideoScene: React.FC<{
+  recipeName: string;
+}> = ({ recipeName }) => {
+  return (
+    <AbsoluteFill>
+      <VideoBackground
+        src="serving-food-plate.mp4"
+        overlay="rgba(0,0,0,0.35)"
+        playbackRate={0.5}
       />
       <AbsoluteFill
         style={{
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20,
         }}
       >
         <AnimatedText
@@ -150,17 +106,8 @@ const RecipeScene: React.FC<{
           fontSize={48}
           fontFamily="heading"
           color={colors.white}
-          animation="popIn"
-          startFrame={260}
-          shadow
-        />
-        <AnimatedText
-          text={`${cookingTime} min \u2022 \u20AC${price.toFixed(2)} \u2022 ${servings} personen`}
-          fontSize={24}
-          fontFamily="body"
-          color="rgba(255,255,255,0.85)"
           animation="fadeUp"
-          startFrame={290}
+          startFrame={300}
           shadow
         />
       </AbsoluteFill>
@@ -168,19 +115,112 @@ const RecipeScene: React.FC<{
   );
 };
 
-// ─── Scene 3: THE QUESTION (frames 450-750) ────────────────────────────────
+// ─── Scene 5: DETAILS (frames 360-450) ──────────────────────────────────────
+// Continue video bg. "20 min . €3,50" fades in.
+
+const DetailsScene: React.FC<{
+  recipeName: string;
+  cookingTime: number;
+  price: number;
+}> = ({ recipeName, cookingTime, price }) => {
+  return (
+    <AbsoluteFill>
+      <VideoBackground
+        src="serving-food-plate.mp4"
+        overlay="rgba(0,0,0,0.4)"
+        playbackRate={0.5}
+        startFrom={3}
+      />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 16,
+        }}
+      >
+        <AnimatedText
+          text={recipeName}
+          fontSize={44}
+          fontFamily="heading"
+          color={colors.white}
+          animation="fadeUp"
+          startFrame={365}
+          shadow
+        />
+        <AnimatedText
+          text={`${cookingTime} min \u2022 \u20AC${price.toFixed(2)}`}
+          fontSize={28}
+          fontFamily="body"
+          color="rgba(255,255,255,0.85)"
+          animation="fadeUp"
+          startFrame={390}
+          shadow
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 6: THE QUESTION (frames 450-540) ────────────────────────────────
+// Best photo bg. Big elegant text.
 
 const QuestionScene: React.FC<{
-  photos: [string, string, string];
-}> = ({ photos }) => {
+  photo: string;
+}> = ({ photo }) => {
   return (
     <AbsoluteFill>
       <PhotoBackground
-        src={photos[2]}
-        overlay="rgba(0,0,0,0.4)"
+        src={photo}
+        overlay="rgba(0,0,0,0.35)"
         kenBurns
-        kenBurnsScale={[1, 1.1]}
+        kenBurnsScale={[1, 1.08]}
         warmth={0.6}
+      />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <AnimatedText
+          text="Wat wordt jouw happie?"
+          fontSize={56}
+          fontFamily="heading"
+          color={colors.white}
+          animation="fadeUp"
+          startFrame={465}
+          shadow
+          maxWidth={800}
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 7: APP PEEK (frames 540-660) ────────────────────────────────────
+// Small phone mockup at 20% opacity behind text
+
+const AppPeekScene: React.FC<{
+  photo: string;
+}> = ({ photo }) => {
+  const frame = useCurrentFrame();
+
+  const phoneOpacity = interpolate(frame, [550, 580], [0, 0.2], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill>
+      <PhotoBackground
+        src={photo}
+        overlay="rgba(0,0,0,0.45)"
+        kenBurns
+        kenBurnsScale={[1.02, 1.08]}
+        warmth={0.5}
       />
       <AbsoluteFill
         style={{
@@ -191,18 +231,71 @@ const QuestionScene: React.FC<{
           gap: 40,
         }}
       >
+        {/* Subtle phone behind text */}
+        <div style={{ opacity: phoneOpacity, position: "absolute" }}>
+          <PhoneMockup scale={0.6}>
+            <div
+              style={{
+                width: 300,
+                height: 620,
+                backgroundColor: colors.background,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: fonts.heading,
+                  fontSize: 24,
+                  fontWeight: 700,
+                  color: colors.logoCoral,
+                }}
+              >
+                Swipe
+              </span>
+            </div>
+          </PhoneMockup>
+        </div>
+
         <AnimatedText
-          text="Wat wordt jouw happie vanavond?"
-          fontSize={52}
+          text="Swipe je avondeten."
+          fontSize={48}
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={470}
+          startFrame={560}
           shadow
-          maxWidth={800}
         />
-        <Logo animation="fadeIn" size={200} startFrame={550} />
       </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 8: CTA (frames 660-750) ──────────────────────────────────────────
+
+const CTAScene: React.FC = () => {
+  return (
+    <AbsoluteFill
+      style={{
+        background: "linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 30,
+      }}
+    >
+      <Logo animation="bounce" size={220} startFrame={665} />
+      <AnimatedText
+        text="Swipe je avondeten."
+        fontSize={32}
+        fontFamily="body"
+        color={colors.white}
+        animation="fadeUp"
+        startFrame={700}
+        shadow
+      />
     </AbsoluteFill>
   );
 };
@@ -219,22 +312,48 @@ export const HetMoment: React.FC<HetMomentProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      <SceneTransition enterFrame={0} exitFrame={240} fadeFrames={12}>
-        <FoodSequenceScene photos={photos} />
+      {/* Scene 1: Photo 1 — zoom in (0-90) */}
+      <SceneTransition enterFrame={0} exitFrame={90} fadeFrames={15}>
+        <Photo1Scene photo={photos[0]} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={240} exitFrame={450} fadeFrames={12}>
-        <RecipeScene
-          photos={photos}
+      {/* Scene 2: Photo 2 — zoom out, crossfade (90-180) */}
+      <SceneTransition enterFrame={75} exitFrame={180} fadeFrames={15}>
+        <Photo2Scene photo={photos[1]} />
+      </SceneTransition>
+
+      {/* Scene 3: Photo 3 — subtle zoom (180-270) */}
+      <SceneTransition enterFrame={165} exitFrame={270} fadeFrames={15}>
+        <Photo3Scene photo={photos[2]} />
+      </SceneTransition>
+
+      {/* Scene 4: Video — slow-mo serving (270-360) */}
+      <SceneTransition enterFrame={270} exitFrame={360} fadeFrames={15}>
+        <VideoScene recipeName={recipeName} />
+      </SceneTransition>
+
+      {/* Scene 5: Details (360-450) */}
+      <SceneTransition enterFrame={360} exitFrame={450} fadeFrames={12}>
+        <DetailsScene
           recipeName={recipeName}
           cookingTime={cookingTime}
           price={price}
-          servings={servings}
         />
       </SceneTransition>
 
-      <SceneTransition enterFrame={450} exitFrame={750} fadeFrames={15}>
-        <QuestionScene photos={photos} />
+      {/* Scene 6: The question (450-540) */}
+      <SceneTransition enterFrame={450} exitFrame={540} fadeFrames={15}>
+        <QuestionScene photo={photos[0]} />
+      </SceneTransition>
+
+      {/* Scene 7: App peek (540-660) */}
+      <SceneTransition enterFrame={540} exitFrame={660} fadeFrames={15}>
+        <AppPeekScene photo={photos[2]} />
+      </SceneTransition>
+
+      {/* Scene 8: CTA (660-750) */}
+      <SceneTransition enterFrame={660} exitFrame={750} fadeFrames={15}>
+        <CTAScene />
       </SceneTransition>
 
       <BackgroundMusic src={music} />

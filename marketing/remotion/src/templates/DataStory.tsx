@@ -11,7 +11,9 @@ import { BackgroundMusic } from "../components/BackgroundMusic";
 import { CountUp } from "../components/CountUp";
 import { Logo } from "../components/Logo";
 import { PhotoBackground } from "../components/PhotoBackground";
+import { ProgressBar } from "../components/ProgressBar";
 import { SceneTransition } from "../components/SceneTransition";
+import { VideoBackground } from "../components/VideoBackground";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/fonts";
 
@@ -33,7 +35,8 @@ export interface DataStoryProps {
   durationInSeconds: number;
 }
 
-// ─── Scene 1: BIG STAT (frames 0-150) ──────────────────────────────────────
+// ─── Scene 1: BIG STAT (frames 0-120) ──────────────────────────────────────
+// Dark bg with subtle photo parallax. Massive CountUp. Spring bounce.
 
 const StatScene: React.FC<{
   bgPhoto: string;
@@ -43,17 +46,7 @@ const StatScene: React.FC<{
 }> = ({ bgPhoto, statNummer, statSuffix, statLabel }) => {
   const frame = useCurrentFrame();
 
-  // Subtle parallax: background moves slightly
-  const parallaxY = interpolate(frame, [0, 150], [0, -20], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  const labelOpacity = interpolate(frame, [70, 100], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const labelY = interpolate(frame, [70, 100], [20, 0], {
+  const parallaxY = interpolate(frame, [0, 120], [0, -20], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -70,8 +63,8 @@ const StatScene: React.FC<{
       >
         <PhotoBackground
           src={bgPhoto}
-          overlay="rgba(0,0,0,0.7)"
-          blur={10}
+          overlay="rgba(0,0,0,0.75)"
+          blur={12}
           kenBurns={false}
         />
       </div>
@@ -89,221 +82,321 @@ const StatScene: React.FC<{
             target={statNummer}
             suffix={statSuffix}
             startFrame={5}
-            durationFrames={90}
+            durationFrames={80}
             color={colors.white}
             fontSize={180}
           />
         </div>
-        <div
-          style={{
-            opacity: labelOpacity,
-            transform: `translateY(${labelY}px)`,
-            textAlign: "center",
-            padding: "0 80px",
-          }}
-        >
-          <span
-            style={{
-              fontFamily: fonts.body,
-              fontSize: 32,
-              color: "rgba(255,255,255,0.8)",
-              textShadow: "0 2px 20px rgba(0,0,0,0.5)",
-            }}
-          >
-            {statLabel}
-          </span>
-        </div>
+        <AnimatedText
+          text={statLabel}
+          fontSize={32}
+          fontFamily="body"
+          color="rgba(255,255,255,0.8)"
+          animation="fadeUp"
+          startFrame={70}
+          shadow
+          maxWidth={800}
+        />
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 2: ANIMATED CHART (frames 150-420) ──────────────────────────────
+// ─── Scene 2: STAT LABEL (frames 120-180) ──────────────────────────────────
+// Zoom blur transition feel
 
-const ChartScene: React.FC<{
+const TransitionScene: React.FC<{
   bgPhoto: string;
-  chartData: { label: string; value: number; highlight?: boolean }[];
-}> = ({ bgPhoto, chartData }) => {
+}> = ({ bgPhoto }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
-  const BAR_WIDTH = 100;
-  const BAR_GAP = 24;
-  const MAX_BAR_HEIGHT = 500;
-  const STAGGER = 20;
-  const SCENE_START = 150;
+  const blurAmount = interpolate(frame, [120, 150, 180], [0, 8, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const scale = interpolate(frame, [120, 150, 180], [1, 1.1, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill>
-      <PhotoBackground
-        src={bgPhoto}
-        overlay="rgba(0,0,0,0.8)"
-        blur={15}
-        kenBurns={false}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          overflow: "hidden",
+          filter: `blur(${blurAmount}px)`,
+          transform: `scale(${scale})`,
+        }}
+      >
+        <PhotoBackground
+          src={bgPhoto}
+          overlay="rgba(0,0,0,0.7)"
+          kenBurns={false}
+          blur={5}
+        />
+      </div>
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <AnimatedText
+          text="De cijfers spreken."
+          fontSize={48}
+          fontFamily="heading"
+          color={colors.logoCoral}
+          animation="highlight"
+          highlightColor="rgba(244,132,95,0.3)"
+          startFrame={140}
+          shadow
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 3: CHART — ProgressBar (frames 180-420) ─────────────────────────
+// Horizontal bars, staggered fill, winner glows
+
+const ChartScene: React.FC<{
+  chartData: { label: string; value: number; highlight?: boolean }[];
+}> = ({ chartData }) => {
+  const progressItems = chartData.map((item) => ({
+    label: item.label,
+    percentage: item.value,
+    color: item.highlight ? colors.logoCoral : undefined,
+  }));
+
+  return (
+    <AbsoluteFill
+      style={{
+        background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <ProgressBar items={progressItems} startFrame={200} />
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 4: VIDEO BREAK (frames 420-540) ──────────────────────────────────
+// Cooking pasta close-up, slow-mo, warm. Just vibes then text.
+
+const VideoBreakScene: React.FC = () => {
+  return (
+    <AbsoluteFill>
+      <VideoBackground
+        src="cooking-pasta-close-up.mp4"
+        overlay="rgba(0,0,0,0.3)"
+        playbackRate={0.5}
       />
       <AbsoluteFill
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          flexDirection: "column",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "flex-end",
-            justifyContent: "center",
-            gap: BAR_GAP,
-            height: MAX_BAR_HEIGHT + 80,
-          }}
-        >
-          {chartData.map((item, i) => {
-            const relFrame = frame - SCENE_START - i * STAGGER;
-            const growProgress = spring({
-              frame: Math.max(0, relFrame),
-              fps,
-              config: { damping: 14, stiffness: 100 },
-            });
-
-            const barHeight = (item.value / 100) * MAX_BAR_HEIGHT * growProgress;
-            const isHighlight = item.highlight;
-
-            const labelOpacity = interpolate(
-              Math.max(0, relFrame),
-              [15, 30],
-              [0, 1],
-              { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-            );
-
-            // Glow effect for highlighted bar when fully grown
-            const glowOpacity = isHighlight
-              ? interpolate(
-                  Math.max(0, relFrame),
-                  [30, 50],
-                  [0, 1],
-                  { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-                )
-              : 0;
-
-            return (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  width: BAR_WIDTH,
-                  height: MAX_BAR_HEIGHT + 80,
-                }}
-              >
-                {/* Value above bar */}
-                <span
-                  style={{
-                    fontFamily: fonts.body,
-                    fontSize: 22,
-                    fontWeight: 700,
-                    color: isHighlight ? colors.logoCoral : "rgba(255,255,255,0.6)",
-                    marginBottom: 8,
-                    opacity: labelOpacity,
-                    textShadow: "0 2px 10px rgba(0,0,0,0.4)",
-                  }}
-                >
-                  {item.value}%
-                </span>
-
-                {/* Bar with gradient */}
-                <div
-                  style={{
-                    width: BAR_WIDTH,
-                    height: barHeight,
-                    background: isHighlight
-                      ? `linear-gradient(180deg, ${colors.logoCoral} 0%, ${colors.accent} 100%)`
-                      : "linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)",
-                    borderRadius: "8px 8px 0 0",
-                    flexShrink: 0,
-                    boxShadow: isHighlight
-                      ? `0 0 ${30 * glowOpacity}px rgba(244,132,95,${0.5 * glowOpacity})`
-                      : undefined,
-                    position: "relative",
-                  }}
-                />
-
-                {/* Label below bar */}
-                <span
-                  style={{
-                    fontFamily: fonts.body,
-                    fontSize: 18,
-                    color: "rgba(255,255,255,0.6)",
-                    marginTop: 12,
-                    textAlign: "center",
-                    opacity: labelOpacity,
-                    textShadow: "0 2px 10px rgba(0,0,0,0.4)",
-                  }}
-                >
-                  {item.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <AnimatedText
+          text="Lekker. En goedkoop."
+          fontSize={48}
+          fontFamily="heading"
+          color={colors.white}
+          animation="fadeUp"
+          startFrame={480}
+          shadow
+        />
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// ─── Scene 3: VERGELIJKING + CTA (frames 420-900) ──────────────────────────
+// ─── Scene 5: COMPARISON — Split screen (frames 540-690) ────────────────────
 
-const CompareCtaScene: React.FC<{
-  ctaPhoto: string;
+const CompareScene: React.FC<{
   vergelijking: {
     linksLabel: string;
     linksWaarde: string;
     rechtsLabel: string;
     rechtsWaarde: string;
-    conclusie: string;
   };
-}> = ({ ctaPhoto, vergelijking }) => {
+}> = ({ vergelijking }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const SCENE_START = 420;
-  const relFrame = frame - SCENE_START;
+  const relFrame = frame - 540;
 
-  const linksOpacity = interpolate(relFrame, [0, 30], [0, 1], {
+  const linksOpacity = interpolate(relFrame, [0, 25], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const linksX = interpolate(relFrame, [0, 30], [-60, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  const rechtsOpacity = interpolate(relFrame, [20, 50], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const rechtsX = interpolate(relFrame, [20, 50], [60, 0], {
+  const linksX = interpolate(relFrame, [0, 25], [-80, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const conclusieScale = spring({
-    frame: Math.max(0, relFrame - 70),
-    fps,
-    config: { damping: 10, stiffness: 160 },
+  const rechtsOpacity = interpolate(relFrame, [15, 40], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const rechtsX = interpolate(relFrame, [15, 40], [80, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
   });
 
+  // Divider animation
+  const dividerHeight = interpolate(relFrame, [5, 30], [0, 400], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        overflow: "hidden",
+      }}
+    >
+      {/* Left: dark, red accent */}
+      <div
+        style={{
+          flex: 1,
+          backgroundColor: "#1a0a0a",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 16,
+          opacity: linksOpacity,
+          transform: `translateX(${linksX}px)`,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: fonts.heading,
+            fontSize: 56,
+            fontWeight: 700,
+            color: colors.dislikeRed,
+            textShadow: "0 4px 30px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.5)",
+          }}
+        >
+          {vergelijking.linksWaarde}
+        </span>
+        <span
+          style={{
+            fontFamily: fonts.body,
+            fontSize: 22,
+            color: "rgba(255,255,255,0.5)",
+            textShadow: "0 4px 30px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.5)",
+          }}
+        >
+          {vergelijking.linksLabel}
+        </span>
+      </div>
+
+      {/* Animated divider */}
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 3,
+          height: dividerHeight,
+          background: `linear-gradient(180deg, transparent, rgba(255,255,255,0.4), transparent)`,
+          zIndex: 10,
+        }}
+      />
+
+      {/* Right: warm, green accent */}
+      <div
+        style={{
+          flex: 1,
+          backgroundColor: "#0a1a0a",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 16,
+          opacity: rechtsOpacity,
+          transform: `translateX(${rechtsX}px)`,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: fonts.heading,
+            fontSize: 56,
+            fontWeight: 700,
+            color: colors.likeGreen,
+            textShadow: "0 0 30px rgba(76,175,80,0.4), 0 4px 30px rgba(0,0,0,0.8)",
+          }}
+        >
+          {vergelijking.rechtsWaarde}
+        </span>
+        <span
+          style={{
+            fontFamily: fonts.body,
+            fontSize: 22,
+            color: "rgba(255,255,255,0.5)",
+            textShadow: "0 4px 30px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.5)",
+          }}
+        >
+          {vergelijking.rechtsLabel}
+        </span>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 6: CONCLUSIE (frames 690-780) ────────────────────────────────────
+
+const ConclusieScene: React.FC<{
+  conclusie: string;
+}> = ({ conclusie }) => {
+  return (
+    <AbsoluteFill
+      style={{
+        background: "linear-gradient(180deg, #0f3460 0%, #1a1a2e 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <AnimatedText
+        text={conclusie}
+        fontSize={52}
+        fontFamily="heading"
+        color={colors.logoCoral}
+        animation="popIn"
+        startFrame={700}
+        shadow
+        glow="rgba(244,132,95,0.3)"
+        maxWidth={800}
+      />
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 7: CTA (frames 780-900) ──────────────────────────────────────────
+
+const CTAScene: React.FC<{
+  ctaPhoto: string;
+}> = ({ ctaPhoto }) => {
   return (
     <AbsoluteFill>
       <PhotoBackground
         src={ctaPhoto}
-        overlay="rgba(0,0,0,0.55)"
+        overlay="rgba(0,0,0,0.5)"
         kenBurns
         kenBurnsScale={[1, 1.08]}
-        warmth={0.4}
+        warmth={0.5}
       />
       <AbsoluteFill
         style={{
@@ -311,123 +404,19 @@ const CompareCtaScene: React.FC<{
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 50,
+          gap: 36,
         }}
       >
-        {/* Comparison row */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 60,
-          }}
-        >
-          {/* Left */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 12,
-              opacity: linksOpacity,
-              transform: `translateX(${linksX}px)`,
-            }}
-          >
-            <span
-              style={{
-                fontFamily: fonts.heading,
-                fontSize: 56,
-                fontWeight: 700,
-                color: colors.dislikeRed,
-                textShadow: "0 2px 20px rgba(0,0,0,0.5)",
-              }}
-            >
-              {vergelijking.linksWaarde}
-            </span>
-            <span
-              style={{
-                fontFamily: fonts.body,
-                fontSize: 20,
-                color: "rgba(255,255,255,0.7)",
-                textShadow: "0 2px 10px rgba(0,0,0,0.4)",
-              }}
-            >
-              {vergelijking.linksLabel}
-            </span>
-          </div>
-
-          {/* VS */}
-          <span
-            style={{
-              fontFamily: fonts.body,
-              fontSize: 28,
-              color: "rgba(255,255,255,0.5)",
-              textShadow: "0 2px 10px rgba(0,0,0,0.4)",
-            }}
-          >
-            vs
-          </span>
-
-          {/* Right */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 12,
-              opacity: rechtsOpacity,
-              transform: `translateX(${rechtsX}px)`,
-            }}
-          >
-            <span
-              style={{
-                fontFamily: fonts.heading,
-                fontSize: 56,
-                fontWeight: 700,
-                color: colors.likeGreen,
-                textShadow: "0 0 30px rgba(76,175,80,0.3), 0 2px 20px rgba(0,0,0,0.5)",
-              }}
-            >
-              {vergelijking.rechtsWaarde}
-            </span>
-            <span
-              style={{
-                fontFamily: fonts.body,
-                fontSize: 20,
-                color: "rgba(255,255,255,0.7)",
-                textShadow: "0 2px 10px rgba(0,0,0,0.4)",
-              }}
-            >
-              {vergelijking.rechtsLabel}
-            </span>
-          </div>
-        </div>
-
-        {/* Conclusie */}
-        <div
-          style={{
-            transform: `scale(${conclusieScale})`,
-            textAlign: "center",
-            padding: "0 60px",
-          }}
-        >
-          <span
-            style={{
-              fontFamily: fonts.heading,
-              fontSize: 36,
-              fontWeight: 700,
-              color: colors.logoCoral,
-              textShadow: "0 2px 20px rgba(0,0,0,0.5)",
-            }}
-          >
-            {vergelijking.conclusie}
-          </span>
-        </div>
-
-        {/* Logo */}
-        <Logo animation="fadeIn" size={180} startFrame={SCENE_START + 120} />
+        <Logo animation="fadeIn" size={200} startFrame={790} />
+        <AnimatedText
+          text="Download Happie"
+          fontSize={36}
+          fontFamily="heading"
+          color={colors.white}
+          animation="fadeUp"
+          startFrame={820}
+          shadow
+        />
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -447,7 +436,8 @@ export const DataStory: React.FC<DataStoryProps> = ({
 }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      <SceneTransition enterFrame={0} exitFrame={150} fadeFrames={15}>
+      {/* Scene 1: Big stat (0-120) */}
+      <SceneTransition enterFrame={0} exitFrame={120} fadeFrames={12}>
         <StatScene
           bgPhoto={bgPhoto}
           statNummer={statNummer}
@@ -456,12 +446,34 @@ export const DataStory: React.FC<DataStoryProps> = ({
         />
       </SceneTransition>
 
-      <SceneTransition enterFrame={150} exitFrame={420} fadeFrames={15}>
-        <ChartScene bgPhoto={bgPhoto} chartData={chartData} />
+      {/* Scene 2: Transition (120-180) */}
+      <SceneTransition enterFrame={120} exitFrame={180} fadeFrames={10}>
+        <TransitionScene bgPhoto={bgPhoto} />
       </SceneTransition>
 
-      <SceneTransition enterFrame={420} exitFrame={900} fadeFrames={15}>
-        <CompareCtaScene ctaPhoto={ctaPhoto} vergelijking={vergelijking} />
+      {/* Scene 3: Chart — horizontal ProgressBars (180-420) */}
+      <SceneTransition enterFrame={180} exitFrame={420} fadeFrames={15}>
+        <ChartScene chartData={chartData} />
+      </SceneTransition>
+
+      {/* Scene 4: Video break — cooking, slow-mo (420-540) */}
+      <SceneTransition enterFrame={420} exitFrame={540} fadeFrames={15}>
+        <VideoBreakScene />
+      </SceneTransition>
+
+      {/* Scene 5: Comparison split screen (540-690) */}
+      <SceneTransition enterFrame={540} exitFrame={690} fadeFrames={12}>
+        <CompareScene vergelijking={vergelijking} />
+      </SceneTransition>
+
+      {/* Scene 6: Conclusie (690-780) */}
+      <SceneTransition enterFrame={690} exitFrame={780} fadeFrames={12}>
+        <ConclusieScene conclusie={vergelijking.conclusie} />
+      </SceneTransition>
+
+      {/* Scene 7: CTA (780-900) */}
+      <SceneTransition enterFrame={780} exitFrame={900} fadeFrames={15}>
+        <CTAScene ctaPhoto={ctaPhoto} />
       </SceneTransition>
 
       <BackgroundMusic src={music} />

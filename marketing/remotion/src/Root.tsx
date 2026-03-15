@@ -27,6 +27,10 @@ export const RemotionRoot: React.FC = () => (
       height={1920}
       fps={30}
       durationInFrames={900}
+      calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
+        durationInFrames: ((props.durationInSeconds as number) || 30) * 30,
+        props,
+      })}
       defaultProps={{
         hookPhoto: bolognese.localImage,
         solutionPhoto: pestoP.localImage,
@@ -52,6 +56,10 @@ export const RemotionRoot: React.FC = () => (
       height={1920}
       fps={30}
       durationInFrames={750}
+      calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
+        durationInFrames: ((props.durationInSeconds as number) || 25) * 30,
+        props,
+      })}
       defaultProps={{
         photo: carbonara.localImage,
         recipeName: carbonara.name,
@@ -63,7 +71,7 @@ export const RemotionRoot: React.FC = () => (
           { naam: "Pecorino", prijs: "\u20AC0,50" },
         ],
         bezorgPrijs: "\u20AC14,50",
-        besparing: "\u20AC11,50",
+        besparing: "\u20AC270/maand",
         music: "",
         durationInSeconds: 25,
       }}
@@ -76,20 +84,21 @@ export const RemotionRoot: React.FC = () => (
       width={1080}
       height={1920}
       fps={30}
+      durationInFrames={900}
       calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
-        durationInFrames: (props.durationInSeconds as number) * 30,
+        durationInFrames: ((props.durationInSeconds as number) || 30) * 30,
         props,
       })}
       defaultProps={{
         bgPhoto: bolognese.localImage,
-        statNummer: 11,
-        statSuffix: "",
-        statLabel: "recepten onder \u20AC5 in Happie",
+        statNummer: 80,
+        statSuffix: "\u20AC",
+        statLabel: "per maand besparen op eten",
         chartData: [
-          { label: "bezorgen", value: 60 },
-          { label: "zelf", value: 40 },
-          { label: "afhaal", value: 50 },
-          { label: "happie", value: 85, highlight: true },
+          { label: "Bezorgen", value: 60 },
+          { label: "Zelf koken", value: 40 },
+          { label: "Afhaal", value: 50 },
+          { label: "Happie", value: 85, highlight: true },
         ],
         vergelijking: {
           linksLabel: "Thuisbezorgd",
@@ -111,8 +120,9 @@ export const RemotionRoot: React.FC = () => (
       width={1080}
       height={1920}
       fps={30}
+      durationInFrames={900}
       calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
-        durationInFrames: (props.durationInSeconds as number) * 30,
+        durationInFrames: ((props.durationInSeconds as number) || 30) * 30,
         props,
       })}
       defaultProps={{
@@ -141,8 +151,9 @@ export const RemotionRoot: React.FC = () => (
       width={1080}
       height={1920}
       fps={30}
+      durationInFrames={750}
       calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
-        durationInFrames: (props.durationInSeconds as number) * 30,
+        durationInFrames: ((props.durationInSeconds as number) || 25) * 30,
         props,
       })}
       defaultProps={{
