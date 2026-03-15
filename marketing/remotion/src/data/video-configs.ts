@@ -1,72 +1,120 @@
 import { VideoConfig } from "../types";
+import { recipes } from "./recipes";
+
+// Pick specific recipes for each video
+const bolognese = recipes.find((r) => r.name === "Spaghetti Bolognese")!;
+const carbonara = recipes.find((r) => r.name === "Carbonara")!;
+const pestoP = recipes.find((r) => r.name === "Pesto Pasta")!;
+const padThai = recipes.find((r) => r.name === "Pad Thai")!;
+const risotto = recipes.find((r) => r.name === "Mushroom Risotto")!;
+const tikka = recipes.find((r) => r.name === "Chicken Tikka Masala")!;
+const gnocchi = recipes.find((r) => r.name === "Gnocchi with Sage Butter")!;
+const burger = recipes.find((r) => r.name === "Beef Burger")!;
+const ramen = recipes.find((r) => r.name === "Ramen")!;
+const shakshuka = recipes.find((r) => r.name === "Shakshuka")!;
+const pizza = recipes.find((r) => r.name === "Margherita Pizza")!;
+const friedRice = recipes.find((r) => r.name === "Fried Rice")!;
+const greenCurry = recipes.find((r) => r.name === "Thai Green Curry")!;
+const bibimbap = recipes.find((r) => r.name === "Bibimbap")!;
+const caprese = recipes.find((r) => r.name === "Caprese Salad")!;
 
 export const videos: VideoConfig[] = [
-  // 1. SwipeTinder
+  // ─── 1. WatEtenWe — Carbonara match ────────────────────────────────────
   {
-    id: "swipe-pasta",
-    template: "SwipeTinder",
+    id: "wateten-carbonara",
+    template: "WatEtenWe",
     durationInSeconds: 10,
     music: "",
     props: {
-      hookText: "POV: Tinder maar dan voor eten 🍝",
+      hookPhoto: bolognese.localImage,
+      solutionPhoto: pestoP.localImage,
+      resultPhoto: carbonara.localImage,
+      recipeName: carbonara.name,
+      cookingTime: carbonara.cookingTime,
+      price: carbonara.estimatedPrice,
       meals: [
-        { naam: "Nasi Goreng", foto: "nasi.jpg", liked: false },
-        { naam: "Shoarma Bowl", foto: "shoarma.jpg", liked: false },
-        { naam: "Pasta Carbonara", foto: "carbonara.jpg", liked: true },
+        { naam: padThai.name, foto: padThai.localImage, liked: false },
+        { naam: risotto.name, foto: risotto.localImage, liked: false },
+        { naam: carbonara.name, foto: carbonara.localImage, liked: true },
       ],
-      matchMeal: "Pasta Carbonara",
     },
   },
-  // 2. SwipeTinder
+
+  // ─── 2. WatEtenWe — Ramen match ────────────────────────────────────────
   {
-    id: "swipe-huisgenoten",
-    template: "SwipeTinder",
+    id: "wateten-ramen",
+    template: "WatEtenWe",
     durationInSeconds: 10,
     music: "",
     props: {
-      hookText: "Mijn huisgenoten en ik swipen voor het avondeten",
+      hookPhoto: friedRice.localImage,
+      solutionPhoto: greenCurry.localImage,
+      resultPhoto: ramen.localImage,
+      recipeName: ramen.name,
+      cookingTime: ramen.cookingTime,
+      price: ramen.estimatedPrice,
       meals: [
-        { naam: "Pannenkoeken", foto: "pannenkoeken.jpg", liked: false },
-        { naam: "Wraps", foto: "wraps.jpg", liked: true },
-        { naam: "Ramen", foto: "ramen.jpg", liked: false },
+        { naam: burger.name, foto: burger.localImage, liked: false },
+        { naam: tikka.name, foto: tikka.localImage, liked: false },
+        { naam: ramen.name, foto: ramen.localImage, liked: true },
       ],
-      matchMeal: "Wraps",
     },
   },
-  // 3. TekstStory
+
+  // ─── 3. FoodReveal — Carbonara budget ──────────────────────────────────
   {
-    id: "tekst-budget",
-    template: "TekstStory",
-    durationInSeconds: 8,
-    music: "",
-    props: {
-      hookText: "Je hebt €3 voor avondeten",
-      antwoord: "Happie zegt: Pasta Aglio e Olio — €2,80 • 15 min",
-      mode: "dark",
-    },
-  },
-  // 4. TekstStory
-  {
-    id: "tekst-inspiratie",
-    template: "TekstStory",
+    id: "reveal-carbonara",
+    template: "FoodReveal",
     durationInSeconds: 10,
     music: "",
     props: {
-      hookText: "Geen inspiratie om te koken?",
-      antwoord: "Swipe door 100+ recepten in 30 seconden",
-      mode: "light",
+      photo: carbonara.localImage,
+      recipeName: carbonara.name,
+      price: carbonara.estimatedPrice,
+      ingredients: [
+        { naam: "Spaghetti", prijs: "\u20AC0,90" },
+        { naam: "Pancetta", prijs: "\u20AC1,20" },
+        { naam: "Eieren", prijs: "\u20AC0,40" },
+        { naam: "Pecorino", prijs: "\u20AC0,50" },
+      ],
+      bezorgPrijs: "\u20AC14,50",
+      besparing: "\u20AC11,50",
     },
   },
-  // 5. StatReel
+
+  // ─── 4. FoodReveal — Pesto Pasta ───────────────────────────────────────
   {
-    id: "stat-bezorging",
-    template: "StatReel",
+    id: "reveal-pesto",
+    template: "FoodReveal",
     durationInSeconds: 10,
     music: "",
     props: {
-      statNummer: 87,
-      statSuffix: "%",
-      statLabel: "van studenten kookt max 2x per week",
+      photo: pestoP.localImage,
+      recipeName: pestoP.name,
+      price: pestoP.estimatedPrice,
+      ingredients: [
+        { naam: "Penne", prijs: "\u20AC0,80" },
+        { naam: "Basilicum", prijs: "\u20AC0,90" },
+        { naam: "Pijnboompitten", prijs: "\u20AC1,00" },
+        { naam: "Parmezaan", prijs: "\u20AC0,80" },
+        { naam: "Kerstomaten", prijs: "\u20AC0,50" },
+      ],
+      bezorgPrijs: "\u20AC13,00",
+      besparing: "\u20AC9,00",
+    },
+  },
+
+  // ─── 5. DataStory — recepten onder 5 euro ──────────────────────────────
+  {
+    id: "data-budget",
+    template: "DataStory",
+    durationInSeconds: 10,
+    music: "",
+    props: {
+      bgPhoto: bolognese.localImage,
+      statNummer: 11,
+      statSuffix: "",
+      statLabel: "recepten onder \u20AC5 in Happie",
       chartData: [
         { label: "bezorgen", value: 60 },
         { label: "zelf", value: 40 },
@@ -75,22 +123,25 @@ export const videos: VideoConfig[] = [
       ],
       vergelijking: {
         linksLabel: "Thuisbezorgd",
-        linksWaarde: "€12",
+        linksWaarde: "\u20AC12",
         rechtsLabel: "Happie",
-        rechtsWaarde: "€3",
-        conclusie: "Bespaar €270/maand",
+        rechtsWaarde: "\u20AC3",
+        conclusie: "Bespaar \u20AC270/maand",
       },
+      ctaPhoto: tikka.localImage,
     },
   },
-  // 6. StatReel
+
+  // ─── 6. DataStory — maandelijkse besparing ────────────────────────────
   {
-    id: "stat-bespaar",
-    template: "StatReel",
+    id: "data-bespaar",
+    template: "DataStory",
     durationInSeconds: 12,
     music: "",
     props: {
-      statNummer: 270,
-      statSuffix: "€",
+      bgPhoto: pizza.localImage,
+      statNummer: 80,
+      statSuffix: "\u20AC",
       statLabel: "per maand besparen op eten",
       chartData: [
         { label: "jan", value: 30 },
@@ -100,65 +151,96 @@ export const videos: VideoConfig[] = [
       ],
       vergelijking: {
         linksLabel: "Zonder Happie",
-        linksWaarde: "€400",
+        linksWaarde: "\u20AC400",
         rechtsLabel: "Met Happie",
-        rechtsWaarde: "€130",
+        rechtsWaarde: "\u20AC130",
         conclusie: "Dat is 3 festivals per jaar",
       },
+      ctaPhoto: ramen.localImage,
     },
   },
-  // 7. AppDemo
+
+  // ─── 7. SamenEten — huisgenoten ───────────────────────────────────────
   {
-    id: "demo-swipe",
-    template: "AppDemo",
-    durationInSeconds: 13,
-    music: "",
-    props: {
-      probleem: "Wat eten we vanavond?",
-      schermen: ["home", "swipe", "result"],
-      features: ["Gratis", "Budget recepten", "Met je huisgenoten"],
-    },
-  },
-  // 8. AppDemo
-  {
-    id: "demo-samen",
-    template: "AppDemo",
+    id: "samen-huisgenoten",
+    template: "SamenEten",
     durationInSeconds: 15,
     music: "",
     props: {
-      probleem: "Samen koken met je huisgenoten",
-      schermen: ["home", "swipe", "result", "boodschappen"],
-      features: ["Stem samen", "Automatische boodschappenlijst", "Recepten onder €5"],
+      chatMessages: [
+        { tekst: "Wat eten we?", isReply: false },
+        { tekst: "Weet niet", isReply: false },
+        { tekst: "Ugh weer pasta", isReply: false },
+        { tekst: "Download Happie!", isReply: true },
+      ],
+      meals: [
+        { naam: burger.name, foto: burger.localImage, liked: false },
+        { naam: padThai.name, foto: padThai.localImage, liked: false },
+        { naam: bibimbap.name, foto: bibimbap.localImage, liked: true },
+      ],
+      matchMeal: bibimbap.name,
+      resultPhoto: bibimbap.localImage,
     },
   },
-  // 9. MemeFormat split
+
+  // ─── 8. SamenEten — koppel ────────────────────────────────────────────
   {
-    id: "meme-split",
-    template: "MemeFormat",
+    id: "samen-koppel",
+    template: "SamenEten",
+    durationInSeconds: 15,
+    music: "",
+    props: {
+      chatMessages: [
+        { tekst: "Schat wat eten we?", isReply: false },
+        { tekst: "Maakt me niet uit", isReply: true },
+        { tekst: "Kies dan iets", isReply: false },
+        { tekst: "Laten we swipen!", isReply: true },
+      ],
+      meals: [
+        { naam: shakshuka.name, foto: shakshuka.localImage, liked: false },
+        { naam: greenCurry.name, foto: greenCurry.localImage, liked: false },
+        { naam: ramen.name, foto: ramen.localImage, liked: true },
+      ],
+      matchMeal: ramen.name,
+      resultPhoto: ramen.localImage,
+    },
+  },
+
+  // ─── 9. HetMoment — Gnocchi ───────────────────────────────────────────
+  {
+    id: "moment-gnocchi",
+    template: "HetMoment",
     durationInSeconds: 8,
     music: "",
     props: {
-      variant: "split",
-      links: { tekst: "Thuisbezorgd bestellen", emoji: "😩" },
-      rechts: { tekst: "Met Happie koken", emoji: "😎" },
+      photos: [
+        gnocchi.localImage,
+        carbonara.localImage,
+        risotto.localImage,
+      ] as [string, string, string],
+      recipeName: gnocchi.name,
+      cookingTime: gnocchi.cookingTime,
+      price: gnocchi.estimatedPrice,
+      servings: 4,
     },
   },
-  // 10. MemeFormat chat
+
+  // ─── 10. HetMoment — Caprese ──────────────────────────────────────────
   {
-    id: "meme-chat",
-    template: "MemeFormat",
+    id: "moment-caprese",
+    template: "HetMoment",
     durationInSeconds: 10,
     music: "",
     props: {
-      variant: "chat",
-      berichten: [
-        { tekst: "Wat eten we vanavond?", isReply: false },
-        { tekst: "Weet niet", isReply: false },
-        { tekst: "Pasta?", isReply: false },
-        { tekst: "Nee weer pasta", isReply: false },
-        { tekst: "Download gewoon Happie 😤", isReply: true },
-      ],
-      punchline: "Download gewoon Happie 😤",
+      photos: [
+        caprese.localImage,
+        pestoP.localImage,
+        pizza.localImage,
+      ] as [string, string, string],
+      recipeName: caprese.name,
+      cookingTime: caprese.cookingTime,
+      price: caprese.estimatedPrice,
+      servings: 2,
     },
   },
 ];

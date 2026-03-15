@@ -26,59 +26,70 @@ export interface ChatBericht {
 export type VideoConfig =
   | {
       id: string;
-      template: "SwipeTinder";
+      template: "WatEtenWe";
       durationInSeconds: 10;
       music: string;
       props: {
-        hookText: string;
+        hookPhoto: string;
+        solutionPhoto: string;
+        resultPhoto: string;
+        recipeName: string;
+        cookingTime: number;
+        price: number;
         meals: Meal[];
-        matchMeal: string;
-        ctaText?: string;
       };
     }
   | {
       id: string;
-      template: "TekstStory";
-      durationInSeconds: 8 | 10;
+      template: "FoodReveal";
+      durationInSeconds: 10;
       music: string;
       props: {
-        hookText: string;
-        antwoord: string;
-        tagline?: string;
-        mode?: "dark" | "light";
+        photo: string;
+        recipeName: string;
+        price: number;
+        ingredients: { naam: string; prijs: string }[];
+        bezorgPrijs: string;
+        besparing: string;
       };
     }
   | {
       id: string;
-      template: "StatReel";
+      template: "DataStory";
       durationInSeconds: 10 | 12;
       music: string;
       props: {
+        bgPhoto: string;
         statNummer: number;
         statSuffix: string;
         statLabel: string;
         chartData: ChartBar[];
         vergelijking: Vergelijking;
+        ctaPhoto: string;
       };
     }
   | {
       id: string;
-      template: "AppDemo";
-      durationInSeconds: 13 | 15;
+      template: "SamenEten";
+      durationInSeconds: 12 | 15;
       music: string;
       props: {
-        probleem: string;
-        schermen: ("home" | "swipe" | "result" | "boodschappen")[];
-        features: string[];
+        chatMessages: ChatBericht[];
+        meals: Meal[];
+        matchMeal: string;
+        resultPhoto: string;
       };
     }
   | {
       id: string;
-      template: "MemeFormat";
+      template: "HetMoment";
       durationInSeconds: 8 | 10;
       music: string;
-      props:
-        | { variant: "split"; links: { tekst: string; emoji: string }; rechts: { tekst: string; emoji: string } }
-        | { variant: "tierlist"; items: { tier: "S" | "A" | "B" | "F"; label: string }[] }
-        | { variant: "chat"; berichten: ChatBericht[]; punchline: string };
+      props: {
+        photos: [string, string, string];
+        recipeName: string;
+        cookingTime: number;
+        price: number;
+        servings: number;
+      };
     };

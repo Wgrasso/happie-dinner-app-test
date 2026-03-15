@@ -1,55 +1,78 @@
 import React from "react";
 import { Composition } from "remotion";
-import { AppDemo } from "./templates/AppDemo";
-import { MemeFormat } from "./templates/MemeFormat";
-import { StatReel } from "./templates/StatReel";
-import { SwipeTinder } from "./templates/SwipeTinder";
-import { TekstStory } from "./templates/TekstStory";
+import { recipes } from "./data/recipes";
+import { WatEtenWe } from "./templates/WatEtenWe";
+import { FoodReveal } from "./templates/FoodReveal";
+import { DataStory } from "./templates/DataStory";
+import { SamenEten } from "./templates/SamenEten";
+import { HetMoment } from "./templates/HetMoment";
+
+const carbonara = recipes.find((r) => r.name === "Carbonara")!;
+const bolognese = recipes.find((r) => r.name === "Spaghetti Bolognese")!;
+const pestoP = recipes.find((r) => r.name === "Pesto Pasta")!;
+const padThai = recipes.find((r) => r.name === "Pad Thai")!;
+const risotto = recipes.find((r) => r.name === "Mushroom Risotto")!;
+const tikka = recipes.find((r) => r.name === "Chicken Tikka Masala")!;
+const gnocchi = recipes.find((r) => r.name === "Gnocchi with Sage Butter")!;
+const burger = recipes.find((r) => r.name === "Beef Burger")!;
+const ramen = recipes.find((r) => r.name === "Ramen")!;
 
 export const RemotionRoot: React.FC = () => (
   <>
+    {/* ─── WatEtenWe ──────────────────────────────────────────────────── */}
     <Composition
-      id="SwipeTinder"
-      component={SwipeTinder as unknown as React.ComponentType<Record<string, unknown>>}
+      id="WatEtenWe"
+      component={WatEtenWe as unknown as React.ComponentType<Record<string, unknown>>}
       width={1080}
       height={1920}
       fps={30}
       durationInFrames={300}
       defaultProps={{
-        hookText: "POV: Tinder maar dan voor eten 🍝",
+        hookPhoto: bolognese.localImage,
+        solutionPhoto: pestoP.localImage,
+        resultPhoto: carbonara.localImage,
+        recipeName: carbonara.name,
+        cookingTime: carbonara.cookingTime,
+        price: carbonara.estimatedPrice,
         meals: [
-          { naam: "Nasi Goreng", foto: "test.jpg", liked: false },
-          { naam: "Shoarma Bowl", foto: "test.jpg", liked: false },
-          { naam: "Pasta Carbonara", foto: "test.jpg", liked: true },
+          { naam: padThai.name, foto: padThai.localImage, liked: false },
+          { naam: risotto.name, foto: risotto.localImage, liked: false },
+          { naam: carbonara.name, foto: carbonara.localImage, liked: true },
         ],
-        matchMeal: "Pasta Carbonara",
-        ctaText: "Download gratis",
         music: "",
         durationInSeconds: 10,
       }}
     />
+
+    {/* ─── FoodReveal ─────────────────────────────────────────────────── */}
     <Composition
-      id="TekstStory"
-      component={TekstStory as unknown as React.ComponentType<Record<string, unknown>>}
+      id="FoodReveal"
+      component={FoodReveal as unknown as React.ComponentType<Record<string, unknown>>}
       width={1080}
       height={1920}
       fps={30}
-      calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
-        durationInFrames: (props.durationInSeconds as number) * 30,
-        props,
-      })}
+      durationInFrames={300}
       defaultProps={{
-        hookText: "Je hebt €3 voor avondeten",
-        antwoord: "Happie zegt: Pasta Aglio e Olio — €2,80 • 15 min",
-        tagline: "Swipe je avondeten bij Happie",
-        mode: "dark" as const,
+        photo: carbonara.localImage,
+        recipeName: carbonara.name,
+        price: carbonara.estimatedPrice,
+        ingredients: [
+          { naam: "Spaghetti", prijs: "\u20AC0,90" },
+          { naam: "Pancetta", prijs: "\u20AC1,20" },
+          { naam: "Eieren", prijs: "\u20AC0,40" },
+          { naam: "Pecorino", prijs: "\u20AC0,50" },
+        ],
+        bezorgPrijs: "\u20AC14,50",
+        besparing: "\u20AC11,50",
         music: "",
-        durationInSeconds: 8,
+        durationInSeconds: 10,
       }}
     />
+
+    {/* ─── DataStory ──────────────────────────────────────────────────── */}
     <Composition
-      id="StatReel"
-      component={StatReel as unknown as React.ComponentType<Record<string, unknown>>}
+      id="DataStory"
+      component={DataStory as unknown as React.ComponentType<Record<string, unknown>>}
       width={1080}
       height={1920}
       fps={30}
@@ -58,9 +81,10 @@ export const RemotionRoot: React.FC = () => (
         props,
       })}
       defaultProps={{
-        statNummer: 87,
-        statSuffix: "%",
-        statLabel: "van studenten kookt max 2x per week",
+        bgPhoto: bolognese.localImage,
+        statNummer: 11,
+        statSuffix: "",
+        statLabel: "recepten onder \u20AC5 in Happie",
         chartData: [
           { label: "bezorgen", value: 60 },
           { label: "zelf", value: 40 },
@@ -69,18 +93,21 @@ export const RemotionRoot: React.FC = () => (
         ],
         vergelijking: {
           linksLabel: "Thuisbezorgd",
-          linksWaarde: "€12",
+          linksWaarde: "\u20AC12",
           rechtsLabel: "Happie",
-          rechtsWaarde: "€3",
-          conclusie: "Bespaar €270/maand",
+          rechtsWaarde: "\u20AC3",
+          conclusie: "Bespaar \u20AC270/maand",
         },
+        ctaPhoto: tikka.localImage,
         music: "",
         durationInSeconds: 10,
       }}
     />
+
+    {/* ─── SamenEten ──────────────────────────────────────────────────── */}
     <Composition
-      id="AppDemo"
-      component={AppDemo as unknown as React.ComponentType<Record<string, unknown>>}
+      id="SamenEten"
+      component={SamenEten as unknown as React.ComponentType<Record<string, unknown>>}
       width={1080}
       height={1920}
       fps={30}
@@ -89,16 +116,28 @@ export const RemotionRoot: React.FC = () => (
         props,
       })}
       defaultProps={{
-        probleem: "Wat eten we vanavond?",
-        schermen: ["home", "swipe", "result"] as const,
-        features: ["Gratis", "Budget recepten", "Met je huisgenoten"],
+        chatMessages: [
+          { tekst: "Wat eten we?", isReply: false },
+          { tekst: "Weet niet", isReply: false },
+          { tekst: "Ugh weer pasta", isReply: false },
+          { tekst: "Download Happie!", isReply: true },
+        ],
+        meals: [
+          { naam: burger.name, foto: burger.localImage, liked: false },
+          { naam: padThai.name, foto: padThai.localImage, liked: false },
+          { naam: ramen.name, foto: ramen.localImage, liked: true },
+        ],
+        matchMeal: ramen.name,
+        resultPhoto: ramen.localImage,
         music: "",
-        durationInSeconds: 13,
+        durationInSeconds: 15,
       }}
     />
+
+    {/* ─── HetMoment ──────────────────────────────────────────────────── */}
     <Composition
-      id="MemeFormat"
-      component={MemeFormat as unknown as React.ComponentType<Record<string, unknown>>}
+      id="HetMoment"
+      component={HetMoment as unknown as React.ComponentType<Record<string, unknown>>}
       width={1080}
       height={1920}
       fps={30}
@@ -107,9 +146,15 @@ export const RemotionRoot: React.FC = () => (
         props,
       })}
       defaultProps={{
-        variant: "split" as const,
-        links: { tekst: "Thuisbezorgd bestellen", emoji: "😩" },
-        rechts: { tekst: "Met Happie koken", emoji: "😎" },
+        photos: [
+          gnocchi.localImage,
+          carbonara.localImage,
+          risotto.localImage,
+        ] as [string, string, string],
+        recipeName: gnocchi.name,
+        cookingTime: gnocchi.cookingTime,
+        price: gnocchi.estimatedPrice,
+        servings: 4,
         music: "",
         durationInSeconds: 8,
       }}
