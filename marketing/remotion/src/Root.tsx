@@ -1,6 +1,7 @@
 import React from "react";
 import { Composition } from "remotion";
 import { SwipeTinder } from "./templates/SwipeTinder";
+import { TekstStory } from "./templates/TekstStory";
 import { colors } from "./theme/colors";
 import { fonts } from "./theme/fonts";
 
@@ -40,6 +41,25 @@ export const RemotionRoot: React.FC = () => (
         ctaText: "Download gratis",
         music: "",
         durationInSeconds: 10,
+      }}
+    />
+    <Composition
+      id="TekstStory"
+      component={TekstStory as unknown as React.ComponentType<Record<string, unknown>>}
+      width={1080}
+      height={1920}
+      fps={30}
+      calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
+        durationInFrames: (props.durationInSeconds as number) * 30,
+        props,
+      })}
+      defaultProps={{
+        hookText: "Je hebt €3 voor avondeten",
+        antwoord: "Happie zegt: Pasta Aglio e Olio — €2,80 • 15 min",
+        tagline: "Swipe je avondeten bij Happie",
+        mode: "dark" as const,
+        music: "",
+        durationInSeconds: 8,
       }}
     />
   </>
