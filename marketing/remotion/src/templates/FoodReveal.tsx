@@ -355,7 +355,7 @@ const CTAScene: React.FC<{
           gap: 36,
         }}
       >
-        <Logo animation="fadeIn" size={200} startFrame={670} />
+        <Logo animation="fadeIn" size={650} startFrame={670} />
         <AnimatedText
           text="60+ recepten onder \u20AC5"
           fontSize={40}

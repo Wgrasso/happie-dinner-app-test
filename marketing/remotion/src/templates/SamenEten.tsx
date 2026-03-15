@@ -548,7 +548,7 @@ const CTAScene: React.FC<{
           gap: 36,
         }}
       >
-        <Logo animation="bounce" size={220} startFrame={730} />
+        <Logo animation="bounce" size={650} startFrame={730} />
         <AnimatedText
           text="Download Happie"
           fontSize={36}

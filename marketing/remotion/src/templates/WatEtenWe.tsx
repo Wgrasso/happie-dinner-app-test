@@ -111,19 +111,19 @@ const EscalationScene: React.FC = () => {
       }}
     >
       <NotificationBubble
-        text="Pasta vanavond?"
+        text="Wat eten we? 🍕"
         appName="WhatsApp"
         startFrame={155}
         icon="whatsapp"
       />
       <NotificationBubble
-        text="Nee! Te saai"
+        text="Weet niet 🤷"
         appName="WhatsApp"
         startFrame={175}
         icon="whatsapp"
       />
       <NotificationBubble
-        text="Pizza? Te duur..."
+        text="NIET WEER PASTA"
         appName="WhatsApp"
         startFrame={195}
         icon="whatsapp"
@@ -475,7 +475,7 @@ const CTAScene: React.FC<{
           gap: 36,
         }}
       >
-        <Logo animation="bounce" size={220} startFrame={730} />
+        <Logo animation="bounce" size={650} startFrame={730} />
         <AnimatedText
           text="Download Happie"
           fontSize={36}

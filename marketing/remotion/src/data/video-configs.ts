@@ -129,11 +129,12 @@ export const videos: VideoConfig[] = [
       statNummer: 80,
       statSuffix: "\u20AC",
       statLabel: "per maand besparen op eten",
+      chartTitle: "Hoe makkelijk is avondeten kiezen?",
       chartData: [
-        { label: "Bezorgen", value: 60 },
-        { label: "Zelf koken", value: 40 },
-        { label: "Afhaal", value: 50 },
-        { label: "Happie", value: 85, highlight: true },
+        { label: "Bezorgen", value: 15 },
+        { label: "Zelf bedenken", value: 40 },
+        { label: "Kookboek", value: 55 },
+        { label: "Happie", value: 90, highlight: true },
       ],
       vergelijking: {
         linksLabel: "Thuisbezorgd",
@@ -155,21 +156,22 @@ export const videos: VideoConfig[] = [
     music: "",
     props: {
       bgPhoto: carbonara.localImage,
-      statNummer: 285,
+      statNummer: 270,
       statSuffix: "\u20AC",
-      statLabel: "bespaard per maand",
+      statLabel: "per maand besparen vs bezorgen",
+      chartTitle: "Maandelijkse kosten avondeten",
       chartData: [
-        { label: "Jan", value: 30 },
-        { label: "Feb", value: 55 },
-        { label: "Mrt", value: 75, highlight: true },
-        { label: "Apr", value: 90, highlight: true },
+        { label: "Bezorgen", value: 95 },
+        { label: "Afhaal", value: 75 },
+        { label: "Zelf (geen plan)", value: 55 },
+        { label: "Met Happie", value: 30, highlight: true },
       ],
       vergelijking: {
         linksLabel: "Bezorgd",
         linksWaarde: "\u20AC12,50",
         rechtsLabel: "Happie",
         rechtsWaarde: "\u20AC3,00",
-        conclusie: "Bespaar \u20AC285/maand",
+        conclusie: "Bespaar \u20AC270/maand",
       },
       ctaPhoto: chickenWrap.localImage,
     },
@@ -184,10 +186,10 @@ export const videos: VideoConfig[] = [
     music: "",
     props: {
       chatMessages: [
-        { tekst: "Wat eten we vanavond?", isReply: false },
-        { tekst: "Maakt me niet uit", isReply: true },
-        { tekst: "Kies dan iets!", isReply: false },
-        { tekst: "Ugh, niet dit weer", isReply: true },
+        { tekst: "Maakt me niet uit 🤷", isReply: true },
+        { tekst: "Oké, pasta!", isReply: false },
+        { tekst: "Ugh pasta WEER??", isReply: true },
+        { tekst: "JE ZEI MAAKT NIET UIT", isReply: false },
       ],
       meals: [
         { naam: burger.name, foto: burger.localImage, liked: false },
@@ -208,10 +210,10 @@ export const videos: VideoConfig[] = [
     music: "",
     props: {
       chatMessages: [
-        { tekst: "Laten we sushi doen!", isReply: false },
-        { tekst: "Sushi?? Met \u20AC2??", isReply: true },
-        { tekst: "Ik ben blut", isReply: false },
-        { tekst: "Fried Rice = \u20AC2,50", isReply: true },
+        { tekst: "Laten we sushi maken! 🍣", isReply: false },
+        { tekst: "Bro we hebben \u20AC2 pp", isReply: true },
+        { tekst: "Dan doen we 'budget sushi'", isReply: false },
+        { tekst: "Dat heet rijst met sojasaus", isReply: true },
       ],
       meals: [
         { naam: tikka.name, foto: tikka.localImage, liked: false },

@@ -94,11 +94,12 @@ export const RemotionRoot: React.FC = () => (
         statNummer: 80,
         statSuffix: "\u20AC",
         statLabel: "per maand besparen op eten",
+        chartTitle: "Hoe makkelijk is avondeten kiezen?",
         chartData: [
-          { label: "Bezorgen", value: 60 },
-          { label: "Zelf koken", value: 40 },
-          { label: "Afhaal", value: 50 },
-          { label: "Happie", value: 85, highlight: true },
+          { label: "Bezorgen", value: 15 },
+          { label: "Zelf bedenken", value: 40 },
+          { label: "Kookboek", value: 55 },
+          { label: "Happie", value: 90, highlight: true },
         ],
         vergelijking: {
           linksLabel: "Thuisbezorgd",
@@ -127,10 +128,10 @@ export const RemotionRoot: React.FC = () => (
       })}
       defaultProps={{
         chatMessages: [
-          { tekst: "Wat eten we?", isReply: false },
-          { tekst: "Weet niet", isReply: false },
-          { tekst: "Ugh weer pasta", isReply: false },
-          { tekst: "Download Happie!", isReply: true },
+          { tekst: "Maakt me niet uit \uD83E\uDD37", isReply: true },
+          { tekst: "Oké, pasta!", isReply: false },
+          { tekst: "Ugh pasta WEER??", isReply: true },
+          { tekst: "JE ZEI MAAKT NIET UIT", isReply: false },
         ],
         meals: [
           { naam: burger.name, foto: burger.localImage, liked: false },

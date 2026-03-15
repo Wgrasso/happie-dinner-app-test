@@ -22,6 +22,7 @@ export interface DataStoryProps {
   statNummer: number;
   statSuffix: string;
   statLabel: string;
+  chartTitle?: string;
   chartData: { label: string; value: number; highlight?: boolean }[];
   vergelijking: {
     linksLabel: string;
@@ -164,22 +165,56 @@ const TransitionScene: React.FC<{
 
 const ChartScene: React.FC<{
   chartData: { label: string; value: number; highlight?: boolean }[];
-}> = ({ chartData }) => {
+  chartTitle?: string;
+}> = ({ chartData, chartTitle }) => {
+  const frame = useCurrentFrame();
   const progressItems = chartData.map((item) => ({
     label: item.label,
     percentage: item.value,
     color: item.highlight ? colors.logoCoral : undefined,
   }));
 
+  const titleOpacity = interpolate(frame, [180, 200], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const titleY = interpolate(frame, [180, 200], [20, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
   return (
     <AbsoluteFill
       style={{
         background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
+        gap: 32,
       }}
     >
+      {chartTitle && (
+        <div
+          style={{
+            opacity: titleOpacity,
+            transform: `translateY(${titleY}px)`,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: fonts.heading,
+              fontSize: 36,
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.85)",
+              textShadow: "0 4px 30px rgba(0,0,0,0.8)",
+              textAlign: "center",
+            }}
+          >
+            {chartTitle}
+          </span>
+        </div>
+      )}
       <ProgressBar items={progressItems} startFrame={200} />
     </AbsoluteFill>
   );
@@ -407,7 +442,7 @@ const CTAScene: React.FC<{
           gap: 36,
         }}
       >
-        <Logo animation="fadeIn" size={200} startFrame={790} />
+        <Logo animation="fadeIn" size={650} startFrame={790} />
         <AnimatedText
           text="Download Happie"
           fontSize={36}
@@ -429,6 +464,7 @@ export const DataStory: React.FC<DataStoryProps> = ({
   statNummer,
   statSuffix,
   statLabel,
+  chartTitle,
   chartData,
   vergelijking,
   ctaPhoto,
@@ -453,7 +489,7 @@ export const DataStory: React.FC<DataStoryProps> = ({
 
       {/* Scene 3: Chart — horizontal ProgressBars (180-420) */}
       <SceneTransition enterFrame={180} exitFrame={420} fadeFrames={15}>
-        <ChartScene chartData={chartData} />
+        <ChartScene chartData={chartData} chartTitle={chartTitle} />
       </SceneTransition>
 
       {/* Scene 4: Video break — cooking, slow-mo (420-540) */}

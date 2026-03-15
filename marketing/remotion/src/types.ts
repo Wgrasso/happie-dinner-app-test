@@ -27,7 +27,7 @@ export type VideoConfig =
   | {
       id: string;
       template: "WatEtenWe";
-      durationInSeconds: 10;
+      durationInSeconds: number;
       music: string;
       props: {
         hookPhoto: string;
@@ -42,7 +42,7 @@ export type VideoConfig =
   | {
       id: string;
       template: "FoodReveal";
-      durationInSeconds: 10;
+      durationInSeconds: number;
       music: string;
       props: {
         photo: string;
@@ -56,13 +56,14 @@ export type VideoConfig =
   | {
       id: string;
       template: "DataStory";
-      durationInSeconds: 10 | 12;
+      durationInSeconds: number;
       music: string;
       props: {
         bgPhoto: string;
         statNummer: number;
         statSuffix: string;
         statLabel: string;
+        chartTitle?: string;
         chartData: ChartBar[];
         vergelijking: Vergelijking;
         ctaPhoto: string;
@@ -71,7 +72,7 @@ export type VideoConfig =
   | {
       id: string;
       template: "SamenEten";
-      durationInSeconds: 12 | 15;
+      durationInSeconds: number;
       music: string;
       props: {
         chatMessages: ChatBericht[];
@@ -83,7 +84,7 @@ export type VideoConfig =
   | {
       id: string;
       template: "HetMoment";
-      durationInSeconds: 8 | 10;
+      durationInSeconds: number;
       music: string;
       props: {
         photos: [string, string, string];

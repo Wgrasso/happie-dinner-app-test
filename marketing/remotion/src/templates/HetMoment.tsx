@@ -286,7 +286,7 @@ const CTAScene: React.FC = () => {
         gap: 30,
       }}
     >
-      <Logo animation="bounce" size={220} startFrame={665} />
+      <Logo animation="bounce" size={650} startFrame={665} />
       <AnimatedText
         text="Swipe je avondeten."
         fontSize={32}
