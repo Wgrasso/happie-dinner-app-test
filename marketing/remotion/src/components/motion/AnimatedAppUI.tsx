@@ -35,6 +35,8 @@ const SCREEN_WIDTH = 300;
 const SCREEN_HEIGHT = 620;
 
 // ── Swipe Three Sequence ─────────────────────────────────────────────────────
+// Cards are separate positioned elements that MOVE with translateX + rotation.
+// Next card scales up from 0.95 when the previous exits.
 
 const SwipeThreeSequence: React.FC<{
   recipe: AnimatedAppUIProps["recipe"];
@@ -45,12 +47,15 @@ const SwipeThreeSequence: React.FC<{
 
   const results = swipeResults.length >= 3 ? swipeResults : ["like", "dislike", "like"];
 
-  // Card timing: [0-30 static] [30-60 swipe1] [70-100 swipe2] [110-140 swipe3] [140-180 result]
+  // Tighter timing for faster pacing
   const swipeTimings = [
-    { start: 30, end: 60 },
-    { start: 70, end: 100 },
-    { start: 110, end: 140 },
+    { start: 20, end: 45 },
+    { start: 55, end: 80 },
+    { start: 90, end: 115 },
   ];
+
+  const cardNames = [recipe.name, "Kip Teriyaki", "Shakshuka"];
+  const cardColors = ["#E8D5C4", "#D4E8D4", "#E8D4D4"];
 
   return (
     <div style={{ position: "relative", width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}>
@@ -62,52 +67,60 @@ const SwipeThreeSequence: React.FC<{
         }}
       />
 
-      {/* Swipe card overlays */}
-      {swipeTimings.map((timing, i) => {
+      {/* Render cards in reverse order (bottom card first) so z-order is correct */}
+      {[...swipeTimings].reverse().map((timing, reverseI) => {
+        const i = swipeTimings.length - 1 - reverseI;
         const localFrame = frame - timing.start;
         const isActive = localFrame >= 0;
         const direction = results[i] === "like" ? 1 : -1;
 
+        // Card movement: translateX with rotation
         const translateX = isActive
-          ? interpolate(localFrame, [0, 20], [0, direction * 400], {
+          ? interpolate(localFrame, [0, 18], [0, direction * 420], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             })
           : 0;
 
         const rotation = isActive
-          ? interpolate(localFrame, [0, 20], [0, direction * 15], {
+          ? interpolate(localFrame, [0, 18], [0, direction * 20], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             })
           : 0;
 
+        // Next card underneath scales up when this card exits
+        const prevSwipeEnd = i > 0 ? swipeTimings[i - 1].start + 18 : 0;
+        const scaleUp = i > 0
+          ? interpolate(frame, [prevSwipeEnd, prevSwipeEnd + 8], [0.95, 1.0], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            })
+          : 1;
+
+        // Like/dislike overlay opacity
         const overlayOpacity = isActive
-          ? interpolate(localFrame, [0, 12], [0, 0.85], {
+          ? interpolate(localFrame, [0, 10], [0, 0.9], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             })
           : 0;
 
-        // Hide after swipe completes
+        // Hide after swipe
         const cardOpacity = isActive
-          ? interpolate(localFrame, [18, 22], [1, 0], {
+          ? interpolate(localFrame, [16, 20], [1, 0], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             })
           : i === 0
           ? 1
-          : 0;
-
-        // Show this card only before its predecessor finishes swiping
-        const showCard = i === 0 || frame >= swipeTimings[i - 1].start + 18;
-        if (!showCard && !isActive) return null;
+          : frame >= (i > 0 ? swipeTimings[i - 1].start + 16 : 0) ? 1 : 0;
 
         const isLike = results[i] === "like";
         const labelText = isLike ? "HAPPIE!" : "NEE!";
         const overlayColor = isLike
-          ? "rgba(76,175,80,0.85)"
-          : "rgba(204,68,68,0.85)";
+          ? "rgba(76,175,80,0.9)"
+          : "rgba(204,68,68,0.9)";
 
         return (
           <div
@@ -119,14 +132,50 @@ const SwipeThreeSequence: React.FC<{
               width: SCREEN_WIDTH - 48,
               height: 380,
               borderRadius: 20,
-              transform: `translateX(${translateX}px) rotate(${rotation}deg)`,
+              backgroundColor: cardColors[i],
+              transform: `translateX(${translateX}px) rotate(${rotation}deg) scale(${scaleUp})`,
               opacity: cardOpacity,
               zIndex: 10 + (3 - i),
               overflow: "hidden",
+              boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
             }}
           >
+            {/* Card content */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                padding: 16,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: fonts.heading,
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: "#2D2D2D",
+                  textAlign: "center",
+                }}
+              >
+                {cardNames[i]}
+              </span>
+              <span
+                style={{
+                  fontFamily: fonts.body,
+                  fontSize: 14,
+                  color: "#8B8885",
+                  marginTop: 8,
+                }}
+              >
+                {recipe.cookingTime} min
+              </span>
+            </div>
+
             {/* Swipe overlay */}
-            {isActive && (
+            {isActive && overlayOpacity > 0 && (
               <div
                 style={{
                   position: "absolute",
@@ -160,20 +209,20 @@ const SwipeThreeSequence: React.FC<{
         );
       })}
 
-      {/* Match result overlay at the end */}
-      {frame >= 140 && (
+      {/* Match result overlay */}
+      {frame >= 120 && (
         <div
           style={{
             position: "absolute",
             inset: 0,
-            backgroundColor: "rgba(0,0,0,0.7)",
+            backgroundColor: "rgba(0,0,0,0.75)",
             borderRadius: 30,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             gap: 16,
-            opacity: interpolate(frame, [140, 155], [0, 1], {
+            opacity: interpolate(frame, [120, 132], [0, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             }),
@@ -187,6 +236,11 @@ const SwipeThreeSequence: React.FC<{
               fontWeight: 700,
               color: colors.likeGreen,
               textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+              transform: `scale(${spring({
+                frame: Math.max(0, frame - 125),
+                fps: 30,
+                config: { damping: 8, stiffness: 200 },
+              })})`,
             }}
           >
             Match gevonden!
@@ -208,6 +262,7 @@ const SwipeThreeSequence: React.FC<{
 };
 
 // ── Vote Result Sequence ─────────────────────────────────────────────────────
+// Progress bars FILL from 0% to final width. Gold badge has shine sweep.
 
 const VoteResultSequence: React.FC<{
   recipe: AnimatedAppUIProps["recipe"];
@@ -222,6 +277,8 @@ const VoteResultSequence: React.FC<{
     { name: "Shakshuka", votes: 3 },
   ];
 
+  const maxVotes = Math.max(...results.map((r) => r.votes));
+
   return (
     <div style={{ position: "relative", width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}>
       <ResultsScreen
@@ -232,55 +289,147 @@ const VoteResultSequence: React.FC<{
         }}
       />
 
-      {/* Animated card slide-ins */}
+      {/* Animated progress bars and badges */}
       {results.slice(0, 3).map((item, i) => {
-        const slideStart = 10 + i * 25;
-        const slideProgress = spring({
-          frame: Math.max(0, frame - slideStart),
+        const barStart = 15 + i * 20;
+        const barProgress = spring({
+          frame: Math.max(0, frame - barStart),
           fps,
-          config: { damping: 12, stiffness: 120, mass: 0.8 },
-          from: 0,
-          to: 1,
+          config: { damping: 14, stiffness: 80 },
         });
 
-        const translateY = interpolate(slideProgress, [0, 1], [100, 0]);
-        const opacity = interpolate(slideProgress, [0, 1], [0, 1]);
+        const barWidth = barProgress * (item.votes / maxVotes) * 100;
+        const isWinner = i === 0;
 
-        // Winner glow for first place
-        const glowOpacity =
-          i === 0
-            ? interpolate(
-                Math.sin(frame * 0.1),
-                [-1, 1],
-                [0.05, 0.15],
-              )
-            : 0;
+        // Gold badge shine sweep for winner
+        const shineX = isWinner
+          ? interpolate(frame, [60, 90], [-100, 200], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            })
+          : -100;
 
         return (
           <div
             key={i}
             style={{
               position: "absolute",
-              top: 50 + i * 190,
+              top: 80 + i * 170,
               left: 16,
               right: 16,
-              height: 170,
-              transform: `translateY(${translateY}px)`,
-              opacity,
               zIndex: 5,
               pointerEvents: "none",
             }}
           >
-            {i === 0 && (
+            {/* Bar container */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: fonts.body,
+                    fontSize: 14,
+                    fontWeight: isWinner ? 700 : 500,
+                    color: isWinner ? "#8B7355" : "#8B8885",
+                  }}
+                >
+                  {item.name}
+                </span>
+                <span
+                  style={{
+                    fontFamily: fonts.body,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: isWinner ? colors.logoCoral : "#8B8885",
+                    opacity: barProgress,
+                  }}
+                >
+                  {item.votes} stemmen
+                </span>
+              </div>
+              <div
+                style={{
+                  width: "100%",
+                  height: 12,
+                  borderRadius: 6,
+                  backgroundColor: "rgba(139,115,85,0.1)",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${barWidth}%`,
+                    height: "100%",
+                    borderRadius: 6,
+                    backgroundColor: isWinner ? colors.logoCoral : "#C4B8A8",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Shine sweep */}
+                  {isWinner && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: `${shineX}%`,
+                        width: 40,
+                        height: "100%",
+                        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)",
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Gold badge for winner */}
+            {isWinner && frame >= 50 && (
               <div
                 style={{
                   position: "absolute",
-                  inset: -4,
-                  borderRadius: 24,
-                  boxShadow: `0 0 30px rgba(255,215,0,${glowOpacity})`,
-                  pointerEvents: "none",
+                  top: -10,
+                  right: 0,
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  backgroundColor: "#FFD700",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 10px rgba(255,215,0,0.5)",
+                  transform: `scale(${spring({
+                    frame: Math.max(0, frame - 50),
+                    fps,
+                    config: { damping: 8, stiffness: 300 },
+                  })})`,
+                  overflow: "hidden",
                 }}
-              />
+              >
+                <span style={{ fontSize: 14 }}>🏆</span>
+                {/* Shine sweep on badge */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: `${shineX}%`,
+                    width: 15,
+                    height: "100%",
+                    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent)",
+                  }}
+                />
+              </div>
             )}
           </div>
         );
@@ -290,6 +439,8 @@ const VoteResultSequence: React.FC<{
 };
 
 // ── Wie Eet Mee Sequence ─────────────────────────────────────────────────────
+// YES toggle visually CLICKS (scale 0.95 -> 1.0 + color change).
+// Member count ticks up frame by frame.
 
 const WieEetMeeSequence: React.FC<{
   recipe: AnimatedAppUIProps["recipe"];
@@ -299,22 +450,48 @@ const WieEetMeeSequence: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Toggle animation at frame 15
-  const toggleProgress = spring({
-    frame: Math.max(0, frame - 15),
-    fps,
-    config: { damping: 10, stiffness: 200, mass: 0.6 },
-    from: 0,
-    to: 1,
-  });
+  // Toggle click at frame 15: scale down then back up
+  const toggleClickScale = frame >= 15 && frame < 25
+    ? interpolate(frame, [15, 18, 25], [1, 0.92, 1.0], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+      })
+    : frame >= 25
+    ? 1
+    : 1;
 
-  // Counter ticks up
-  const counterValue = Math.round(
-    interpolate(frame, [25, 60], [0, membersEating], {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-    })
+  // Color transition from gray to green
+  const toggleColorProgress = interpolate(frame, [15, 22], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const toggleBg = toggleColorProgress > 0.5 ? "#4CAF50" : "#E8E2DA";
+  const toggleText = toggleColorProgress > 0.5 ? colors.white : "#8B8885";
+  const toggleLabel = toggleColorProgress > 0.5 ? "Ja, ik eet mee!" : "Nee";
+
+  // Counter ticks up one by one (not smooth)
+  const counterValue = Math.min(
+    membersEating,
+    Math.max(0, Math.floor(
+      interpolate(frame, [28, 28 + membersEating * 5], [0, membersEating], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+      })
+    ))
   );
+
+  // Each tick triggers a micro-bounce on the counter
+  const lastTickFrame = 28 + counterValue * 5;
+  const tickBounce = frame >= 28
+    ? spring({
+        frame: Math.max(0, frame - lastTickFrame),
+        fps,
+        config: { damping: 6, stiffness: 400, mass: 0.3 },
+      })
+    : 1;
+  const counterScale = frame >= 28
+    ? interpolate(tickBounce, [0, 0.5, 1], [1, 1.15, 1])
+    : 0;
 
   return (
     <div style={{ position: "relative", width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}>
@@ -332,29 +509,75 @@ const WieEetMeeSequence: React.FC<{
       <div
         style={{
           position: "absolute",
-          top: 100,
+          top: 95,
           left: "50%",
-          transform: `translateX(-50%) scale(${0.9 + toggleProgress * 0.1})`,
+          transform: `translateX(-50%) scale(${toggleClickScale})`,
+          zIndex: 10,
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: toggleBg,
+            borderRadius: 14,
+            padding: "10px 28px",
+            transition: "none",
+            boxShadow: toggleColorProgress > 0.5
+              ? "0 2px 12px rgba(76,175,80,0.4)"
+              : "none",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: fonts.body,
+              fontSize: 14,
+              fontWeight: 600,
+              color: toggleText,
+            }}
+          >
+            {toggleLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* Animated counter overlay */}
+      <div
+        style={{
+          position: "absolute",
+          top: 150,
+          left: "50%",
+          transform: `translateX(-50%) scale(${counterScale})`,
           zIndex: 10,
           pointerEvents: "none",
         }}
       >
-        {/* Toggle slides from Nee to Ja */}
-        <div
+        <span
           style={{
-            backgroundColor: interpolate(toggleProgress, [0, 1], [0, 1]) > 0.5
-              ? "#4CAF50"
-              : "#E8E2DA",
-            borderRadius: 14,
-            padding: "10px 28px",
-            opacity: 0, // invisible overlay, the real one is rendered by WieEetErMeeScreen
+            fontFamily: fonts.heading,
+            fontSize: 32,
+            fontWeight: 700,
+            color: "#8B7355",
+            opacity: frame > 28 ? 1 : 0,
           }}
-        />
+        >
+          {counterValue}
+        </span>
+        <span
+          style={{
+            fontFamily: fonts.body,
+            fontSize: 14,
+            fontWeight: 500,
+            color: "#8B8885",
+            marginLeft: 4,
+            opacity: frame > 28 ? 1 : 0,
+          }}
+        >
+          van {totalMembers} eten mee
+        </span>
       </div>
 
       {/* Member avatars pop in */}
-      {Array.from({ length: Math.min(membersEating, 8) }).map((_, i) => {
-        const popStart = 30 + i * 7;
+      {Array.from({ length: Math.min(counterValue, 8) }).map((_, i) => {
+        const popStart = 30 + i * 5;
         const popScale = spring({
           frame: Math.max(0, frame - popStart),
           fps,
@@ -373,37 +596,15 @@ const WieEetMeeSequence: React.FC<{
               width: 36,
               height: 36,
               borderRadius: "50%",
+              backgroundColor: `hsl(${i * 45 + 20}, 40%, 65%)`,
               transform: `scale(${popScale})`,
               zIndex: 10,
               pointerEvents: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
             }}
           />
         );
       })}
-
-      {/* Animated counter overlay */}
-      <div
-        style={{
-          position: "absolute",
-          top: 155,
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 10,
-          pointerEvents: "none",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: fonts.body,
-            fontSize: 15,
-            fontWeight: 500,
-            color: "#8B7355",
-            opacity: frame > 25 ? 1 : 0,
-          }}
-        >
-          {counterValue} van {totalMembers} eten mee
-        </span>
-      </div>
     </div>
   );
 };

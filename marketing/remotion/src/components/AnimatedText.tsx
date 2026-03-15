@@ -12,7 +12,7 @@ interface AnimatedTextProps {
   fontSize?: number;
   fontFamily?: "heading" | "body";
   color?: string;
-  animation?: "fadeUp" | "popIn" | "typewriter" | "slamIn" | "countUp" | "splitReveal" | "glitch" | "highlight" | "shake";
+  animation?: "fadeUp" | "popIn" | "typewriter" | "slamIn" | "countUp" | "splitReveal" | "glitch" | "highlight" | "shake" | "letterStagger";
   startFrame?: number;
   shadow?: boolean; // text shadow for readability
   glow?: string; // glow color
@@ -260,6 +260,46 @@ export const AnimatedText: React.FC<AnimatedTextProps> = ({
         const shakeX = Math.sin(relFrame * 12) * 3;
         transform = `translateX(${shakeX}px)`;
       }
+      break;
+    }
+    case "letterStagger": {
+      // Each character springs in individually with 2-frame stagger
+      opacity = 1;
+      const staggerDelay = 2; // frames between each letter
+      displayText = (
+        <span style={{ display: "inline-flex", flexWrap: "wrap", justifyContent: "center" }}>
+          {text.split("").map((char, i) => {
+            const charStart = i * staggerDelay;
+            const charFrame = Math.max(0, relFrame - charStart);
+            const charScale = spring({
+              frame: charFrame,
+              fps,
+              config: { damping: 8, stiffness: 280, mass: 0.4 },
+              from: 0,
+              to: 1,
+            });
+            const charOpacity = interpolate(charFrame, [0, 3], [0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            });
+            const charY = interpolate(charScale, [0, 1], [20, 0]);
+            const charRotate = interpolate(charScale, [0, 0.5, 1], [8, -3, 0]);
+            return (
+              <span
+                key={i}
+                style={{
+                  display: "inline-block",
+                  transform: `translateY(${charY}px) rotate(${charRotate}deg) scale(${charScale})`,
+                  opacity: charOpacity,
+                  whiteSpace: char === " " ? "pre" : undefined,
+                }}
+              >
+                {char === " " ? "\u00A0" : char}
+              </span>
+            );
+          })}
+        </span>
+      );
       break;
     }
   }

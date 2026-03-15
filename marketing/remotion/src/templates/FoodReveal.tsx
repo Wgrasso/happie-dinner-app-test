@@ -41,7 +41,11 @@ export interface FoodRevealProps {
   durationInSeconds: number;
 }
 
-// --- Scene 1: HOOK --- Food photo, massive price glows in --------------------
+// --- FoodReveal PERSONALITY: Luxurious, slow. Food photos linger.
+// Warm amber tones dominate. Elegant serif typography.
+// Color: warm amber overlay on everything.
+
+// --- Scene 1: HOOK (60 frames) --- Food photo, massive price ---
 
 const HookScene: React.FC<{
   photo: string;
@@ -51,10 +55,10 @@ const HookScene: React.FC<{
     <AbsoluteFill>
       <PhotoBackground
         src={photo}
-        overlay="rgba(0,0,0,0.2)"
+        overlay="rgba(45,27,18,0.25)"
         kenBurns
-        kenBurnsScale={[1, 1.12]}
-        warmth={0.4}
+        kenBurnsScale={[1, 1.1]}
+        warmth={0.7}
       />
       <AbsoluteFill
         style={{
@@ -62,7 +66,7 @@ const HookScene: React.FC<{
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 16,
+          gap: 12,
         }}
       >
         <AnimatedText
@@ -73,15 +77,15 @@ const HookScene: React.FC<{
           animation="popIn"
           startFrame={5}
           shadow
-          glow="rgba(255,255,255,0.3)"
+          glow="rgba(255,200,150,0.3)"
         />
-        <AnimatedUnderline startFrame={25} width={300} color={colors.logoCoral} strokeWidth={5} />
+        <AnimatedUnderline startFrame={22} width={300} color="rgba(255,200,150,0.6)" strokeWidth={4} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// --- Scene 2: RECIPE NAME over photo -----------------------------------------
+// --- Scene 2: RECIPE NAME (60 frames) --- linger on food ---
 
 const RecipeNameScene: React.FC<{
   photo: string;
@@ -92,38 +96,37 @@ const RecipeNameScene: React.FC<{
     <AbsoluteFill>
       <PhotoBackground
         src={photo}
-        overlay="rgba(0,0,0,0.35)"
+        overlay="rgba(45,27,18,0.35)"
         kenBurns
         kenBurnsScale={[1.05, 1.12]}
-        warmth={0.5}
+        warmth={0.8}
       />
-      <ScreenWipe startFrame={0} durationFrames={16} color={colors.logoCoral} direction="right" />
+      <ScreenWipe startFrame={0} durationFrames={14} color="rgba(139,115,85,0.8)" direction="right" />
       <AbsoluteFill
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20,
+          gap: 16,
         }}
       >
         <AnimatedText
-          text={`\u20AC${price.toFixed(2)}`}
-          fontSize={96}
+          text={recipeName}
+          fontSize={52}
           fontFamily="heading"
           color={colors.white}
-          animation="fadeUp"
-          startFrame={0}
+          animation="letterStagger"
+          startFrame={5}
           shadow
-          glow="rgba(255,255,255,0.2)"
         />
         <AnimatedText
-          text={recipeName}
-          fontSize={44}
-          fontFamily="heading"
-          color="rgba(255,255,255,0.9)"
-          animation="popIn"
-          startFrame={10}
+          text={`\u20AC${price.toFixed(2)} per persoon`}
+          fontSize={28}
+          fontFamily="body"
+          color="rgba(255,220,180,0.85)"
+          animation="fadeUp"
+          startFrame={25}
           shadow
         />
       </AbsoluteFill>
@@ -131,7 +134,7 @@ const RecipeNameScene: React.FC<{
   );
 };
 
-// --- Scene 3: INGREDIENTS over cutting-vegetables video ----------------------
+// --- Scene 3: INGREDIENTS (120 frames) --- over video ---
 
 const IngredientsScene: React.FC<{
   ingredients: { naam: string; prijs: string }[];
@@ -140,7 +143,7 @@ const IngredientsScene: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const totalProgress = interpolate(frame, [10, 220], [0, 1], {
+  const totalProgress = interpolate(frame, [10, 110], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -150,8 +153,8 @@ const IngredientsScene: React.FC<{
     <AbsoluteFill>
       <VideoBackground
         src="cutting-vegetables.mp4"
-        overlay="rgba(0,0,0,0.65)"
-        playbackRate={0.8}
+        overlay="rgba(45,27,18,0.6)"
+        playbackRate={0.7}
       />
       <AbsoluteFill
         style={{
@@ -164,13 +167,13 @@ const IngredientsScene: React.FC<{
         }}
       >
         {ingredients.slice(0, 6).map((item, i) => {
-          const itemStart = 15 + i * 25;
+          const itemStart = 10 + i * 18;
           const itemProgress = spring({
             frame: Math.max(0, frame - itemStart),
             fps,
             config: { damping: 14, stiffness: 160 },
           });
-          const itemX = interpolate(itemProgress, [0, 1], [300, 0]);
+          const itemX = interpolate(itemProgress, [0, 1], [250, 0]);
           const itemOpacity = interpolate(itemProgress, [0, 1], [0, 1]);
 
           return (
@@ -183,15 +186,15 @@ const IngredientsScene: React.FC<{
                 alignItems: "center",
                 width: "100%",
                 maxWidth: 700,
-                padding: "14px 0",
-                borderBottom: "1px solid rgba(255,255,255,0.12)",
+                padding: "12px 0",
+                borderBottom: "1px solid rgba(255,220,180,0.15)",
                 opacity: itemOpacity,
                 transform: `translateX(${itemX}px)`,
               }}
             >
               <span
                 style={{
-                  fontFamily: fonts.body,
+                  fontFamily: fonts.heading,
                   fontSize: 28,
                   color: colors.white,
                   fontWeight: 400,
@@ -204,7 +207,7 @@ const IngredientsScene: React.FC<{
                 style={{
                   fontFamily: fonts.body,
                   fontSize: 28,
-                  color: colors.logoCoral,
+                  color: "rgba(255,200,150,0.9)",
                   fontWeight: 600,
                   textShadow: "0 4px 30px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.5)",
                 }}
@@ -218,7 +221,7 @@ const IngredientsScene: React.FC<{
         {/* Running total */}
         <div
           style={{
-            marginTop: 40,
+            marginTop: 30,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -227,7 +230,7 @@ const IngredientsScene: React.FC<{
           <span
             style={{
               fontFamily: fonts.heading,
-              fontSize: 56,
+              fontSize: 52,
               fontWeight: 700,
               color: colors.white,
               textShadow: "0 4px 30px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.5)",
@@ -241,7 +244,7 @@ const IngredientsScene: React.FC<{
   );
 };
 
-// --- Scene 4: COMPARISON --- PriceTag ----------------------------------------
+// --- Scene 4: COMPARISON (90 frames) --- PriceTag ---
 
 const CompareScene: React.FC<{
   bezorgPrijs: string;
@@ -249,41 +252,42 @@ const CompareScene: React.FC<{
 }> = ({ bezorgPrijs, price }) => {
   return (
     <AbsoluteFill>
+      {/* Warm amber background instead of gradient */}
       <GradientBackground
-        colors={["#1a1a2e", "#16213e", "#0f3460"]}
+        colors={["#2d1b12", "#1a1008", "#3d2518"]}
         animate
         angle={135}
       />
-      <ScreenWipe startFrame={0} durationFrames={16} color="#8B7355" direction="down" />
+      <ScreenWipe startFrame={0} durationFrames={14} color="rgba(139,115,85,0.6)" direction="down" />
       <AbsoluteFill
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 40,
+          gap: 36,
         }}
       >
         <AnimatedText
           text="Thuisbezorgd?"
           fontSize={36}
-          fontFamily="body"
-          color="rgba(255,255,255,0.5)"
+          fontFamily="heading"
+          color="rgba(255,220,180,0.6)"
           animation="fadeUp"
-          startFrame={5}
+          startFrame={3}
           shadow
         />
         <PriceTag
           price={bezorgPrijs}
           newPrice={`\u20AC${price.toFixed(2)}`}
-          startFrame={10}
+          startFrame={8}
         />
       </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
-// --- Scene 5: SAVINGS with AnimatedCounter -----------------------------------
+// --- Scene 5: SAVINGS (90 frames) --- AnimatedCounter ---
 
 const SavingsScene: React.FC<{
   besparing: string;
@@ -294,7 +298,7 @@ const SavingsScene: React.FC<{
   return (
     <AbsoluteFill>
       <GradientBackground
-        colors={["#0f3460", "#1a1a2e", "#16213e"]}
+        colors={["#1a1008", "#2d1b12", "#3d2518"]}
         animate
         angle={180}
       />
@@ -304,27 +308,27 @@ const SavingsScene: React.FC<{
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20,
+          gap: 16,
         }}
       >
         <AnimatedCounter
           from={0}
           to={savingsNum}
-          startFrame={10}
-          durationFrames={50}
+          startFrame={5}
+          durationFrames={40}
           prefix={"\u20AC"}
           fontSize={80}
-          color={colors.logoCoral}
+          color="rgba(255,200,150,0.95)"
           showUnderline
-          underlineColor={colors.logoCoral}
+          underlineColor="rgba(255,200,150,0.6)"
         />
         <AnimatedText
           text="per maand besparen"
           fontSize={28}
-          fontFamily="body"
-          color="rgba(255,255,255,0.7)"
+          fontFamily="heading"
+          color="rgba(255,220,180,0.7)"
           animation="fadeUp"
-          startFrame={50}
+          startFrame={40}
           shadow
         />
       </AbsoluteFill>
@@ -332,7 +336,7 @@ const SavingsScene: React.FC<{
   );
 };
 
-// --- Scene 6: APP DEMO --- AnimatedAppUI ------------------------------------
+// --- Scene 6: APP DEMO (120 frames) ---
 
 const AppDemoScene: React.FC<{
   recipeName: string;
@@ -340,8 +344,8 @@ const AppDemoScene: React.FC<{
   return (
     <AbsoluteFill>
       <GradientWave
-        colors={["#1a1a2e", "#0d1117", "#0f3460"]}
-        speed={0.8}
+        colors={["#2d1b12", "#1a1008", "#3d2518"]}
+        speed={0.6}
         direction="diagonal"
       />
       <AbsoluteFill
@@ -350,7 +354,7 @@ const AppDemoScene: React.FC<{
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20,
+          gap: 16,
         }}
       >
         <AnimatedAppUI
@@ -369,17 +373,26 @@ const AppDemoScene: React.FC<{
   );
 };
 
-// --- Scene 7: CTA ------------------------------------------------------------
+// --- Scene 7: CTA (90 frames) --- with fade to black ---
 
 const CTAScene: React.FC<{
   photo: string;
 }> = ({ photo }) => {
+  const frame = useCurrentFrame();
+
+  const fadeOut = interpolate(frame, [75, 90], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
   return (
     <AbsoluteFill>
-      <GradientBackground
-        colors={["#1a1a2e", "#2d1b12", "#0f3460"]}
-        animate
-        angle={135}
+      <PhotoBackground
+        src={photo}
+        overlay="rgba(45,27,18,0.6)"
+        kenBurns
+        kenBurnsScale={[1, 1.06]}
+        warmth={0.8}
       />
       <AbsoluteFill
         style={{
@@ -387,20 +400,30 @@ const CTAScene: React.FC<{
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 36,
+          gap: 30,
         }}
       >
-        <Logo animation="fadeIn" size={650} startFrame={10} />
+        <Logo animation="fadeIn" size={650} startFrame={5} />
         <AnimatedText
           text="60+ recepten onder \u20AC5"
-          fontSize={40}
+          fontSize={36}
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={40}
+          startFrame={25}
           shadow
         />
       </AbsoluteFill>
+      {/* Fade to black for seamless loop */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: "#000",
+          opacity: fadeOut,
+          zIndex: 100,
+        }}
+      />
     </AbsoluteFill>
   );
 };
@@ -416,22 +439,21 @@ export const FoodReveal: React.FC<FoodRevealProps> = ({
   besparing,
   music,
 }) => {
-  const { width, height } = useVideoConfig();
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
-        {/* Scene 1: Hook --- massive price (90 frames) */}
-        <TransitionSeries.Sequence durationInFrames={90}>
+        {/* Scene 1: Hook (60 frames) */}
+        <TransitionSeries.Sequence durationInFrames={60}>
           <HookScene photo={photo} price={price} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
-          presentation={slide()}
-          timing={springTiming({ config: { damping: 12 } })}
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: 15 })}
         />
 
-        {/* Scene 2: Recipe name (45 frames) */}
-        <TransitionSeries.Sequence durationInFrames={45}>
+        {/* Scene 2: Recipe name (60 frames) */}
+        <TransitionSeries.Sequence durationInFrames={60}>
           <RecipeNameScene photo={photo} recipeName={recipeName} price={price} />
         </TransitionSeries.Sequence>
 
@@ -440,14 +462,14 @@ export const FoodReveal: React.FC<FoodRevealProps> = ({
           timing={springTiming({ config: { damping: 14 } })}
         />
 
-        {/* Scene 3: Ingredients over video (240 frames) */}
-        <TransitionSeries.Sequence durationInFrames={240}>
+        {/* Scene 3: Ingredients over video (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
           <IngredientsScene ingredients={ingredients} price={price} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={slide()}
-          timing={springTiming({ config: { damping: 12 } })}
+          timing={springTiming({ config: { damping: 14 } })}
         />
 
         {/* Scene 4: Comparison PriceTag (90 frames) */}
@@ -457,11 +479,11 @@ export const FoodReveal: React.FC<FoodRevealProps> = ({
 
         <TransitionSeries.Transition
           presentation={fade()}
-          timing={linearTiming({ durationInFrames: 15 })}
+          timing={linearTiming({ durationInFrames: 12 })}
         />
 
-        {/* Scene 5: Savings with AnimatedCounter (120 frames) */}
-        <TransitionSeries.Sequence durationInFrames={120}>
+        {/* Scene 5: Savings (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
           <SavingsScene besparing={besparing} />
         </TransitionSeries.Sequence>
 
@@ -470,18 +492,18 @@ export const FoodReveal: React.FC<FoodRevealProps> = ({
           timing={linearTiming({ durationInFrames: 12 })}
         />
 
-        {/* Scene 6: App demo (150 frames) */}
-        <TransitionSeries.Sequence durationInFrames={150}>
+        {/* Scene 6: App demo (120 frames) */}
+        <TransitionSeries.Sequence durationInFrames={120}>
           <AppDemoScene recipeName={recipeName} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={fade()}
-          timing={linearTiming({ durationInFrames: 15 })}
+          timing={linearTiming({ durationInFrames: 12 })}
         />
 
-        {/* Scene 7: CTA (120 frames) */}
-        <TransitionSeries.Sequence durationInFrames={120}>
+        {/* Scene 7: CTA (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
           <CTAScene photo={photo} />
         </TransitionSeries.Sequence>
       </TransitionSeries>

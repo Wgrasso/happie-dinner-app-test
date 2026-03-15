@@ -1,8 +1,10 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Img,
   interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -44,17 +46,38 @@ export interface WatEtenWeProps {
   durationInSeconds: number;
 }
 
-// --- Scene 1: HOOK --- GradientBackground + bold text + AnimatedUnderline ---
+// --- WatEtenWe PERSONALITY: Fast, chaotic energy. Quick cuts. Multiple elements
+// simultaneously. High contrast: pure black #000 to bright coral #F4845F.
+
+// --- Scene 1: HOOK (60 frames) --- illustration bg + slamIn text ---
 
 const HookScene: React.FC = () => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  // Rapid color flash behind text
+  const flashOpacity = interpolate(frame, [0, 3, 8], [0, 0.6, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill>
-      <GradientBackground
-        colors={["#0a0a1a", "#1a1a2e", "#0d1117"]}
-        animate
-        angle={135}
+      <PhotoBackground
+        src="illustrations/empty-fridge-sad.png"
+        overlay="rgba(0,0,0,0.55)"
+        kenBurns
+        kenBurnsScale={[1.05, 1.15]}
+      />
+      {/* Flash */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: colors.logoCoral,
+          opacity: flashOpacity,
+          zIndex: 2,
+        }}
       />
       <AbsoluteFill
         style={{
@@ -62,7 +85,8 @@ const HookScene: React.FC = () => {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 20,
+          gap: 12,
+          zIndex: 3,
         }}
       >
         <AnimatedText
@@ -71,19 +95,17 @@ const HookScene: React.FC = () => {
           fontFamily="heading"
           color={colors.white}
           animation="slamIn"
-          startFrame={5}
+          startFrame={3}
           shadow
         />
-        <div style={{ marginTop: 8 }}>
-          <AnimatedUnderline startFrame={35} width={420} color={colors.logoCoral} strokeWidth={5} />
-        </div>
+        {/* Both appear almost simultaneously */}
         <AnimatedText
           text="Niemand weet het."
           fontSize={40}
           fontFamily="body"
-          color="rgba(255,255,255,0.6)"
-          animation="fadeUp"
-          startFrame={40}
+          color={colors.logoCoral}
+          animation="letterStagger"
+          startFrame={18}
           shadow
         />
       </AbsoluteFill>
@@ -91,60 +113,33 @@ const HookScene: React.FC = () => {
   );
 };
 
-// --- Scene 2: PROBLEM --- ScreenWipe + NotificationStack --------------------
+// --- Scene 2: PROBLEM (90 frames) --- ScreenWipe + NotificationStack ---
 
 const ProblemScene: React.FC = () => {
+  const frame = useCurrentFrame();
+
   return (
-    <AbsoluteFill>
-      <GradientBackground colors={["#0d1117", "#1a1a2e"]} angle={180} />
-      <ScreenWipe startFrame={0} durationFrames={18} color={colors.logoCoral} direction="right" />
-      <AbsoluteFill
+    <AbsoluteFill style={{ backgroundColor: "#000" }}>
+      <ScreenWipe startFrame={0} durationFrames={14} color={colors.logoCoral} direction="right" />
+      {/* Animated shapes for visual interest */}
+      <div
         style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 30,
+          position: "absolute",
+          top: "15%",
+          right: 60,
+          width: 80,
+          height: 80,
+          borderRadius: "50%",
+          border: `3px solid rgba(244,132,95,${interpolate(frame, [0, 60], [0, 0.3], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          })})`,
+          transform: `scale(${interpolate(frame, [0, 60], [0.5, 1.5], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          })})`,
         }}
-      >
-        <NotificationStack
-          startFrame={10}
-          notifications={[
-            { sender: "Lisa", message: "Wat eten we vanavond?", color: "#25D366" },
-            { sender: "Tom", message: "Weet niet...", color: "#25D366" },
-            { sender: "Sarah", message: "NIET WEER PASTA", color: "#25D366" },
-            { sender: "Groep", message: "Elke. Avond. Hetzelfde.", color: "#E74C3C" },
-          ]}
-          width={380}
-          staggerFrames={20}
-        />
-        <AnimatedText
-          text="Elke. Avond. Hetzelfde."
-          fontSize={48}
-          fontFamily="heading"
-          color={colors.logoCoral}
-          animation="glitch"
-          startFrame={90}
-          shadow
-        />
-      </AbsoluteFill>
-    </AbsoluteFill>
-  );
-};
-
-// --- Scene 3: APP SOLUTION --- ScreenWipe + AnimatedAppUI -------------------
-
-const AppScene: React.FC<{
-  recipeName: string;
-}> = ({ recipeName }) => {
-  return (
-    <AbsoluteFill>
-      <GradientWave
-        colors={["#1a1a2e", "#0d1117", "#16213e"]}
-        speed={0.8}
-        direction="diagonal"
       />
-      <ScreenWipe startFrame={0} durationFrames={18} color="#8B7355" direction="left" />
       <AbsoluteFill
         style={{
           display: "flex",
@@ -154,26 +149,120 @@ const AppScene: React.FC<{
           gap: 20,
         }}
       >
-        <div style={{ position: "relative" }}>
-          <AnimatedText
-            text="Swipe samen."
-            fontSize={48}
-            fontFamily="heading"
-            color={colors.white}
-            animation="fadeUp"
-            startFrame={10}
-            shadow
-          />
-          <AnimatedUnderline startFrame={40} width={320} color={colors.logoCoral} strokeWidth={4} y={60} />
-        </div>
+        <NotificationStack
+          startFrame={5}
+          notifications={[
+            { sender: "Lisa", message: "Wat eten we?", color: "#25D366" },
+            { sender: "Tom", message: "Weet niet...", color: "#25D366" },
+            { sender: "Sarah", message: "NIET WEER PASTA", color: "#E74C3C" },
+          ]}
+          width={380}
+          staggerFrames={15}
+        />
+        <AnimatedText
+          text="Elke. Avond. Hetzelfde."
+          fontSize={44}
+          fontFamily="heading"
+          color={colors.logoCoral}
+          animation="glitch"
+          startFrame={55}
+          shadow
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// --- Scene 3: TRANSITION PUNCH (60 frames) --- food photo flash ---
+
+const TransitionPunchScene: React.FC<{ photo: string }> = ({ photo }) => {
+  const frame = useCurrentFrame();
+
+  return (
+    <AbsoluteFill>
+      <PhotoBackground
+        src={photo}
+        overlay="rgba(0,0,0,0.25)"
+        kenBurns
+        kenBurnsScale={[1.1, 1]}
+      />
+      <ScreenWipe startFrame={0} durationFrames={12} color="#000" direction="left" />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <AnimatedText
+          text="Er is een app."
+          fontSize={56}
+          fontFamily="heading"
+          color={colors.white}
+          animation="slamIn"
+          startFrame={8}
+          shadow
+        />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// --- Scene 4: APP SOLUTION (180 frames) --- AnimatedAppUI swipe ---
+
+const AppScene: React.FC<{
+  recipeName: string;
+}> = ({ recipeName }) => {
+  return (
+    <AbsoluteFill style={{ backgroundColor: "#000" }}>
+      <ScreenWipe startFrame={0} durationFrames={14} color="#8B7355" direction="left" />
+      {/* Geometric lines for energy */}
+      <div
+        style={{
+          position: "absolute",
+          top: 100,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: "linear-gradient(90deg, transparent, rgba(244,132,95,0.3), transparent)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: 200,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: "linear-gradient(90deg, transparent, rgba(244,132,95,0.3), transparent)",
+        }}
+      />
+      <AbsoluteFill
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 16,
+        }}
+      >
+        <AnimatedText
+          text="Swipe samen."
+          fontSize={44}
+          fontFamily="heading"
+          color={colors.white}
+          animation="letterStagger"
+          startFrame={5}
+          shadow
+        />
         <AnimatedAppUI
-          startFrame={20}
+          startFrame={15}
           sequence="swipe-three"
           recipe={{
             name: recipeName,
             image: "carbonara.jpg",
             cookingTime: 25,
-            description: "Romige Italiaanse klassieker met pancetta en parmezaan.",
+            description: "Romige Italiaanse klassieker.",
             ingredients: ["Spaghetti", "Pancetta", "Eieren", "Parmezaan", "Peper"],
           }}
           swipeResults={["like", "dislike", "like"]}
@@ -183,7 +272,7 @@ const AppScene: React.FC<{
   );
 };
 
-// --- Scene 4: FOOD REVEAL --- RevealMask circle + AnimatedCounter -----------
+// --- Scene 5: FOOD REVEAL (90 frames) --- RevealMask + counter ---
 
 const FoodRevealScene: React.FC<{
   resultPhoto: string;
@@ -197,66 +286,75 @@ const FoodRevealScene: React.FC<{
         src={resultPhoto}
         overlay="rgba(0,0,0,0.3)"
         kenBurns
-        kenBurnsScale={[1, 1.15]}
-        warmth={0.6}
+        kenBurnsScale={[1, 1.12]}
+        warmth={0.5}
       />
-      <RevealMask startFrame={0} durationFrames={20} shape="circle">
+      <RevealMask startFrame={0} durationFrames={16} shape="circle">
         <AbsoluteFill
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: 20,
+            gap: 16,
           }}
         >
           <AnimatedText
             text={recipeName}
-            fontSize={60}
+            fontSize={56}
             fontFamily="heading"
             color={colors.white}
             animation="popIn"
-            startFrame={20}
+            startFrame={16}
             shadow
             glow="rgba(255,255,255,0.2)"
           />
-          <AnimatedText
-            text={`${cookingTime} min`}
-            fontSize={28}
-            fontFamily="body"
-            color="rgba(255,255,255,0.85)"
-            animation="fadeUp"
-            startFrame={50}
-            shadow
-          />
-          <AnimatedCounter
-            from={0}
-            to={price}
-            startFrame={60}
-            durationFrames={30}
-            prefix={"\u20AC"}
-            fontSize={56}
-            color={colors.logoCoral}
-            showUnderline
-            underlineColor={colors.logoCoral}
-          />
+          <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+            <AnimatedText
+              text={`${cookingTime} min`}
+              fontSize={28}
+              fontFamily="body"
+              color="rgba(255,255,255,0.85)"
+              animation="fadeUp"
+              startFrame={35}
+              shadow
+            />
+            <AnimatedCounter
+              from={0}
+              to={price}
+              startFrame={35}
+              durationFrames={25}
+              prefix={"\u20AC"}
+              fontSize={48}
+              color={colors.logoCoral}
+              showUnderline
+              underlineColor={colors.logoCoral}
+            />
+          </div>
         </AbsoluteFill>
       </RevealMask>
     </AbsoluteFill>
   );
 };
 
-// --- Scene 5: CTA -----------------------------------------------------------
+// --- Scene 6: CTA (90 frames) --- illustration bg + logo + fade to black ---
 
-const CTAScene: React.FC<{
-  resultPhoto: string;
-}> = ({ resultPhoto }) => {
+const CTAScene: React.FC = () => {
+  const frame = useCurrentFrame();
+
+  // Fade to black in last 15 frames for loop
+  const fadeOut = interpolate(frame, [75, 90], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
   return (
     <AbsoluteFill>
-      <GradientBackground
-        colors={["#1a1a2e", "#2d1b12", "#0d1117"]}
-        animate
-        angle={135}
+      <PhotoBackground
+        src="illustrations/happy-dinner-table.png"
+        overlay="rgba(0,0,0,0.6)"
+        kenBurns
+        kenBurnsScale={[1, 1.08]}
       />
       <AbsoluteFill
         style={{
@@ -264,21 +362,31 @@ const CTAScene: React.FC<{
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 36,
+          gap: 30,
         }}
       >
-        <Logo animation="bounce" size={650} startFrame={10} />
+        <Logo animation="bounce" size={650} startFrame={5} />
         <AnimatedText
           text="Download Happie"
           fontSize={36}
           fontFamily="heading"
           color={colors.white}
           animation="fadeUp"
-          startFrame={40}
+          startFrame={30}
           shadow
         />
-        <StoreBadges startFrame={60} />
+        <StoreBadges startFrame={45} />
       </AbsoluteFill>
+      {/* Fade to black for loop */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: "#000",
+          opacity: fadeOut,
+          zIndex: 100,
+        }}
+      />
     </AbsoluteFill>
   );
 };
@@ -298,18 +406,18 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       <TransitionSeries>
-        {/* Scene 1: Hook --- GradientBg, bold text, underline (90 frames) */}
-        <TransitionSeries.Sequence durationInFrames={90}>
+        {/* Scene 1: Hook (60 frames) --- illustration + slamIn */}
+        <TransitionSeries.Sequence durationInFrames={60}>
           <HookScene />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={wipe()}
-          timing={springTiming({ config: { damping: 12 } })}
+          timing={springTiming({ config: { damping: 14 } })}
         />
 
-        {/* Scene 2: Problem --- ScreenWipe + NotificationStack (150 frames) */}
-        <TransitionSeries.Sequence durationInFrames={150}>
+        {/* Scene 2: Problem (90 frames) --- notifications */}
+        <TransitionSeries.Sequence durationInFrames={90}>
           <ProblemScene />
         </TransitionSeries.Sequence>
 
@@ -318,18 +426,28 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
           timing={springTiming({ config: { damping: 14 } })}
         />
 
-        {/* Scene 3: App Solution --- ScreenWipe + AnimatedAppUI swipe (240 frames) */}
-        <TransitionSeries.Sequence durationInFrames={240}>
+        {/* Scene 3: Transition punch (60 frames) --- food photo flash */}
+        <TransitionSeries.Sequence durationInFrames={60}>
+          <TransitionPunchScene photo={solutionPhoto} />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={slide()}
+          timing={springTiming({ config: { damping: 14 } })}
+        />
+
+        {/* Scene 4: App Solution (180 frames) --- swipe demo */}
+        <TransitionSeries.Sequence durationInFrames={180}>
           <AppScene recipeName={recipeName} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={fade()}
-          timing={linearTiming({ durationInFrames: 15 })}
+          timing={linearTiming({ durationInFrames: 12 })}
         />
 
-        {/* Scene 4: Food Reveal --- RevealMask + AnimatedCounter (180 frames) */}
-        <TransitionSeries.Sequence durationInFrames={180}>
+        {/* Scene 5: Food Reveal (90 frames) */}
+        <TransitionSeries.Sequence durationInFrames={90}>
           <FoodRevealScene
             resultPhoto={resultPhoto}
             recipeName={recipeName}
@@ -340,12 +458,12 @@ export const WatEtenWe: React.FC<WatEtenWeProps> = ({
 
         <TransitionSeries.Transition
           presentation={fade()}
-          timing={linearTiming({ durationInFrames: 15 })}
+          timing={linearTiming({ durationInFrames: 12 })}
         />
 
-        {/* Scene 5: CTA (180 frames) */}
-        <TransitionSeries.Sequence durationInFrames={180}>
-          <CTAScene resultPhoto={resultPhoto} />
+        {/* Scene 6: CTA (90 frames) --- with fade-to-black loop */}
+        <TransitionSeries.Sequence durationInFrames={90}>
+          <CTAScene />
         </TransitionSeries.Sequence>
       </TransitionSeries>
 

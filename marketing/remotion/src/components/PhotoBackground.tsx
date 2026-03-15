@@ -8,12 +8,13 @@ import {
 } from "remotion";
 
 interface PhotoBackgroundProps {
-  src: string; // filename in public/meals/
+  src: string; // filename in public/meals/ OR full path like "illustrations/foo.png"
   overlay?: string; // CSS color overlay, default "rgba(0,0,0,0.4)"
   blur?: number; // backdrop blur in px, default 0
   kenBurns?: boolean; // slow zoom effect, default true
   kenBurnsScale?: [number, number]; // start/end scale, default [1, 1.15]
   warmth?: number; // 0-1, adds warm amber overlay
+  desaturate?: number; // 0-1, desaturate via CSS filter
 }
 
 export const PhotoBackground: React.FC<PhotoBackgroundProps> = ({
@@ -23,6 +24,7 @@ export const PhotoBackground: React.FC<PhotoBackgroundProps> = ({
   kenBurns = true,
   kenBurnsScale = [1, 1.15],
   warmth = 0,
+  desaturate = 0,
 }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
@@ -46,7 +48,7 @@ export const PhotoBackground: React.FC<PhotoBackgroundProps> = ({
     >
       {/* Photo */}
       <Img
-        src={staticFile(`meals/${src}`)}
+        src={staticFile(src.includes("/") ? src : `meals/${src}`)}
         style={{
           position: "absolute",
           top: 0,
@@ -55,7 +57,10 @@ export const PhotoBackground: React.FC<PhotoBackgroundProps> = ({
           height: "100%",
           objectFit: "cover",
           transform: `scale(${scale})`,
-          filter: blur > 0 ? `blur(${blur}px)` : undefined,
+          filter: [
+            blur > 0 ? `blur(${blur}px)` : "",
+            desaturate > 0 ? `saturate(${1 - desaturate})` : "",
+          ].filter(Boolean).join(" ") || undefined,
         }}
       />
 
