@@ -15,14 +15,17 @@ const render = async () => {
     : path.resolve(__dirname, "./out");
 
   // Dynamic import based on batch flag
-  const configModule =
-    batchId === "2"
-      ? await import("./src/data/video-configs-batch2")
-      : await import("./src/data/video-configs");
-  const allVideos =
-    "videosBatch2" in configModule
-      ? configModule.videosBatch2
-      : configModule.videos;
+  let allVideos;
+  if (batchId === "3") {
+    const configModule = await import("./src/data/video-configs-batch3");
+    allVideos = configModule.videosBatch3;
+  } else if (batchId === "2") {
+    const configModule = await import("./src/data/video-configs-batch2");
+    allVideos = configModule.videosBatch2;
+  } else {
+    const configModule = await import("./src/data/video-configs");
+    allVideos = configModule.videos;
+  }
 
   const configsToRender = targetId
     ? allVideos.filter((v) => v.id === targetId)

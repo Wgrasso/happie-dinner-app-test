@@ -27,8 +27,7 @@ const scriptMap = new Map(scripts.map((s) => [s.id, s]));
 // 10 selected videos: 2 best from each of the 5 categories
 // Connected to scripts.ts for content/hooks
 export const videos: VideoConfig[] = [
-  // ─── PROBLEEM 1: Groepsapp chaos (WatEtenWe) ────────────────────────────
-  // Script: "20 berichten. Nul beslissingen."
+  // --- PROBLEEM 1: Groepsapp chaos (WatEtenWe) ---
   {
     id: "probleem-groepsapp",
     template: "WatEtenWe",
@@ -49,8 +48,7 @@ export const videos: VideoConfig[] = [
     },
   },
 
-  // ─── PROBLEEM 2: 8 mensen, 8 meningen (WatEtenWe) ──────────────────────
-  // Script: "8 monden. 1 keuken. 0 plan."
+  // --- PROBLEEM 2: 8 mensen, 8 meningen (WatEtenWe) ---
   {
     id: "probleem-8-meningen",
     template: "WatEtenWe",
@@ -71,8 +69,7 @@ export const videos: VideoConfig[] = [
     },
   },
 
-  // ─── FOOD REVEAL 1: Carbonara (FoodReveal) ──────────────────────────────
-  // Script: "Dit kost \u20AC3,00. Echt."
+  // --- FOOD REVEAL 1: Carbonara (FoodReveal) ---
   {
     id: "food-carbonara",
     template: "FoodReveal",
@@ -88,13 +85,10 @@ export const videos: VideoConfig[] = [
         { naam: "Eieren", prijs: "\u20AC0,40" },
         { naam: "Pecorino", prijs: "\u20AC0,50" },
       ],
-      bezorgPrijs: "\u20AC14,50",
-      besparing: "\u20AC270/maand",
     },
   },
 
-  // ─── FOOD REVEAL 2: Pad Thai (FoodReveal) ───────────────────────────────
-  // Script: "Restaurant = \u20AC18. Happie = \u20AC5,50."
+  // --- FOOD REVEAL 2: Pad Thai (FoodReveal) ---
   {
     id: "food-pad-thai",
     template: "FoodReveal",
@@ -112,73 +106,54 @@ export const videos: VideoConfig[] = [
         { naam: "Tamarinde", prijs: "\u20AC0,50" },
         { naam: "Limoen", prijs: "\u20AC0,30" },
       ],
-      bezorgPrijs: "\u20AC18,00",
-      besparing: "\u20AC375/maand",
     },
   },
 
-  // ─── DATA 1: \u20AC80 per maand besparen (DataStory) ────────────────────────
-  // Script: "80. Nee, geen likes. Euro's."
+  // --- DATA 1: Makkelijk avondeten kiezen (DataStory) ---
   {
-    id: "data-besparing",
+    id: "data-makkelijk",
     template: "DataStory",
     durationInSeconds: 30,
     music: "",
     props: {
       bgPhoto: bolognese.localImage,
-      statNummer: 80,
-      statSuffix: "\u20AC",
-      statLabel: "per maand besparen op eten",
+      statNummer: 60,
+      statSuffix: "+",
+      statLabel: "recepten onder \u20AC5 per persoon",
       chartTitle: "Hoe makkelijk is avondeten kiezen?",
       chartData: [
-        { label: "Bezorgen", value: 15 },
-        { label: "Zelf bedenken", value: 40 },
-        { label: "Kookboek", value: 55 },
-        { label: "Happie", value: 90, highlight: true },
+        { label: "Zelf bedenken", value: 25 },
+        { label: "Kookboek", value: 45 },
+        { label: "Recepten-app", value: 60 },
+        { label: "Happie", value: 92, highlight: true },
       ],
-      vergelijking: {
-        linksLabel: "Thuisbezorgd",
-        linksWaarde: "\u20AC400",
-        rechtsLabel: "Met Happie",
-        rechtsWaarde: "\u20AC130",
-        conclusie: "Dat is 3 festivals per jaar",
-      },
       ctaPhoto: tikka.localImage,
     },
   },
 
-  // ─── DATA 2: Van \u20AC12 naar \u20AC3 (DataStory) ──────────────────────────────
-  // Script: "\u20AC12 per maaltijd. Wist je dat?"
+  // --- DATA 2: Samen koken data (DataStory) ---
   {
-    id: "data-van-12-naar-3",
+    id: "data-samen-koken",
     template: "DataStory",
     durationInSeconds: 30,
     music: "",
     props: {
       bgPhoto: carbonara.localImage,
-      statNummer: 270,
-      statSuffix: "\u20AC",
-      statLabel: "per maand besparen vs bezorgen",
-      chartTitle: "Maandelijkse kosten avondeten",
+      statNummer: 8,
+      statSuffix: "van 8",
+      statLabel: "huisgenoten eten vanavond mee",
+      chartTitle: "Hoe vaak kook je samen?",
       chartData: [
-        { label: "Bezorgen", value: 95 },
-        { label: "Afhaal", value: 75 },
-        { label: "Zelf (geen plan)", value: 55 },
-        { label: "Met Happie", value: 30, highlight: true },
+        { label: "Nooit", value: 10 },
+        { label: "1x per week", value: 35 },
+        { label: "3x per week", value: 55 },
+        { label: "Met Happie", value: 90, highlight: true },
       ],
-      vergelijking: {
-        linksLabel: "Bezorgd",
-        linksWaarde: "\u20AC12,50",
-        rechtsLabel: "Happie",
-        rechtsWaarde: "\u20AC3,00",
-        conclusie: "Bespaar \u20AC270/maand",
-      },
       ctaPhoto: chickenWrap.localImage,
     },
   },
 
-  // ─── SAMEN 1: Die ene huisgenoot (SamenEten) ───────────────────────────
-  // Script: "Maakt me niet uit" — spoiler: het maakt ze wel uit
+  // --- SAMEN 1: Die ene huisgenoot (SamenEten) ---
   {
     id: "humor-maakt-niet-uit",
     template: "SamenEten",
@@ -187,7 +162,7 @@ export const videos: VideoConfig[] = [
     props: {
       chatMessages: [
         { tekst: "Maakt me niet uit", isReply: true },
-        { tekst: "Oké, pasta!", isReply: false },
+        { tekst: "Ok\u00E9, pasta!", isReply: false },
         { tekst: "Ugh pasta WEER??", isReply: true },
         { tekst: "JE ZEI MAAKT NIET UIT", isReply: false },
       ],
@@ -201,8 +176,7 @@ export const videos: VideoConfig[] = [
     },
   },
 
-  // ─── SAMEN 2: Sushi op studentenbudget (SamenEten) ─────────────────────
-  // Script: "Sushi op studentenbudget?"
+  // --- SAMEN 2: Sushi op studentenbudget (SamenEten) ---
   {
     id: "humor-sushi-budget",
     template: "SamenEten",
@@ -225,8 +199,7 @@ export const videos: VideoConfig[] = [
     },
   },
 
-  // ─── LIFESTYLE 1: Samen aan tafel (HetMoment) ─────────────────────────
-  // Script: atmospheric, food-first
+  // --- LIFESTYLE 1: Samen aan tafel (HetMoment) ---
   {
     id: "lifestyle-samen-tafel",
     template: "HetMoment",
@@ -245,8 +218,7 @@ export const videos: VideoConfig[] = [
     },
   },
 
-  // ─── LIFESTYLE 2: Van chaos naar gezellig (HetMoment) ─────────────────
-  // Script: atmospheric, warm
+  // --- LIFESTYLE 2: Van chaos naar gezellig (HetMoment) ---
   {
     id: "lifestyle-chaos-gezellig",
     template: "HetMoment",

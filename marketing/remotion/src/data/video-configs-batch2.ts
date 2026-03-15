@@ -23,8 +23,7 @@ const burger = recipes.find((r) => r.name === "Beef Burger")!;
 
 // 10 NEW video concepts — completely different hooks, recipes, stories
 export const videosBatch2: VideoConfig[] = [
-  // ─── 1: "De Koelkast Interventie" (WatEtenWe) ─────────────────────────────
-  // Hook: "Je koelkast huilt." — lege koelkast → Happie → Mushroom Risotto
+  // --- 1: "De Koelkast Interventie" (WatEtenWe) ---
   {
     id: "b2-koelkast-interventie",
     template: "WatEtenWe",
@@ -53,8 +52,7 @@ export const videosBatch2: VideoConfig[] = [
     },
   },
 
-  // ─── 2: "Wereldkeuken" (FoodReveal) ───────────────────────────────────────
-  // Hook: "22 landen. 1 keuken." — Thai Green Curry met prijs breakdown
+  // --- 2: "Wereldkeuken" (FoodReveal) ---
   {
     id: "b2-wereldkeuken",
     template: "FoodReveal",
@@ -65,19 +63,16 @@ export const videosBatch2: VideoConfig[] = [
       recipeName: thaiGreenCurry.name,
       price: thaiGreenCurry.estimatedPrice,
       ingredients: [
-        { naam: "Kippendij", prijs: "€1,80" },
-        { naam: "Kokosmelk", prijs: "€1,20" },
-        { naam: "Currypasta", prijs: "€0,90" },
-        { naam: "Groenten", prijs: "€0,60" },
-        { naam: "Jasmine rijst", prijs: "€0,50" },
+        { naam: "Kippendij", prijs: "\u20AC1,80" },
+        { naam: "Kokosmelk", prijs: "\u20AC1,20" },
+        { naam: "Currypasta", prijs: "\u20AC0,90" },
+        { naam: "Groenten", prijs: "\u20AC0,60" },
+        { naam: "Jasmine rijst", prijs: "\u20AC0,50" },
       ],
-      bezorgPrijs: "€16,50",
-      besparing: "€345/maand",
     },
   },
 
-  // ─── 3: "Het Stemmen Begint" (SamenEten) ──────────────────────────────────
-  // Hook: "Democratie in de keuken." — iedereen swipet → Korean Fried Chicken wint
+  // --- 3: "Het Stemmen Begint" (SamenEten) ---
   {
     id: "b2-stemmen-begint",
     template: "SamenEten",
@@ -88,7 +83,7 @@ export const videosBatch2: VideoConfig[] = [
         { tekst: "Ik wil Aziatisch", isReply: false },
         { tekst: "Ik wil Mexicaans!", isReply: true },
         { tekst: "Ik wil gewoon goedkoop", isReply: false },
-        { tekst: "We gaan STEMMEN 🗳️", isReply: true },
+        { tekst: "We gaan STEMMEN", isReply: true },
       ],
       meals: [
         { naam: fishTacos.name, foto: fishTacos.localImage, liked: false },
@@ -104,8 +99,7 @@ export const videosBatch2: VideoConfig[] = [
     },
   },
 
-  // ─── 4: "20 Minuten" (DataStory) ──────────────────────────────────────────
-  // Hook: "Sneller dan Thuisbezorgd." — Poke Bowl als voorbeeld: 20 min, €5
+  // --- 4: "20 Minuten" (DataStory) ---
   {
     id: "b2-20-minuten",
     template: "DataStory",
@@ -116,26 +110,18 @@ export const videosBatch2: VideoConfig[] = [
       statNummer: 20,
       statSuffix: "min",
       statLabel: "van koelkast naar tafel",
-      chartTitle: "Wachttijd vs kooktijd",
+      chartTitle: "Hoe snel staat eten op tafel?",
       chartData: [
-        { label: "Thuisbezorgd", value: 45 },
         { label: "Afhalen", value: 30 },
-        { label: "Supermarkt", value: 55 },
+        { label: "Supermarkt + koken", value: 55 },
+        { label: "Kookboek zoeken", value: 40 },
         { label: "Happie", value: 20, highlight: true },
       ],
-      vergelijking: {
-        linksLabel: "Bezorging",
-        linksWaarde: "45 min + €15",
-        rechtsLabel: "Poke Bowl",
-        rechtsWaarde: "20 min + €5",
-        conclusie: "Sneller, goedkoper, lekkerder",
-      },
       ctaPhoto: pokeBowl.localImage,
     },
   },
 
-  // ─── 5: "First Date Dinner" (HetMoment) ───────────────────────────────────
-  // Hook: "Indruk maken? Kook." — Ramen close-up, cinematisch, warm
+  // --- 5: "First Date Dinner" (HetMoment) ---
   {
     id: "b2-first-date-dinner",
     template: "HetMoment",
@@ -154,8 +140,7 @@ export const videosBatch2: VideoConfig[] = [
     },
   },
 
-  // ─── 6: "De Weekplanner" (WatEtenWe) ──────────────────────────────────────
-  // Hook: "Maandag: paniek. Dinsdag: paniek." — plan vooruit → Lasagna + Fish Tacos
+  // --- 6: "De Weekplanner" (WatEtenWe) ---
   {
     id: "b2-weekplanner",
     template: "WatEtenWe",
@@ -176,8 +161,7 @@ export const videosBatch2: VideoConfig[] = [
     },
   },
 
-  // ─── 7: "Geheim Recept" (FoodReveal) ──────────────────────────────────────
-  // Hook: "Dit kost €3." — Shakshuka, 5 ingrediënten, 25 minuten
+  // --- 7: "Geheim Recept" (FoodReveal) ---
   {
     id: "b2-geheim-recept",
     template: "FoodReveal",
@@ -188,19 +172,16 @@ export const videosBatch2: VideoConfig[] = [
       recipeName: shakshuka.name,
       price: shakshuka.estimatedPrice,
       ingredients: [
-        { naam: "Eieren (6x)", prijs: "€1,00" },
-        { naam: "Tomaten (blik)", prijs: "€0,80" },
-        { naam: "Paprika's", prijs: "€0,60" },
-        { naam: "Ui + knoflook", prijs: "€0,30" },
-        { naam: "Kruiden", prijs: "€0,30" },
+        { naam: "Eieren (6x)", prijs: "\u20AC1,00" },
+        { naam: "Tomaten (blik)", prijs: "\u20AC0,80" },
+        { naam: "Paprika's", prijs: "\u20AC0,60" },
+        { naam: "Ui + knoflook", prijs: "\u20AC0,30" },
+        { naam: "Kruiden", prijs: "\u20AC0,30" },
       ],
-      bezorgPrijs: "€13,00",
-      besparing: "€300/maand",
     },
   },
 
-  // ─── 8: "De Transformation" (SamenEten) ───────────────────────────────────
-  // Hook: "Week 1 vs Week 8." — tosti → Vietnamese Pho
+  // --- 8: "De Transformation" (SamenEten) ---
   {
     id: "b2-transformation",
     template: "SamenEten",
@@ -210,8 +191,8 @@ export const videosBatch2: VideoConfig[] = [
       chatMessages: [
         { tekst: "Tosti?", isReply: false },
         { tekst: "Tosti.", isReply: true },
-        { tekst: "— 8 weken later —", isReply: false },
-        { tekst: "Vietnamese Pho vanavond! 🍜", isReply: true },
+        { tekst: "\u2014 8 weken later \u2014", isReply: false },
+        { tekst: "Vietnamese Pho vanavond!", isReply: true },
       ],
       meals: [
         { naam: padThai.name, foto: padThai.localImage, liked: false },
@@ -227,38 +208,29 @@ export const videosBatch2: VideoConfig[] = [
     },
   },
 
-  // ─── 9: "Festival Budget" (DataStory) ─────────────────────────────────────
-  // Hook: "3 festivals per jaar." — €270/maand besparen → Chicken Fajitas €4
+  // --- 9: "Samen Koken Stats" (DataStory) ---
   {
-    id: "b2-festival-budget",
+    id: "b2-samen-koken-stats",
     template: "DataStory",
     durationInSeconds: 30,
     music: "",
     props: {
       bgPhoto: chickenFajitas.localImage,
-      statNummer: 3,
+      statNummer: 5,
       statSuffix: "x",
-      statLabel: "festivals per jaar extra",
-      chartTitle: "Waar gaat je geld heen?",
+      statLabel: "per week samen aan tafel",
+      chartTitle: "Wat maakt studentenleven leuk?",
       chartData: [
-        { label: "Bezorgen", value: 90 },
-        { label: "Afhaal", value: 70 },
-        { label: "Uit eten", value: 95 },
-        { label: "Met Happie", value: 25, highlight: true },
+        { label: "Studeren", value: 20 },
+        { label: "Uitgaan", value: 65 },
+        { label: "Sport", value: 55 },
+        { label: "Samen koken", value: 88, highlight: true },
       ],
-      vergelijking: {
-        linksLabel: "Bezorgen",
-        linksWaarde: "€400/maand",
-        rechtsLabel: "Happie",
-        rechtsWaarde: "€130/maand",
-        conclusie: "€270 = 3 festivals per jaar",
-      },
       ctaPhoto: chickenFajitas.localImage,
     },
   },
 
-  // ─── 10: "Taco Tuesday" (HetMoment) ───────────────────────────────────────
-  // Hook: "Elke dinsdag hetzelfde ritueel." — Fish Tacos, warm, nostalgisch
+  // --- 10: "Taco Tuesday" (HetMoment) ---
   {
     id: "b2-taco-tuesday",
     template: "HetMoment",

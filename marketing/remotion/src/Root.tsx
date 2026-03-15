@@ -6,6 +6,7 @@ import { FoodReveal } from "./templates/FoodReveal";
 import { DataStory } from "./templates/DataStory";
 import { SamenEten } from "./templates/SamenEten";
 import { HetMoment } from "./templates/HetMoment";
+import { StoryAd } from "./templates/StoryAd";
 
 const carbonara = recipes.find((r) => r.name === "Carbonara")!;
 const bolognese = recipes.find((r) => r.name === "Spaghetti Bolognese")!;
@@ -19,7 +20,7 @@ const ramen = recipes.find((r) => r.name === "Ramen")!;
 
 export const RemotionRoot: React.FC = () => (
   <>
-    {/* ─── WatEtenWe ──────────────────────────────────────────────────── */}
+    {/* --- WatEtenWe --- */}
     <Composition
       id="WatEtenWe"
       component={WatEtenWe as unknown as React.ComponentType<Record<string, unknown>>}
@@ -48,7 +49,7 @@ export const RemotionRoot: React.FC = () => (
       }}
     />
 
-    {/* ─── FoodReveal ─────────────────────────────────────────────────── */}
+    {/* --- FoodReveal --- */}
     <Composition
       id="FoodReveal"
       component={FoodReveal as unknown as React.ComponentType<Record<string, unknown>>}
@@ -70,14 +71,12 @@ export const RemotionRoot: React.FC = () => (
           { naam: "Eieren", prijs: "\u20AC0,40" },
           { naam: "Pecorino", prijs: "\u20AC0,50" },
         ],
-        bezorgPrijs: "\u20AC14,50",
-        besparing: "\u20AC270/maand",
         music: "",
         durationInSeconds: 25,
       }}
     />
 
-    {/* ─── DataStory ──────────────────────────────────────────────────── */}
+    {/* --- DataStory --- */}
     <Composition
       id="DataStory"
       component={DataStory as unknown as React.ComponentType<Record<string, unknown>>}
@@ -91,30 +90,23 @@ export const RemotionRoot: React.FC = () => (
       })}
       defaultProps={{
         bgPhoto: bolognese.localImage,
-        statNummer: 80,
-        statSuffix: "\u20AC",
-        statLabel: "per maand besparen op eten",
+        statNummer: 60,
+        statSuffix: "+",
+        statLabel: "recepten onder \u20AC5 per persoon",
         chartTitle: "Hoe makkelijk is avondeten kiezen?",
         chartData: [
-          { label: "Bezorgen", value: 15 },
-          { label: "Zelf bedenken", value: 40 },
-          { label: "Kookboek", value: 55 },
-          { label: "Happie", value: 90, highlight: true },
+          { label: "Zelf bedenken", value: 25 },
+          { label: "Kookboek", value: 45 },
+          { label: "Recepten-app", value: 60 },
+          { label: "Happie", value: 92, highlight: true },
         ],
-        vergelijking: {
-          linksLabel: "Thuisbezorgd",
-          linksWaarde: "\u20AC12",
-          rechtsLabel: "Happie",
-          rechtsWaarde: "\u20AC3",
-          conclusie: "Bespaar \u20AC270/maand",
-        },
         ctaPhoto: tikka.localImage,
         music: "",
         durationInSeconds: 30,
       }}
     />
 
-    {/* ─── SamenEten ──────────────────────────────────────────────────── */}
+    {/* --- SamenEten --- */}
     <Composition
       id="SamenEten"
       component={SamenEten as unknown as React.ComponentType<Record<string, unknown>>}
@@ -129,7 +121,7 @@ export const RemotionRoot: React.FC = () => (
       defaultProps={{
         chatMessages: [
           { tekst: "Maakt me niet uit", isReply: true },
-          { tekst: "Oké, pasta!", isReply: false },
+          { tekst: "Ok\u00E9, pasta!", isReply: false },
           { tekst: "Ugh pasta WEER??", isReply: true },
           { tekst: "JE ZEI MAAKT NIET UIT", isReply: false },
         ],
@@ -145,7 +137,7 @@ export const RemotionRoot: React.FC = () => (
       }}
     />
 
-    {/* ─── HetMoment ──────────────────────────────────────────────────── */}
+    {/* --- HetMoment --- */}
     <Composition
       id="HetMoment"
       component={HetMoment as unknown as React.ComponentType<Record<string, unknown>>}
@@ -169,6 +161,31 @@ export const RemotionRoot: React.FC = () => (
         servings: 4,
         music: "",
         durationInSeconds: 25,
+      }}
+    />
+
+    {/* --- StoryAd --- */}
+    <Composition
+      id="StoryAd"
+      component={StoryAd as unknown as React.ComponentType<Record<string, unknown>>}
+      width={1080}
+      height={1920}
+      fps={30}
+      durationInFrames={900}
+      calculateMetadata={({ props }: { props: Record<string, unknown> }) => ({
+        durationInFrames: ((props.durationInSeconds as number) || 30) * 30,
+        props,
+      })}
+      defaultProps={{
+        scenes: [
+          { type: "video", src: "student-studying-tired.mp4", text: "Het is 18:00", textPosition: "center", textAnimation: "fadeUp" },
+          { type: "text", text: "Wat eten we?", textAnimation: "slamIn" },
+          { type: "phone", phoneSequence: "swipe-three", phoneSize: "full" },
+          { type: "text", text: "Studenten Happie.", textAnimation: "fadeUp" },
+        ],
+        sceneDurations: [225, 225, 225, 225],
+        music: "",
+        durationInSeconds: 30,
       }}
     />
   </>

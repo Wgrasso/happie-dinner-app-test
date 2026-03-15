@@ -1,3 +1,5 @@
+import type { StoryScene } from "./templates/StoryAd";
+
 export interface Meal {
   naam: string;
   foto: string;
@@ -8,14 +10,6 @@ export interface ChartBar {
   label: string;
   value: number;
   highlight?: boolean;
-}
-
-export interface Vergelijking {
-  linksLabel: string;
-  linksWaarde: string;
-  rechtsLabel: string;
-  rechtsWaarde: string;
-  conclusie: string;
 }
 
 export interface ChatBericht {
@@ -49,8 +43,6 @@ export type VideoConfig =
         recipeName: string;
         price: number;
         ingredients: { naam: string; prijs: string }[];
-        bezorgPrijs: string;
-        besparing: string;
       };
     }
   | {
@@ -65,7 +57,6 @@ export type VideoConfig =
         statLabel: string;
         chartTitle?: string;
         chartData: ChartBar[];
-        vergelijking: Vergelijking;
         ctaPhoto: string;
       };
     }
@@ -92,5 +83,15 @@ export type VideoConfig =
         cookingTime: number;
         price: number;
         servings: number;
+      };
+    }
+  | {
+      id: string;
+      template: "StoryAd";
+      durationInSeconds: number;
+      music: string;
+      props: {
+        scenes: StoryScene[];
+        sceneDurations: number[];
       };
     };
