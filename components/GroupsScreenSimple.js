@@ -18,6 +18,9 @@ import { getTopVotedMeals } from '../lib/mealRequestService';
 import { useAppState } from '../lib/AppStateContext';
 import { useToast } from './ui/Toast';
 import { GroupCardSkeleton, MemberListSkeleton, TopMealsSkeleton, InlineLoader } from './ui/SkeletonLoader';
+import ServingSelector from './ui/ServingSelector';
+import { scaleIngredients } from '../lib/ingredientScaler';
+import { getRecipeExtras } from '../lib/recipeExtrasService';
 import { EmptyGroups, EmptyVotes, EmptyOccasions } from './ui/EmptyState';
 import { 
   getMySpecialOccasions, 
@@ -2006,6 +2009,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // Recipe modal state
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [servingCount, setServingCount] = useState(4);
   
   // Top 3 modal - fetches fresh data every time it opens
   const [showTop3Modal, setShowTop3Modal] = useState(false);
@@ -3624,7 +3628,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // Handle recipe press (open recipe modal) - memoized for performance
   const handleRecipePress = useCallback((meal) => {
     lightHaptic();
-    log.ui('🍽️ Recipe pressed:', meal?.meal_data?.name);
+    log.ui('Recipe pressed:', meal?.meal_data?.name);
+    const extras = getRecipeExtras(meal?.meal_data?.name);
+    setServingCount(extras.default_servings);
     setSelectedRecipe(meal);
     setShowRecipeModal(true);
   }, []);
@@ -4537,6 +4543,12 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         <Text style={styles.recipeModalMetaValue}>{selectedRecipe.meal_data.cuisine_type}</Text>
                       </View>
                     ) : null}
+                    {(() => { const ex = getRecipeExtras(selectedRecipe.meal_data.name); return ex.estimated_cost ? (
+                      <View style={styles.recipeModalMetaItem}>
+                        <Text style={styles.recipeModalMetaLabel}>{t('recipes.cost')}</Text>
+                        <Text style={styles.recipeModalMetaValue}>{'\u20AC'}{ex.estimated_cost.toFixed(0)}</Text>
+                      </View>
+                    ) : null; })()}
                   </View>
                   {selectedRecipe.meal_data.description ? (
                     <Text style={styles.recipeModalDescription}>{selectedRecipe.meal_data.description}</Text>
@@ -4544,7 +4556,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   {selectedRecipe.meal_data.ingredients?.length > 0 && (
                     <View style={styles.recipeModalSection}>
                       <Text style={styles.recipeModalSectionTitle}>{t('recipes.ingredients')}</Text>
-                      {selectedRecipe.meal_data.ingredients.map((item, idx) => (
+                      <ServingSelector count={servingCount} onChange={setServingCount} />
+                      {scaleIngredients(selectedRecipe.meal_data.ingredients, getRecipeExtras(selectedRecipe.meal_data.name).default_servings, servingCount).map((item, idx) => (
                         <Text key={idx} style={styles.recipeModalIngredient}>• {item}</Text>
                       ))}
                     </View>

@@ -8,6 +8,9 @@ import { useTranslation } from 'react-i18next';
 import { formatDateLongNL } from '../lib/dateFormatting';
 import { useAppState } from '../lib/AppStateContext';
 import { log } from '../lib/debugConfig';
+import ServingSelector from './ui/ServingSelector';
+import { scaleIngredients } from '../lib/ingredientScaler';
+import { getRecipeExtras } from '../lib/recipeExtrasService';
 
 // Safe image component that handles missing drawings gracefully
 const SafeDrawing = ({ source, style, resizeMode = "contain" }) => {
@@ -54,6 +57,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalAnimation] = useState(new Animated.Value(0));
+  const [servingCount, setServingCount] = useState(4);
 
   const { width, height } = Dimensions.get('window');
 
@@ -273,6 +277,8 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
   };
 
   const openRecipe = (recipe) => {
+    const extras = getRecipeExtras(recipe?.name || recipe?.title);
+    setServingCount(extras.default_servings);
     setSelectedRecipe(recipe);
     setModalVisible(true);
     
@@ -658,12 +664,12 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                         <Text style={styles.metricLabel}>{t('recipes.cookingTime')}</Text>
                         <Text style={styles.metricValue}>{formatTime(selectedRecipe.readyInMinutes)}</Text>
                       </View>
-                      {selectedRecipe.pricePerServing && (
+                      {(() => { const ex = getRecipeExtras(selectedRecipe.name || selectedRecipe.title); return ex.estimated_cost ? (
                       <View style={styles.modalMetricItem}>
-                          <Text style={styles.metricLabel}>{t('recipes.pricePerServing')}</Text>
-                          <Text style={styles.metricValue}>€{selectedRecipe.pricePerServing.toFixed(2)}</Text>
+                          <Text style={styles.metricLabel}>{t('recipes.cost')}</Text>
+                          <Text style={styles.metricValue}>{'\u20AC'}{ex.estimated_cost.toFixed(0)}</Text>
                       </View>
-                      )}
+                      ) : null; })()}
                     </View>
 
                     {selectedRecipe.dietary && selectedRecipe.dietary.length > 0 && (
@@ -690,7 +696,8 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                     {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (
                       <View style={styles.modalSection}>
                         <Text style={styles.dietaryTitle}>{t('recipes.ingredients')}</Text>
-                        {selectedRecipe.ingredients.map((ingredient, index) => (
+                        <ServingSelector count={servingCount} onChange={setServingCount} />
+                        {scaleIngredients(selectedRecipe.ingredients, getRecipeExtras(selectedRecipe.name || selectedRecipe.title).default_servings, servingCount).map((ingredient, index) => (
                           <Text key={index} style={styles.ingredientText}>
                             • {ingredient}
                           </Text>

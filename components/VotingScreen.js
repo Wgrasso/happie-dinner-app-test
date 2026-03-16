@@ -7,6 +7,9 @@ import { log, debugError } from '../lib/debugConfig';
 import { mediumHaptic, successHaptic, lightHaptic } from '../lib/haptics';
 import { sendPushNotifications } from '../lib/notificationService';
 import { supabase } from '../lib/supabase';
+import ServingSelector from './ui/ServingSelector';
+import { scaleIngredients } from '../lib/ingredientScaler';
+import { getRecipeExtras } from '../lib/recipeExtrasService';
 
 // Swipe configuration
 const SWIPE_THRESHOLD = 100; // pixels to trigger vote
@@ -85,6 +88,7 @@ export default function VotingScreen({ route, navigation }) {
   // Recipe modal states
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [servingCount, setServingCount] = useState(4);
   const modalAnimation = useRef(new Animated.Value(0)).current;
   const backdropAnimation = useRef(new Animated.Value(0)).current;
   
@@ -580,9 +584,14 @@ export default function VotingScreen({ route, navigation }) {
     } else {
       setSelectedRecipe(meal);
     }
-    
+
+    // Set serving count from extras
+    const recipeName = meal?.meal_data?.name || '';
+    const extras = getRecipeExtras(recipeName);
+    setServingCount(extras.default_servings);
+
     setShowRecipeModal(true);
-    
+
     // Animate modal entrance
     Animated.parallel([
       Animated.spring(modalAnimation, {
@@ -965,7 +974,13 @@ export default function VotingScreen({ route, navigation }) {
                           <Text style={styles.modalTagText}>{selectedRecipe.meal_data.cuisine_type}</Text>
                         </View>
                       )}
-                      
+
+                      {(() => { const ex = getRecipeExtras(selectedRecipe.meal_data.name); return ex.estimated_cost ? (
+                        <View style={styles.modalTimeBadge}>
+                          <Text style={styles.modalTimeText}>{'\u20AC'}{ex.estimated_cost.toFixed(0)}</Text>
+                        </View>
+                      ) : null; })()}
+
                       {selectedRecipe.meal_data.tags && selectedRecipe.meal_data.tags.length > 0 && (
                         <View style={styles.modalTagsContainer}>
                           {selectedRecipe.meal_data.tags.slice(0, 3).map((tag, index) => (
@@ -1015,19 +1030,22 @@ export default function VotingScreen({ route, navigation }) {
                     </View>
                   )}
                   
-                  {/* Ingredients - Simplified display */}
+                  {/* Ingredients - with serving selector */}
                   {selectedRecipe.meal_data.ingredients && selectedRecipe.meal_data.ingredients.length > 0 && (
                     <View style={styles.modalSection}>
                       <Text style={styles.modalSectionTitle}>
                         {t('recipes.ingredients')} ({selectedRecipe.meal_data.ingredients.length})
                       </Text>
+                      <ServingSelector count={servingCount} onChange={setServingCount} />
                       <View style={styles.ingredientsList}>
-                        {selectedRecipe.meal_data.ingredients.map((ingredient, index) => (
+                        {scaleIngredients(
+                          selectedRecipe.meal_data.ingredients.map(i => typeof i === 'string' ? i : (i.raw_text || i.text || '')),
+                          getRecipeExtras(selectedRecipe.meal_data.name).default_servings,
+                          servingCount
+                        ).map((ingredient, index) => (
                           <View key={index} style={styles.ingredientItem}>
                             <Text style={styles.ingredientBullet}>•</Text>
-                            <Text style={styles.ingredientText}>
-                              {typeof ingredient === 'string' ? ingredient : (ingredient.raw_text || ingredient.text || t('recipes.ingredients'))}
-                            </Text>
+                            <Text style={styles.ingredientText}>{ingredient}</Text>
                           </View>
                         ))}
                       </View>
