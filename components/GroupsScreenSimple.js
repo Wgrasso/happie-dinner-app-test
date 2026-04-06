@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { 
-  StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, 
+  StyleSheet, Text, View, ScrollView, TouchableOpacity, 
   TextInput, ActivityIndicator, Image, Modal, Animated, RefreshControl,
-  Dimensions, LayoutAnimation, Platform, UIManager, Alert, Clipboard,
-  Keyboard, Pressable, InteractionManager
-} from 'react-native';
+  Dimensions, LayoutAnimation, Platform, UIManager, Alert,
+  Keyboard, Pressable, InteractionManager, Share, SafeAreaView } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { createGroupInSupabase, joinGroupByCode, leaveGroup, deleteGroup } from '../lib/groupsService';
+import { uploadGroupPhoto, updateGroupPhoto } from '../lib/groupPhotoService';
+import * as ImagePicker from 'expo-image-picker';
+import * as Clipboard from 'expo-clipboard';
 import { lightHaptic, mediumHaptic, successHaptic } from '../lib/haptics';
 import { supabase } from '../lib/supabase';
 import { setMyResponseToday } from '../lib/dailyResponseService';
@@ -22,6 +24,7 @@ import ServingSelector from './ui/ServingSelector';
 import { scaleIngredients } from '../lib/ingredientScaler';
 import { getRecipeExtras } from '../lib/recipeExtrasService';
 import { EmptyGroups, EmptyVotes, EmptyOccasions } from './ui/EmptyState';
+import GroupRecipesScreen from './GroupRecipesScreen';
 import { 
   getMySpecialOccasions, 
   getPastOccasions,
@@ -415,11 +418,14 @@ const ExpandableGroupCard = React.memo(({
   isCreator = false,
   onOpenChat,
   hasUnread = false,
+  onChangePhoto,
 }) => {
   const expandAnimation = useRef(new Animated.Value(isExpanded ? 1 : 0)).current;
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
+  const [showGroupRecipesModal, setShowGroupRecipesModal] = useState(false);
   const { t } = useTranslation();
+  const toast = useToast();
   
   useEffect(() => {
     Animated.spring(expandAnimation, {
@@ -475,8 +481,20 @@ const ExpandableGroupCard = React.memo(({
   });
 
   const handleCopyCode = () => {
-    Clipboard.setString(group.join_code);
+    Clipboard.setStringAsync(group.join_code);
     successHaptic();
+  };
+
+  const handleShareGroup = async () => {
+    const code = group.join_code;
+    // Copy code to clipboard immediately so the user has it
+    Clipboard.setStringAsync(code);
+    toast.success(t('groups.codeCopied') || 'Code gekopieerd!');
+    try {
+      await Share.share({
+        message: `Join mijn groep op Happie.\n\nGroepscode: ${code}\n\nhttps://apps.apple.com/app/happie/id6757129676`,
+      });
+    } catch (_) {}
   };
 
   return (
@@ -487,9 +505,25 @@ const ExpandableGroupCard = React.memo(({
         onPress={onToggle}
         activeOpacity={1}
       >
-        {/* Left: Group Info */}
-        <View style={cardStyles.info}>
-          <Text style={cardStyles.name} numberOfLines={1}>
+        {/* Left: Group Photo */}
+        {group.photo_url ? (
+          <ExpoImage
+            source={{ uri: group.photo_url }}
+            style={cardStyles.groupPhoto}
+            contentFit="cover"
+            transition={0}
+            cachePolicy="memory-disk"
+            priority="high"
+          />
+        ) : null}
+
+        {/* Group Info */}
+        <View style={[cardStyles.info, group.photo_url && { marginLeft: 12 }]}>
+          <Text
+            style={cardStyles.name}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             {group.name || group.group_name}
           </Text>
           {group.join_code && (
@@ -660,13 +694,25 @@ const ExpandableGroupCard = React.memo(({
             </View>
           )}
 
-          {/* Three-Dot Menu Button */}
-          <TouchableOpacity
-            style={cardStyles.threeDotsButton}
-            onPress={() => setShowActionsMenu(true)}
-          >
-            <Text style={cardStyles.threeDotsText}>•••</Text>
-          </TouchableOpacity>
+          {/* Bottom row: invite + recipes, menu right */}
+          <View style={cardStyles.bottomRow}>
+            <View style={cardStyles.bottomRowButtons}>
+              <TouchableOpacity style={cardStyles.inviteButton} onPress={handleShareGroup}>
+                <Feather name="user-plus" size={13} color="#FEFEFE" style={{ marginRight: 6 }} />
+                <Text style={cardStyles.inviteButtonText}>{t('common.inviteMembers') || 'Groepsleden uitnodigen'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={cardStyles.inviteButton} onPress={() => setShowGroupRecipesModal(true)}>
+                <Feather name="book-open" size={13} color="#FEFEFE" style={{ marginRight: 6 }} />
+                <Text style={cardStyles.inviteButtonText}>{t('groups.recipes') || 'Recepten'}</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={cardStyles.menuButton}
+              onPress={() => setShowActionsMenu(true)}
+            >
+              <Feather name="settings" size={18} color="#999" />
+            </TouchableOpacity>
+          </View>
         </View>
       </Animated.View>
 
@@ -705,9 +751,33 @@ const ExpandableGroupCard = React.memo(({
             >
               <Text style={cardStyles.menuItemText}>{t('common.members')}</Text>
             </TouchableOpacity>
-            
+
             <View style={cardStyles.menuDivider} />
-            
+
+            <TouchableOpacity
+              style={cardStyles.menuItem}
+              onPress={() => {
+                setShowActionsMenu(false);
+                setShowGroupRecipesModal(true);
+              }}
+            >
+              <Text style={cardStyles.menuItemText}>{t('groups.recipes') || 'Recepten'}</Text>
+            </TouchableOpacity>
+
+            <View style={cardStyles.menuDivider} />
+
+            <TouchableOpacity
+              style={cardStyles.menuItem}
+              onPress={() => {
+                setShowActionsMenu(false);
+                onChangePhoto?.();
+              }}
+            >
+              <Text style={cardStyles.menuItemText}>{group.photo_url ? 'Foto wijzigen' : 'Groepsfoto toevoegen'}</Text>
+            </TouchableOpacity>
+
+            <View style={cardStyles.menuDivider} />
+
             <TouchableOpacity
               style={cardStyles.menuItem}
               onPress={() => {
@@ -717,18 +787,21 @@ const ExpandableGroupCard = React.memo(({
             >
               <Text style={cardStyles.menuItemTextMuted}>{t('common.leave')}</Text>
             </TouchableOpacity>
-            
-            <View style={cardStyles.menuDivider} />
-            
-            <TouchableOpacity
-              style={cardStyles.menuItem}
-              onPress={() => {
-                setShowActionsMenu(false);
-                onDeleteGroup();
-              }}
-            >
-              <Text style={cardStyles.menuItemTextDanger}>{t('common.delete')}</Text>
-            </TouchableOpacity>
+
+            {isCreator && (
+              <>
+                <View style={cardStyles.menuDivider} />
+                <TouchableOpacity
+                  style={cardStyles.menuItem}
+                  onPress={() => {
+                    setShowActionsMenu(false);
+                    onDeleteGroup();
+                  }}
+                >
+                  <Text style={cardStyles.menuItemTextDanger}>{t('common.delete')}</Text>
+                </TouchableOpacity>
+              </>
+            )}
             
             <View style={cardStyles.menuDivider} />
             
@@ -781,6 +854,14 @@ const ExpandableGroupCard = React.memo(({
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Group Recipes Modal */}
+      <GroupRecipesScreen
+        visible={showGroupRecipesModal}
+        onClose={() => setShowGroupRecipesModal(false)}
+        groupId={group.id}
+        groupName={group.name}
+      />
     </View>
   );
 });
@@ -804,6 +885,11 @@ const cardStyles = StyleSheet.create({
     alignItems: 'center',
     padding: 18,
   },
+  groupPhoto: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
   info: {
     flex: 1,
   },
@@ -818,11 +904,16 @@ const cardStyles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     color: '#A09485',
   },
+  joinCodeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
   joinCodeText: {
     fontSize: 11,
     fontFamily: 'Inter_400Regular',
     color: '#C0B9AE',
-    marginTop: 2,
     letterSpacing: 1,
   },
   // Yes/No buttons on header -- segmented control
@@ -1081,6 +1172,36 @@ const cardStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 6,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 0,
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  bottomRowButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  inviteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#8B7355',
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  inviteButtonText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    color: '#FEFEFE',
+  },
+  menuButton: {
+    padding: 8,
   },
   menuItem: {
     paddingVertical: 16,
@@ -1839,7 +1960,7 @@ const occasionStyles = StyleSheet.create({
 // ============================================
 // MAIN COMPONENT
 // ============================================
-export default function GroupsScreenSimple({ navigation, route, isActive = true, onReady, pendingGroupReopen, onPendingGroupReopenCleared }) {
+export default function GroupsScreenSimple({ navigation, route, isActive = true, onReady, pendingGroupReopen, onPendingGroupReopenCleared, pendingJoinCode, onJoinCodeHandled }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   
@@ -1858,10 +1979,12 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     getCachedDailyResponses,
     getCachedActiveMealRequest,
     updateCachedResponse,
+    updateGroup,
     setGuestStatus,
     getPreloadedExpansionData,
     preloadAllGroupData,
     invalidateCache,
+    invalidateGroupCache,
     refreshTrigger,
   } = appState;
 
@@ -1934,27 +2057,78 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   const [allGroupResponses, setAllGroupResponses] = useState({});
 
   // When midnight reset fires (refreshTrigger changes), clear all local response state
-  // so stale yesterday's responses don't linger in the UI
+  // and reload everything fresh for the new day
   const initialRefreshTrigger = useRef(refreshTrigger);
   useEffect(() => {
     if (refreshTrigger === initialRefreshTrigger.current) return; // skip initial mount
-    log.groups('Midnight reset detected (refreshTrigger changed) - clearing local response state');
+    log.groups('Midnight reset detected (refreshTrigger changed) - clearing all response state and reloading');
     setAllGroupResponses({});
     setExpandedResponses({});
     setMyResponse(null);
+    setExpandedGroupId(null);
+    expandedGroupIdRef.current = null;
+    setTopMeals([]);
+    setActiveRequestId(null);
+    activeRequestIdRef.current = null;
+    setActiveRecipeType(null);
+    knownActiveRequests.current = {};
+    // Force reload all groups data fresh
+    contextLoadGroups(true).catch(() => {});
     // Re-fetch responses for collapsed cards
     if (groups?.length && fetchResponsesRef.current && currentUserId) {
-      fetchResponsesRef.current(groups, currentUserId).then(responses => {
-        if (responses && applyResponsesRef.current) {
-          applyResponsesRef.current(responses, '');
-        }
-      }).catch(() => {});
+      setTimeout(() => {
+        fetchResponsesRef.current(groups, currentUserId).then(responses => {
+          if (responses && applyResponsesRef.current) {
+            applyResponsesRef.current(responses, '');
+          }
+        }).catch(() => {});
+      }, 500);
     }
   }, [refreshTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Unread chat messages per group
   const [unreadGroups, setUnreadGroups] = useState({});
   const chatOpenGroupRef = useRef(null);
+  const chatLastReadRef = useRef({});
+
+  // Load last-read timestamps and check for unread messages on mount
+  useEffect(() => {
+    if (!currentUserId || !groups.length) return;
+    (async () => {
+      try {
+        const AsyncStorageMod = require('@react-native-async-storage/async-storage').default;
+        const stored = await AsyncStorageMod.getItem('chatLastRead');
+        const lastRead = stored ? JSON.parse(stored) : {};
+        chatLastReadRef.current = lastRead;
+
+        // Check each group for messages newer than last read
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const unread = {};
+
+        for (const group of groups) {
+          const groupId = group.group_id || group.id;
+          const lastReadAt = lastRead[groupId] || todayStart.toISOString();
+
+          const { data } = await supabase
+            .from('group_messages')
+            .select('id')
+            .eq('group_id', groupId)
+            .gt('created_at', lastReadAt)
+            .neq('user_id', currentUserId)
+            .limit(1);
+
+          if (data?.length > 0) {
+            unread[groupId] = true;
+          }
+        }
+
+        if (Object.keys(unread).length > 0) {
+          setUnreadGroups(prev => ({ ...prev, ...unread }));
+        }
+      } catch (_) {}
+    })();
+  }, [currentUserId, groups.length]);
 
   // INSTANT: Load cached responses from AsyncStorage on mount for immediate yes/no display
   useEffect(() => {
@@ -2040,8 +2214,18 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [groupName, setGroupName] = useState('');
+  const [groupPhotoUri, setGroupPhotoUri] = useState(null);
   const [joinCode, setJoinCode] = useState('');
   const [modalActionLoading, setModalActionLoading] = useState(false);
+
+  // Handle deep link join code
+  useEffect(() => {
+    if (pendingJoinCode) {
+      setJoinCode(pendingJoinCode);
+      setShowJoinModal(true);
+      onJoinCodeHandled?.();
+    }
+  }, [pendingJoinCode]);
   
   // Special occasions state
   const [specialOccasions, setSpecialOccasions] = useState([]);
@@ -2246,7 +2430,14 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       const preloaded = getPreloadedExpansionData(gid);
       if (preloaded) {
         setExpandedMembers(preloaded.members || []);
-        setExpandedResponses(preloaded.responses || {});
+        const autoMerged = { ...(preloaded.responses || {}) };
+        if (currentUserId && allGroupResponses[gid]) {
+          autoMerged[currentUserId] = allGroupResponses[gid];
+        }
+        setExpandedResponses(autoMerged);
+        if (currentUserId && autoMerged[currentUserId]) {
+          setMyResponse(autoMerged[currentUserId]);
+        }
         setExpandedLoading(false);
         if (preloaded.mealRequest?.id) {
           setActiveRequestId(preloaded.mealRequest.id);
@@ -2642,6 +2833,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 return;
               }
 
+              // CRITICAL: Always update the AppStateContext cache so collapsed
+              // cards (which read from getCachedDailyResponses) see the update.
+              // This applies to ALL users, not just the current one.
+              updateCachedResponse(groupId, r.user_id, r.response);
+
               // Always update collapsed card attendance data
               if (isMe) {
                 setAllGroupResponses(prev => ({ ...prev, [groupId]: r.response }));
@@ -2712,7 +2908,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           { event: 'INSERT', schema: 'public', table: 'group_messages' },
           (payload) => {
             const msg = payload.new;
-            if (!msg || msg.user_id === currentUserId) return;
+            if (!msg) return;
+            // Skip own messages, but NOT Happie team messages sent as you
+            if (msg.user_id === currentUserId && !msg.message?.startsWith('Happie team: ')) return;
             // Ignore messages for groups the user doesn't belong to
             if (!userGroupIdsRef.current.has(msg.group_id)) return;
             if (chatOpenGroupRef.current === msg.group_id) return;
@@ -2737,6 +2935,184 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       }
     };
   }, [currentUserId, groups.length]);
+
+  // Real-time subscription for the `groups` table itself — picks up live
+  // changes to photo_url, name, is_main_group, is_active for any group the
+  // current user belongs to. Without this, photos only refresh on app reload.
+  const groupsChannelRef = useRef(null);
+  useEffect(() => {
+    if (!currentUserId || !groups.length) return;
+
+    let retryTimer = null;
+    const subscribe = () => {
+      if (groupsChannelRef.current) {
+        try { supabase.removeChannel(groupsChannelRef.current); } catch (_) {}
+      }
+      const channel = supabase
+        .channel(`groups-watch-${currentUserId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'groups' },
+          (payload) => {
+            const row = payload.new || payload.old;
+            if (!row?.id) return;
+            // Only care about groups the user belongs to
+            if (!userGroupIdsRef.current.has(row.id)) return;
+
+            if (payload.eventType === 'DELETE' || payload.new?.is_active === false) {
+              // Group deleted or deactivated — refresh full list so it disappears
+              loadGroupsRef.current?.(true).catch(() => {});
+              return;
+            }
+
+            // UPDATE / INSERT — patch the in-memory group with new fields
+            updateGroup({
+              group_id: row.id,
+              id: row.id,
+              name: payload.new?.name,
+              group_name: payload.new?.name,
+              description: payload.new?.description,
+              photo_url: payload.new?.photo_url,
+              is_main_group: payload.new?.is_main_group,
+              is_active: payload.new?.is_active,
+            });
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            retryTimer = setTimeout(subscribe, 3000);
+          }
+        });
+      groupsChannelRef.current = channel;
+    };
+
+    subscribe();
+
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      if (groupsChannelRef.current) {
+        try { supabase.removeChannel(groupsChannelRef.current); } catch (_) {}
+        groupsChannelRef.current = null;
+      }
+    };
+  }, [currentUserId, groups.length, updateGroup]);
+
+  // Real-time subscription for group_members — picks up joins/leaves so
+  // member counts and member lists stay live. Invalidates caches for the
+  // affected group and triggers a full groups reload to refresh counts.
+  const groupMembersChannelRef = useRef(null);
+  useEffect(() => {
+    if (!currentUserId || !groups.length) return;
+
+    let retryTimer = null;
+    let refreshDebounceTimer = null;
+
+    const debouncedRefresh = (groupId) => {
+      if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
+      refreshDebounceTimer = setTimeout(() => {
+        try {
+          if (groupId) invalidateGroupCache(groupId);
+          loadGroupsRef.current?.(true).catch(() => {});
+        } catch (_) {}
+      }, 300);
+    };
+
+    const subscribe = () => {
+      if (groupMembersChannelRef.current) {
+        try { supabase.removeChannel(groupMembersChannelRef.current); } catch (_) {}
+      }
+      const channel = supabase
+        .channel(`group-members-watch-${currentUserId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'group_members' },
+          (payload) => {
+            const row = payload.new || payload.old;
+            const gid = row?.group_id;
+            if (!gid) return;
+            // Only react to events for groups the user belongs to
+            if (!userGroupIdsRef.current.has(gid)) return;
+            debouncedRefresh(gid);
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            retryTimer = setTimeout(subscribe, 3000);
+          }
+        });
+      groupMembersChannelRef.current = channel;
+    };
+
+    subscribe();
+
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
+      if (groupMembersChannelRef.current) {
+        try { supabase.removeChannel(groupMembersChannelRef.current); } catch (_) {}
+        groupMembersChannelRef.current = null;
+      }
+    };
+  }, [currentUserId, groups.length, invalidateGroupCache]);
+
+  // Real-time subscription for `meal_requests` — picks up when voting starts,
+  // is replaced, or completes in any of the user's groups. Without this,
+  // other members don't see "voting in progress" until they reload the app.
+  const mealRequestsChannelRef = useRef(null);
+  useEffect(() => {
+    if (!currentUserId || !groups.length) return;
+
+    let retryTimer = null;
+    let refreshDebounceTimer = null;
+
+    const debouncedRefresh = (groupId) => {
+      if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
+      refreshDebounceTimer = setTimeout(() => {
+        try {
+          if (groupId) invalidateGroupCache(groupId);
+          // Fetch fresh active meal request for the affected group so the
+          // "voting in progress" state appears/disappears immediately.
+          contextLoadActiveMealRequest?.(groupId, true).catch(() => {});
+        } catch (_) {}
+      }, 200);
+    };
+
+    const subscribe = () => {
+      if (mealRequestsChannelRef.current) {
+        try { supabase.removeChannel(mealRequestsChannelRef.current); } catch (_) {}
+      }
+      const channel = supabase
+        .channel(`meal-requests-watch-${currentUserId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'meal_requests' },
+          (payload) => {
+            const row = payload.new || payload.old;
+            const gid = row?.group_id;
+            if (!gid) return;
+            if (!userGroupIdsRef.current.has(gid)) return;
+            debouncedRefresh(gid);
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            retryTimer = setTimeout(subscribe, 3000);
+          }
+        });
+      mealRequestsChannelRef.current = channel;
+    };
+
+    subscribe();
+
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
+      if (mealRequestsChannelRef.current) {
+        try { supabase.removeChannel(mealRequestsChannelRef.current); } catch (_) {}
+        mealRequestsChannelRef.current = null;
+      }
+    };
+  }, [currentUserId, groups.length, invalidateGroupCache, contextLoadActiveMealRequest]);
 
   // Real-time subscription for new special occasions (participant invites or own creations)
   useEffect(() => {
@@ -3184,17 +3560,18 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         // INSTANT: Use preloaded data immediately - no loading needed!
         log.groups('Using preloaded data for instant expansion:', groupId);
         setExpandedMembers(preloadedData.members || []);
-        setExpandedResponses(preloadedData.responses || {});
         setExpandedLoading(false);
-        
-        // Set my response and protect it from the background refresh overwriting it
-        if (currentUserId && preloadedData.responses?.[currentUserId]) {
-          setMyResponse(preloadedData.responses[currentUserId]);
-          setAllGroupResponses(prev => ({ ...prev, [groupId]: preloadedData.responses[currentUserId] }));
-          optimisticUpdateInProgress.current = true;
-          setTimeout(() => { optimisticUpdateInProgress.current = false; }, 1000);
-        } else if (currentUserId && allGroupResponses[groupId]) {
-          setMyResponse(allGroupResponses[groupId]);
+
+        // Merge preloaded responses with any optimistic response the user already set
+        const mergedResponses = { ...(preloadedData.responses || {}) };
+        if (currentUserId && allGroupResponses[groupId]) {
+          mergedResponses[currentUserId] = allGroupResponses[groupId];
+        }
+        setExpandedResponses(mergedResponses);
+
+        // Set my response
+        if (currentUserId && mergedResponses[currentUserId]) {
+          setMyResponse(mergedResponses[currentUserId]);
           optimisticUpdateInProgress.current = true;
           setTimeout(() => { optimisticUpdateInProgress.current = false; }, 1000);
         } else {
@@ -3254,11 +3631,15 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             // Update with fresh data (silently, no loading state)
             if (members) setExpandedMembers(members);
             if (responses) {
-              setExpandedResponses(responses);
-              // Only update if NO optimistic update in progress
-              if (currentUserId && responses[currentUserId] && !optimisticUpdateInProgress.current) {
-                setMyResponse(responses[currentUserId]);
-                setAllGroupResponses(prev => ({ ...prev, [refreshGroupId]: responses[currentUserId] }));
+              if (optimisticUpdateInProgress.current && currentUserId) {
+                // Preserve the user's optimistic response, merge the rest
+                setExpandedResponses(prev => ({ ...responses, [currentUserId]: prev[currentUserId] }));
+              } else {
+                setExpandedResponses(responses);
+                if (currentUserId && responses[currentUserId]) {
+                  setMyResponse(responses[currentUserId]);
+                  setAllGroupResponses(prev => ({ ...prev, [refreshGroupId]: responses[currentUserId] }));
+                }
               }
             }
             
@@ -3330,7 +3711,13 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       setMyResponse(knownResponse);
       
       if (cachedResponses) {
-        setExpandedResponses(cachedResponses);
+        const merged = { ...cachedResponses };
+        if (currentUserId && allGroupResponses[groupId]) {
+          merged[currentUserId] = allGroupResponses[groupId];
+        }
+        setExpandedResponses(merged);
+      } else if (currentUserId && allGroupResponses[groupId]) {
+        setExpandedResponses({ [currentUserId]: allGroupResponses[groupId] });
       }
       
       if (knownResponse) {
@@ -3366,13 +3753,18 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         // Load responses from context (force=true for fresh data on expand)
         const responses = await contextLoadDailyResponses(fetchGroupId, true);
         if (expandedGroupIdRef.current !== fetchGroupId) return;
-        setExpandedResponses(responses);
-        
-        // Set my response and update allGroupResponses (only if no optimistic update in progress)
-        if (!optimisticUpdateInProgress.current) {
+
+        if (optimisticUpdateInProgress.current && currentUserId) {
+          // Preserve user's optimistic response, merge the rest
+          setExpandedResponses(prev => ({ ...responses, [currentUserId]: prev[currentUserId] }));
+        } else {
+          setExpandedResponses(responses);
           if (currentUserId && responses[currentUserId]) {
             setMyResponse(responses[currentUserId]);
             setAllGroupResponses(prev => ({ ...prev, [fetchGroupId]: responses[currentUserId] }));
+          } else if (currentUserId && allGroupResponses[fetchGroupId]) {
+            // Server doesn't have it yet but we do locally — keep it
+            setExpandedResponses(prev => ({ ...responses, [currentUserId]: allGroupResponses[fetchGroupId] }));
           } else {
             setMyResponse(null);
           }
@@ -3451,11 +3843,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     
     // OPTIMISTIC UPDATE - Update UI instantly before server confirms
     setAllGroupResponses(prev => ({ ...prev, [groupId]: newValue }));
-    
-    if (expandedGroupId === groupId) {
-      setMyResponse(newValue);
-      setExpandedResponses(prev => ({ ...prev, [userId]: newValue }));
-    }
+    setMyResponse(newValue);
+    setExpandedResponses(prev => ({ ...prev, [userId]: newValue }));
     
     // Optimistic update - context cache
     updateCachedResponse(groupId, userId, newValue);
@@ -3474,7 +3863,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       const error = result.success ? null : new Error(result.error);
 
       // Realtime callback clears optimisticUpdateInProgress; safety fallback in case realtime is slow
-      setTimeout(() => { optimisticUpdateInProgress.current = false; }, 5000);
+      setTimeout(() => { optimisticUpdateInProgress.current = false; }, 10000);
 
       if (error) {
         debugError('COMPONENTS', 'Error saving response:', error);
@@ -3500,6 +3889,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       } else {
         // Success feedback
         successHaptic();
+
+        // First-yes notification is handled by Supabase database trigger (notify_first_yes)
       }
     } catch (error) {
       debugError('COMPONENTS', 'Error in response change:', error);
@@ -3919,19 +4310,63 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   };
 
   // Create group
+  const handlePickGroupPhoto = async () => {
+    lightHaptic();
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Toestemming nodig', 'Geef toegang tot je fotobibliotheek.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setGroupPhotoUri(result.assets[0].uri);
+      }
+    } catch {
+      toast.error('Kon foto niet laden');
+    }
+  };
+
   const handleCreateGroup = async () => {
     if (!groupName.trim()) return;
-    
+
     setModalActionLoading(true);
     try {
       const result = await createGroupInSupabase(groupName.trim());
       if (result.success) {
-        successHaptic(); // Success feedback
+        // Upload photo if one was picked
+        if (groupPhotoUri && result.group?.id) {
+          const uploadResult = await uploadGroupPhoto(groupPhotoUri);
+          if (uploadResult.success && uploadResult.url) {
+            await updateGroupPhoto(result.group.id, uploadResult.url);
+          }
+        }
+        successHaptic();
         setShowCreateModal(false);
+        const savedName = groupName.trim();
         setGroupName('');
+        setGroupPhotoUri(null);
         toast.success(t('groups.groupCreated'));
-        const loadedGroups = await contextLoadGroups(true);
-        await loadSpecialOccasionsIndependent();
+
+        // Load groups immediately so the new group appears instantly
+        contextLoadGroups(true).then(() => loadSpecialOccasionsIndependent());
+
+        // Show share popup after modal animation finishes
+        const code = result.group?.join_code;
+        if (code) {
+          InteractionManager.runAfterInteractions(() => {
+            setTimeout(() => {
+              Share.share({
+                message: `Join mijn groep op Happie.\n\nGroepscode: ${code}\n\nhttps://apps.apple.com/app/happie/id6757129676`,
+              }).catch(() => {});
+            }, 500);
+          });
+        }
       } else {
         toast.error(result.error || t('errors.generic'));
       }
@@ -3939,6 +4374,38 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       toast.error(t('errors.generic'));
     } finally {
       setModalActionLoading(false);
+    }
+  };
+
+  // Change group photo (from actions menu)
+  const handleChangeGroupPhoto = async (groupId) => {
+    lightHaptic();
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Toestemming nodig', 'Geef toegang tot je fotobibliotheek.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets[0]) {
+        const uploadResult = await uploadGroupPhoto(result.assets[0].uri);
+        if (uploadResult.success && uploadResult.url) {
+          await updateGroupPhoto(groupId, uploadResult.url);
+          successHaptic();
+          toast.success('Groepsfoto bijgewerkt');
+          await new Promise(r => setTimeout(r, 500));
+          await contextLoadGroups(true);
+        } else {
+          toast.error(uploadResult.error || 'Upload mislukt');
+        }
+      }
+    } catch {
+      toast.error('Kon foto niet laden');
     }
   };
 
@@ -3985,11 +4452,15 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               log.groups('Attempting to leave group:', groupId);
               const result = await leaveGroup(groupId);
               log.groups('Leave group result:', result);
-              
+
               if (result.success) {
                 successHaptic(); // Success feedback
-                // Collapse the card and refresh groups
+                // Collapse the card and clear expanded state
                 setExpandedGroupId(null);
+                expandedGroupIdRef.current = null;
+                setExpandedMembers([]);
+                setExpandedResponses({});
+                setMyResponse(null);
                 const loadedGroups = await contextLoadGroups(true);
                 await loadSpecialOccasionsIndependent();
                 toast.success(t('groups.leftGroup'));
@@ -4142,6 +4613,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 onOpenChat={() => {
                   chatOpenGroupRef.current = groupId;
                   setUnreadGroups(prev => { const n = { ...prev }; delete n[groupId]; return n; });
+                  // Save last read timestamp
+                  const now = new Date().toISOString();
+                  chatLastReadRef.current[groupId] = now;
+                  const AsyncStorageMod = require('@react-native-async-storage/async-storage').default;
+                  AsyncStorageMod.setItem('chatLastRead', JSON.stringify(chatLastReadRef.current)).catch(() => {});
                   navigation.navigate('GroupChat', {
                     groupId,
                     groupName: group.name || group.group_name,
@@ -4149,6 +4625,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   });
                 }}
                 hasUnread={!!unreadGroups[groupId]}
+                onChangePhoto={() => handleChangeGroupPhoto(groupId)}
               />
             );
           })
@@ -4527,24 +5004,18 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     {selectedRecipe.meal_data.name || t('recipes.defaultName')}
                   </Text>
                   <View style={styles.recipeModalMeta}>
-                    <View style={styles.recipeModalMetaItem}>
+                    <View style={styles.recipeModalMetaItemThird}>
                       <Text style={styles.recipeModalMetaLabel}>{t('common.votes')}</Text>
                       <Text style={styles.recipeModalMetaValue}>{selectedRecipe.yes_votes || 0}</Text>
                     </View>
                     {selectedRecipe.meal_data.total_time_minutes > 0 && (
-                      <View style={styles.recipeModalMetaItem}>
+                      <View style={styles.recipeModalMetaItemThird}>
                         <Text style={styles.recipeModalMetaLabel}>{t('recipes.cookingTime')}</Text>
                         <Text style={styles.recipeModalMetaValue}>{selectedRecipe.meal_data.total_time_minutes} min</Text>
                       </View>
                     )}
-                    {selectedRecipe.meal_data.cuisine_type ? (
-                      <View style={styles.recipeModalMetaItem}>
-                        <Text style={styles.recipeModalMetaLabel}>{t('recipes.cuisineType')}</Text>
-                        <Text style={styles.recipeModalMetaValue}>{selectedRecipe.meal_data.cuisine_type}</Text>
-                      </View>
-                    ) : null}
                     {(() => { const ex = getRecipeExtras(selectedRecipe.meal_data.name); return ex.estimated_cost ? (
-                      <View style={styles.recipeModalMetaItem}>
+                      <View style={styles.recipeModalMetaItemThird}>
                         <Text style={styles.recipeModalMetaLabel}>{t('recipes.cost')}</Text>
                         <Text style={styles.recipeModalMetaValue}>{'\u20AC'}{ex.estimated_cost.toFixed(0)}</Text>
                       </View>
@@ -4596,12 +5067,22 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         <View style={styles.modalOverlay}>
           <TouchableOpacity 
             style={styles.modalBackdrop} 
-            onPress={() => { Keyboard.dismiss(); setShowCreateModal(false); }} 
+            onPress={() => { Keyboard.dismiss(); setShowCreateModal(false); setGroupPhotoUri(null); }} 
             activeOpacity={1} 
           />
           <Pressable style={styles.simpleModal} onPress={Keyboard.dismiss}>
             <Text style={styles.simpleModalTitle}>{t('common.newGroup')}</Text>
             <Text style={styles.simpleModalSubtitle}>{t('groups.giveGroupName')}</Text>
+            <TouchableOpacity style={styles.groupPhotoPickerRow} onPress={handlePickGroupPhoto}>
+              {groupPhotoUri ? (
+                <Image source={{ uri: groupPhotoUri }} style={styles.groupPhotoPreview} />
+              ) : (
+                <View style={styles.groupPhotoPlaceholder}>
+                  <Feather name="camera" size={22} color="#A09485" />
+                </View>
+              )}
+              <Text style={styles.groupPhotoLabel}>{groupPhotoUri ? 'Foto wijzigen' : 'Groepsfoto toevoegen'}</Text>
+            </TouchableOpacity>
             <TextInput
               style={styles.input}
               placeholder={t('groups.namePlaceholder')}
@@ -4613,7 +5094,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             <View style={styles.simpleModalButtons}>
               <TouchableOpacity 
                 style={styles.cancelButton} 
-                onPress={() => setShowCreateModal(false)}
+                onPress={() => { setShowCreateModal(false); setGroupPhotoUri(null); }}
               >
                 <Text style={styles.cancelButtonText}>Annuleren</Text>
               </TouchableOpacity>
@@ -5706,13 +6187,41 @@ const styles = StyleSheet.create({
     borderColor: '#E8E2DA',
     borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingTop: 14,
+    paddingBottom: 14,
     fontSize: 16,
-    lineHeight: 22,
     fontFamily: 'Inter_400Regular',
     marginBottom: 24,
     backgroundColor: '#FAF8F5',
     minHeight: 52,
+    textAlignVertical: 'center',
+  },
+  groupPhotoPickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  groupPhotoPreview: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+  },
+  groupPhotoPlaceholder: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#F0EDE8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E8E2DA',
+    borderStyle: 'dashed',
+  },
+  groupPhotoLabel: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: '#8B7355',
   },
   modalInput: {
     borderWidth: 1,
@@ -5820,11 +6329,13 @@ const styles = StyleSheet.create({
   },
   recipeModalMeta: {
     flexDirection: 'row',
-    gap: 16,
     marginBottom: 14,
-    flexWrap: 'wrap',
   },
   recipeModalMetaItem: {
+    alignItems: 'center',
+  },
+  recipeModalMetaItemThird: {
+    flex: 1,
     alignItems: 'center',
   },
   recipeModalMetaLabel: {
@@ -5866,17 +6377,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   recipeModalStepNumber: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#8B7355',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#E8845C',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
     marginTop: 1,
   },
   recipeModalStepNumberText: {
-    fontSize: 11,
+    fontSize: 13,
+    fontWeight: '700',
     fontFamily: 'Inter_600SemiBold',
     color: '#FEFEFE',
   },

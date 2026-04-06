@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, View, SafeAreaView, Text, Image, Animated } from 'react-native';
+import { StyleSheet, View, Text, Image, Animated, SafeAreaView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import IdeasScreen from './IdeasScreen';
@@ -8,8 +8,14 @@ import GroupsScreen from './GroupsScreenSimple';
 import BottomTabNavigation from './BottomTabNavigation';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../lib/AppStateContext';
+import { initializeNotifications } from '../lib/notificationService';
+import AppPopup from './AppPopup';
+import OnboardingModal from './OnboardingModal';
+import NamePromptModal from './NamePromptModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-export default function MainTabNavigator({ navigation, route }) {
+export default function MainTabNavigator({ navigation, route, pendingJoinCode, onJoinCodeHandled }) {
   const { t } = useTranslation();
   const appState = useAppState();
   const [currentTab, setCurrentTab] = useState('groups');
@@ -19,6 +25,8 @@ export default function MainTabNavigator({ navigation, route }) {
   const splashOpacity = useRef(new Animated.Value(1)).current;
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [imagesPreloaded, setImagesPreloaded] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
   
   // Track if we need to reopen group modal (when returning from voting/results)
   const [pendingGroupReopen, setPendingGroupReopen] = useState(null);
@@ -48,6 +56,32 @@ export default function MainTabNavigator({ navigation, route }) {
       useNativeDriver: true,
     }).start(() => {
       setSplashVisible(false);
+      // Always request notification permission first
+      initializeNotifications().catch(() => {});
+      // Save app version to profile
+      (async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const version = Constants.expoConfig?.version || Constants.manifest?.version || '?';
+            await supabase.from('profiles').update({ app_version: version }).eq('id', user.id);
+          }
+        } catch (_) {}
+      })();
+      // Then check onboarding and name
+      AsyncStorage.getItem('hasSeenOnboarding').then(async (val) => {
+        if (!val) {
+          setShowOnboarding(true);
+        } else {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            const name = user?.user_metadata?.full_name;
+            if (user && (!name || name === user.email?.split('@')[0])) {
+              setShowNamePrompt(true);
+            }
+          } catch (_) {}
+        }
+      }).catch(() => {});
     });
   }, []);
 
@@ -174,7 +208,7 @@ export default function MainTabNavigator({ navigation, route }) {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <Image 
-            source={require('../assets/nieuw_logo_studentenhappie.webp')}
+            source={require('../assets/splash-logo.png')}
             style={styles.loadingLogo}
             resizeMode="contain"
           />
@@ -196,13 +230,15 @@ export default function MainTabNavigator({ navigation, route }) {
           styles.screenContainer,
           currentTab === 'groups' ? styles.activeScreen : styles.hiddenScreen
         ]}>
-          <GroupsScreen 
+          <GroupsScreen
             key="groups"
-            route={route || { params: {} }} 
+            route={route || { params: {} }}
             navigation={enhancedNavigation}
             isActive={currentTab === 'groups'}
             onReady={onGroupsReady}
             pendingGroupReopen={pendingGroupReopen}
+            pendingJoinCode={pendingJoinCode}
+            onJoinCodeHandled={onJoinCodeHandled}
             onPendingGroupReopenCleared={() => setPendingGroupReopen(null)}
           />
         </View>
@@ -249,12 +285,40 @@ export default function MainTabNavigator({ navigation, route }) {
         />
       </View>
 
-      {/* Splash overlay - covers everything until groups is loaded */}
+      {/* Onboarding (first time only) */}
+      <OnboardingModal
+        visible={showOnboarding}
+        onDone={async () => {
+          setShowOnboarding(false);
+          // After onboarding, check if name is needed
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            const name = user?.user_metadata?.full_name;
+            if (user && (!name || name === user.email?.split('@')[0])) {
+              setShowNamePrompt(true);
+            }
+          } catch (_) {}
+        }}
+      />
+
+      {/* Name prompt (for Apple/Google sign in users without a name) */}
+      <NamePromptModal
+        visible={showNamePrompt}
+        onDone={() => {
+          setShowNamePrompt(false);
+          if (appState?.refreshAll) appState.refreshAll();
+        }}
+      />
+
+      {/* In-app popup (controlled from admin dashboard) */}
+      {!splashVisible && !showOnboarding && <AppPopup />}
+
+      {/* Splash overlay with logo, fades out when ready */}
       {splashVisible && (
         <Animated.View style={[styles.splashOverlay, { opacity: splashOpacity }]}>
           <Image
-            source={require('../assets/nieuw_logo_studentenhappie.webp')}
-            style={{ width: 240, height: 240 }}
+            source={require('../assets/splash-logo.png')}
+            style={{ width: 560, height: 280 }}
             resizeMode="contain"
           />
         </Animated.View>

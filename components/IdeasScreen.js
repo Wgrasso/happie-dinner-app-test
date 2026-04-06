@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, Image, Linking, ActivityIndicator, Modal, Animated, Dimensions, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Linking, ActivityIndicator, Modal, Animated, Dimensions, Alert, SafeAreaView } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { getCurrentUserProfile } from '../lib/profileService';
-import { getRandomRecipes, getAllRecipes } from '../lib/recipesService';
-import { getAllChefs } from '../lib/chefService';
+import { getRandomRecipes, getAllRecipes, getMyChefRecipes, shareRecipeWithGroups } from '../lib/recipesService';
+import { getAllChefs, getAllHouses } from '../lib/chefService';
+import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { formatDateLongNL } from '../lib/dateFormatting';
 import { useAppState } from '../lib/AppStateContext';
 import { log } from '../lib/debugConfig';
+import { supabase } from '../lib/supabase';
+import { lightHaptic, successHaptic } from '../lib/haptics';
+import { useToast } from './ui/Toast';
 import ServingSelector from './ui/ServingSelector';
 import { scaleIngredients } from '../lib/ingredientScaler';
 import { getRecipeExtras } from '../lib/recipeExtrasService';
@@ -30,7 +34,8 @@ const SafeDrawing = ({ source, style, resizeMode = "contain" }) => {
 
 export default function IdeasScreen({ route, navigation, hideBottomNav, isActive, shouldPreload, pendingOpenRecipe, onOpenRecipeHandled }) {
   const { t } = useTranslation();
-  const { cachedRecipes, cachedRecipesTimestamp, saveCachedRecipes } = useAppState();
+  const toast = useToast();
+  const { cachedRecipes, cachedRecipesTimestamp, saveCachedRecipes, groups } = useAppState();
   
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -46,18 +51,27 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
   });
   
   // Tab and chefs states
-  const [activeTab, setActiveTab] = useState('meals'); // 'meals' or 'chefs'
+  const [activeTab, setActiveTab] = useState('meals'); // 'meals', 'chefs', or 'houses'
   const [chefs, setChefs] = useState([]);
   const [chefsLoading, setChefsLoading] = useState(false);
+  const [houses, setHouses] = useState([]);
+  const [housesLoading, setHousesLoading] = useState(false);
   const [selectedChef, setSelectedChef] = useState(null);
+  const [selectedChefRecipes, setSelectedChefRecipes] = useState([]);
   const [chefModalVisible, setChefModalVisible] = useState(false);
   const [chefModalAnimation] = useState(new Animated.Value(0));
+  const [flippedChefId, setFlippedChefId] = useState(null);
   
   // Modal states
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalAnimation] = useState(new Animated.Value(0));
   const [servingCount, setServingCount] = useState(4);
+
+  // Add to group states
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
+  const [selectedGroupIds, setSelectedGroupIds] = useState([]);
+  const [savingGroups, setSavingGroups] = useState(false);
 
   const { width, height } = Dimensions.get('window');
 
@@ -78,11 +92,10 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     }
   }, [pendingOpenRecipe, isActive]);
 
-  // Load chefs when switching to chefs tab
+  // Load chefs/houses when switching tabs
   useEffect(() => {
-    if (activeTab === 'chefs') {
-      loadChefs();
-    }
+    if (activeTab === 'chefs') loadChefs();
+    if (activeTab === 'houses') loadHouses();
   }, [activeTab]);
 
   // INSTANT: Use cached recipes from context for immediate display
@@ -300,7 +313,44 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     }).start(() => {
       setModalVisible(false);
       setSelectedRecipe(null);
+      setShowGroupPicker(false);
+      setSelectedGroupIds([]);
     });
+  };
+
+  const toggleGroupSelect = (groupId) => {
+    lightHaptic();
+    setSelectedGroupIds((prev) =>
+      prev.includes(groupId)
+        ? prev.filter((id) => id !== groupId)
+        : [...prev, groupId]
+    );
+  };
+
+  const handleSaveToGroups = async () => {
+    if (!selectedRecipe?.id || selectedGroupIds.length === 0) return;
+    setSavingGroups(true);
+    lightHaptic();
+    try {
+      // Add recipe to each selected group individually (append, not replace)
+      for (const gid of selectedGroupIds) {
+        await supabase
+          .from('recipe_group_shares')
+          .upsert(
+            { recipe_id: selectedRecipe.id, group_id: gid, shared_by: (await supabase.auth.getUser()).data.user.id },
+            { onConflict: 'recipe_id,group_id' }
+          );
+      }
+      successHaptic();
+      const count = selectedGroupIds.length;
+      toast.success(`${t('chef.addedToGroup') || 'Toegevoegd aan'} ${count} ${count === 1 ? 'groep' : 'groepen'}`);
+      setShowGroupPicker(false);
+      setSelectedGroupIds([]);
+    } catch (e) {
+      toast.error(e?.message || 'Er is iets misgegaan');
+    } finally {
+      setSavingGroups(false);
+    }
   };
 
   const openExternalLink = () => {
@@ -369,9 +419,29 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     }
   };
 
-  const openChefProfile = (chef) => {
+  const loadHouses = async () => {
+    setHousesLoading(true);
+    try {
+      const result = await getAllHouses();
+      if (result.success) {
+        setHouses(result.houses);
+      }
+    } catch (error) {
+      // silently fail
+    } finally {
+      setHousesLoading(false);
+    }
+  };
+
+  const openChefProfile = async (chef) => {
     setSelectedChef(chef);
+    setSelectedChefRecipes([]);
     setChefModalVisible(true);
+    // Fetch this chef's public recipes
+    const result = await getMyChefRecipes(chef.id);
+    if (result.success) {
+      setSelectedChefRecipes((result.recipes || []).filter(r => r.visibility === 'public'));
+    }
     Animated.spring(chefModalAnimation, {
       toValue: 1,
       useNativeDriver: true,
@@ -392,10 +462,6 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     });
   };
 
-  // Transform meals from API format to recipe format
-  const transformMealsToRecipes = (meals) => {
-    return meals.map(normalizeRecipe);
-  };
 
 
 
@@ -454,7 +520,16 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
             onPress={() => setActiveTab('chefs')}
           >
             <Text style={[styles.tabText, activeTab === 'chefs' && styles.activeTabText]}>
-              {t('meals.wishlist')}
+              {t('meals.chefs') || 'Chefs'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'houses' && styles.activeTab]}
+            onPress={() => setActiveTab('houses')}
+          >
+            <Text style={[styles.tabText, activeTab === 'houses' && styles.activeTabText]}>
+              {t('meals.houses') || 'Huizen'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -470,7 +545,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
         )}
 
         {/* Content based on active tab */}
-        {activeTab === 'meals' ? (
+        {activeTab === 'meals' && (
         <View style={styles.recipesContainer}>
           <Text style={styles.sectionTitle}>{t('recipes.featuredRecipes')}</Text>
           
@@ -509,30 +584,25 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                     <View style={styles.timeContainer}>
                       <Text style={styles.timeText}>{formatTime(recipe.readyInMinutes)}</Text>
                     </View>
-                      {recipe.pricePerServing && (
-                        <View style={styles.priceContainer}>
-                          <Text style={styles.priceText}>€{recipe.pricePerServing.toFixed(2)}</Text>
-                    </View>
-                      )}
                   </View>
                 </View>
-                
+
                 <Text style={styles.recipeDescription}>{recipe.description}</Text>
-                
-                {recipe.dietary.length > 0 && (
-                  <View style={styles.dietaryTags}>
-                    {recipe.dietary.slice(0, 2).map((dietary, index) => (
-                      <View key={index} style={styles.dietaryTag}>
-                        <Text style={styles.dietaryTagText}>{dietary}</Text>
-                      </View>
-                    ))}
+
+                {(() => { const ex = getRecipeExtras(recipe.name || recipe.title); return ex.estimated_cost ? (
+                  <View style={styles.priceBadgeRow}>
+                    <View style={styles.priceBadge}>
+                      <Text style={styles.priceBadgeText}>€{ex.estimated_cost.toFixed(0)}</Text>
+                    </View>
                   </View>
-                )}
+                ) : null; })()}
               </View>
             </TouchableOpacity>
           ))}
         </View>
-        ) : (
+        )}
+
+        {activeTab === 'chefs' && (
           <View style={styles.recipesContainer}>
             <Text style={styles.sectionTitle}>Chefs</Text>
 
@@ -545,38 +615,190 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                 <Text style={styles.emptyWishlistTitle}>{t('common.loading')}</Text>
               </View>
             ) : (
-              chefs.map((chef) => (
-                <TouchableOpacity
-                  key={chef.id}
-                  style={styles.recipeCard}
-                  onPress={() => openChefProfile(chef)}
-                  activeOpacity={0.9}
-                >
-                  <View style={styles.imageContainer}>
-                    {chef.profile_image ? (
-                      <ExpoImage
-                        source={{ uri: chef.profile_image }}
-                        style={styles.recipeImage}
-                        contentFit="cover"
-                        transition={200}
-                        cachePolicy="memory-disk"
-                      />
+              chefs.map((chef) => {
+                const isFlipped = flippedChefId === chef.id;
+                const chefRecipes = allLoadedRecipes.filter(r => r.chef_id === chef.id);
+                return (
+                  <View key={chef.id} style={styles.recipeCard}>
+                    {!isFlipped ? (
+                      /* Front side - Chef profile */
+                      <TouchableOpacity
+                        onPress={() => openChefProfile(chef)}
+                        activeOpacity={0.9}
+                      >
+                        <View style={styles.imageContainer}>
+                          {chef.profile_image ? (
+                            <ExpoImage
+                              source={{ uri: chef.profile_image }}
+                              style={styles.recipeImage}
+                              contentFit="cover"
+                              transition={200}
+                              cachePolicy="memory-disk"
+                            />
+                          ) : (
+                            <View style={[styles.recipeImage, { backgroundColor: '#E8E6E3', justifyContent: 'center', alignItems: 'center' }]}>
+                              <Text style={{ fontSize: 48, color: '#8B7355' }}>{chef.name.charAt(0)}</Text>
+                            </View>
+                          )}
+                          {chefRecipes.length > 0 && (
+                            <TouchableOpacity
+                              style={styles.chefRecipesButton}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                setFlippedChefId(chef.id);
+                              }}
+                            >
+                              <Text style={styles.chefRecipesButtonText}>{t('recipes.recipes') || 'Recepten'} ({chefRecipes.length})</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+
+                        <View style={styles.recipeContent}>
+                          <Text style={styles.recipeTitle}>{chef.name}</Text>
+                          <Text style={[styles.recipeDescription, { color: '#8B7355', marginBottom: 8 }]}>@{chef.tag}</Text>
+                          {chef.description && (
+                            <Text style={styles.recipeDescription} numberOfLines={2}>{chef.description}</Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
                     ) : (
-                      <View style={[styles.recipeImage, { backgroundColor: '#E8E6E3', justifyContent: 'center', alignItems: 'center' }]}>
-                        <Text style={{ fontSize: 48, color: '#8B7355' }}>{chef.name.charAt(0)}</Text>
+                      /* Back side - Chef's recipes */
+                      <View>
+                        <View style={styles.chefRecipesHeader}>
+                          <Text style={styles.chefRecipesTitle}>{chef.name}</Text>
+                          <TouchableOpacity onPress={() => setFlippedChefId(null)}>
+                            <Text style={styles.chefRecipesClose}>✕</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.chefRecipesList} nestedScrollEnabled>
+                          {chefRecipes.map((recipe) => (
+                            <TouchableOpacity
+                              key={recipe.id}
+                              style={styles.chefRecipeItem}
+                              onPress={() => {
+                                setFlippedChefId(null);
+                                openRecipe(recipe);
+                              }}
+                              activeOpacity={0.7}
+                            >
+                              <ExpoImage
+                                source={{ uri: recipe.image || recipe.thumbnail_url }}
+                                style={styles.chefRecipeThumb}
+                                contentFit="cover"
+                                cachePolicy="memory-disk"
+                              />
+                              <View style={styles.chefRecipeInfo}>
+                                <Text style={styles.chefRecipeName} numberOfLines={1}>{recipe.title || recipe.name}</Text>
+                                <Text style={styles.chefRecipeDesc} numberOfLines={1}>{recipe.description}</Text>
+                              </View>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
                       </View>
                     )}
                   </View>
+                );
+              })
+            )}
+          </View>
+        )}
 
-                  <View style={styles.recipeContent}>
-                    <Text style={styles.recipeTitle}>{chef.name}</Text>
-                    <Text style={[styles.recipeDescription, { color: '#8B7355', marginBottom: 8 }]}>@{chef.tag}</Text>
-                    {chef.description && (
-                      <Text style={styles.recipeDescription} numberOfLines={2}>{chef.description}</Text>
+        {/* Houses Tab */}
+        {activeTab === 'houses' && (
+          <View style={styles.recipesContainer}>
+            <Text style={styles.sectionTitle}>{t('meals.houses') || 'Huizen'}</Text>
+
+            {housesLoading ? (
+              <View style={styles.emptyWishlist}>
+                <ActivityIndicator size="large" color="#8B7355" />
+              </View>
+            ) : houses.length === 0 ? (
+              <View style={styles.emptyWishlist}>
+                <Text style={styles.emptyWishlistTitle}>{t('meals.noHouses') || 'Nog geen huizen'}</Text>
+              </View>
+            ) : (
+              houses.map((house) => {
+                const isFlipped = flippedChefId === house.id;
+                const houseRecipes = allLoadedRecipes.filter(r => r.chef_id === house.id);
+                return (
+                  <View key={house.id} style={styles.recipeCard}>
+                    {!isFlipped ? (
+                      <TouchableOpacity
+                        onPress={() => openChefProfile(house)}
+                        activeOpacity={0.9}
+                      >
+                        <View style={styles.imageContainer}>
+                          {house.profile_image ? (
+                            <ExpoImage
+                              source={{ uri: house.profile_image }}
+                              style={styles.recipeImage}
+                              contentFit="cover"
+                              transition={200}
+                              cachePolicy="memory-disk"
+                            />
+                          ) : (
+                            <View style={[styles.recipeImage, { backgroundColor: '#E8E6E3', justifyContent: 'center', alignItems: 'center' }]}>
+                              <Text style={{ fontSize: 48, color: '#8B7355' }}>{house.name.charAt(0)}</Text>
+                            </View>
+                          )}
+                          {houseRecipes.length > 0 && (
+                            <TouchableOpacity
+                              style={styles.chefRecipesButton}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                setFlippedChefId(house.id);
+                              }}
+                            >
+                              <Text style={styles.chefRecipesButtonText}>{t('recipes.recipes') || 'Recepten'} ({houseRecipes.length})</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+
+                        <View style={styles.recipeContent}>
+                          <Text style={styles.recipeTitle}>{house.name}</Text>
+                          <Text style={[styles.recipeDescription, { color: '#8B7355', marginBottom: 8 }]}>@{house.tag}</Text>
+                          {house.description && (
+                            <Text style={styles.recipeDescription} numberOfLines={2}>{house.description}</Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    ) : (
+                      <View>
+                        <View style={styles.chefRecipesHeader}>
+                          <Text style={styles.chefRecipesTitle}>{house.name}</Text>
+                          <TouchableOpacity onPress={() => setFlippedChefId(null)}>
+                            <Text style={styles.chefRecipesClose}>✕</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.chefRecipesList} nestedScrollEnabled>
+                          {houseRecipes.map((recipe) => (
+                            <TouchableOpacity
+                              key={recipe.id}
+                              style={styles.chefRecipeItem}
+                              onPress={() => {
+                                setFlippedChefId(null);
+                                openRecipe(recipe);
+                              }}
+                              activeOpacity={0.7}
+                            >
+                              <ExpoImage
+                                source={{ uri: recipe.image || recipe.thumbnail_url }}
+                                style={styles.chefRecipeThumb}
+                                contentFit="cover"
+                                cachePolicy="memory-disk"
+                              />
+                              <View style={styles.chefRecipeInfo}>
+                                <Text style={styles.chefRecipeName} numberOfLines={1}>{recipe.title || recipe.name}</Text>
+                                <Text style={styles.chefRecipeDesc} numberOfLines={1}>{recipe.description}</Text>
+                              </View>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      </View>
                     )}
                   </View>
-                </TouchableOpacity>
-              ))
+                );
+              })
             )}
           </View>
         )}
@@ -672,19 +894,6 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                       ) : null; })()}
                     </View>
 
-                    {selectedRecipe.dietary && selectedRecipe.dietary.length > 0 && (
-                      <View style={styles.modalDietary}>
-                        <Text style={styles.dietaryTitle}>{t('recipes.dietaryInfo')}</Text>
-                        <View style={styles.modalDietaryTags}>
-                          {selectedRecipe.dietary.map((dietary, index) => (
-                            <View key={index} style={styles.modalDietaryTag}>
-                              <Text style={styles.modalDietaryText}>{dietary}</Text>
-                            </View>
-                          ))}
-                        </View>
-                      </View>
-                    )}
-
                     {selectedRecipe.description && (
                       <View style={styles.modalDescription}>
                         <Text style={styles.dietaryTitle}>{t('recipes.description')}</Text>
@@ -730,14 +939,78 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                       <TouchableOpacity
                         style={styles.modalChefTag}
                         onPress={() => {
-                          const chef = selectedRecipe.chef;
-                          closeModal();
-                          setTimeout(() => openChefProfile(chef), 400);
+                          const chef = { ...selectedRecipe.chef };
+                          setModalVisible(false);
+                          setSelectedRecipe(null);
+                          setShowGroupPicker(false);
+                          setSelectedGroupIds([]);
+                          setTimeout(() => openChefProfile(chef), 100);
                         }}
                       >
                         <Text style={styles.modalChefTagText}>@{selectedRecipe.chef.tag}</Text>
                         <Text style={styles.modalChefName}>{selectedRecipe.chef.name}</Text>
                       </TouchableOpacity>
+                    )}
+
+                    {/* Add to group button */}
+                    {selectedRecipe?.id && (
+                      <View style={styles.addToGroupSection}>
+                        <TouchableOpacity
+                          style={styles.addToGroupBtn}
+                          onPress={() => { lightHaptic(); setShowGroupPicker(!showGroupPicker); setSelectedGroupIds([]); }}
+                          activeOpacity={0.8}
+                        >
+                          <Feather name={showGroupPicker ? 'chevron-up' : 'plus-circle'} size={18} color="#FFF" />
+                          <Text style={styles.addToGroupBtnText}>
+                            {t('chef.addToGroup') || 'Toevoegen aan groep'}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {showGroupPicker && (
+                          <View style={styles.groupPickerList}>
+                            {(groups || []).length === 0 ? (
+                              <Text style={styles.groupPickerEmpty}>
+                                {t('groups.noGroups') || 'Geen groepen'}
+                              </Text>
+                            ) : (
+                              <>
+                                {(groups || []).map((g) => {
+                                  const isSelected = selectedGroupIds.includes(g.id);
+                                  return (
+                                    <TouchableOpacity
+                                      key={g.id}
+                                      style={[styles.groupPickerItem, isSelected && styles.groupPickerItemActive]}
+                                      onPress={() => toggleGroupSelect(g.id)}
+                                      activeOpacity={0.7}
+                                    >
+                                      <Text style={styles.groupPickerName}>{g.name}</Text>
+                                      <View style={[styles.groupCheckbox, isSelected && styles.groupCheckboxChecked]}>
+                                        {isSelected && <Feather name="check" size={14} color="#FFF" />}
+                                      </View>
+                                    </TouchableOpacity>
+                                  );
+                                })}
+                                {selectedGroupIds.length > 0 && (
+                                  <TouchableOpacity
+                                    style={styles.groupPickerSaveBtn}
+                                    onPress={handleSaveToGroups}
+                                    disabled={savingGroups}
+                                    activeOpacity={0.8}
+                                  >
+                                    {savingGroups ? (
+                                      <ActivityIndicator size="small" color="#FFF" />
+                                    ) : (
+                                      <Text style={styles.groupPickerSaveBtnText}>
+                                        {t('chef.addToGroupConfirm') || 'Toevoegen'} ({selectedGroupIds.length})
+                                      </Text>
+                                    )}
+                                  </TouchableOpacity>
+                                )}
+                              </>
+                            )}
+                          </View>
+                        )}
+                      </View>
                     )}
                   </View>
                 </>
@@ -829,6 +1102,49 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                         ))}
                       </View>
                     )}
+
+                    {/* Chef's recipes */}
+                    <View style={styles.chefModalRecipes}>
+                      <Text style={styles.chefModalRecipesTitle}>{t('recipes.recipes') || 'Recepten'} ({selectedChefRecipes.length})</Text>
+                      {selectedChefRecipes.length === 0 ? (
+                        <Text style={{ fontSize: 13, color: '#A09485', marginTop: 8 }}>{t('chef.noRecipesYet') || 'Nog geen recepten'}</Text>
+                      ) : (
+                        selectedChefRecipes.map((recipe) => (
+                          <TouchableOpacity
+                            key={recipe.id}
+                            style={styles.chefModalRecipeCard}
+                            onPress={() => {
+                              const r = { ...recipe, thumbnail_url: recipe.image, title: recipe.name, chef: { ...selectedChef } };
+                              setChefModalVisible(false);
+                              setTimeout(() => openRecipe(r), 50);
+                            }}
+                            activeOpacity={0.9}
+                          >
+                            <View style={styles.chefModalRecipeImageContainer}>
+                              <ExpoImage
+                                source={{ uri: recipe.image || recipe.thumbnail_url }}
+                                style={styles.chefModalRecipeImage}
+                                contentFit="cover"
+                                cachePolicy="memory-disk"
+                              />
+                            </View>
+                            <View style={styles.chefModalRecipeContent}>
+                              <Text style={styles.chefModalRecipeTitle} numberOfLines={2}>{recipe.title || recipe.name}</Text>
+                              <Text style={styles.chefModalRecipeTag}>@{selectedChef?.tag}</Text>
+                              <View style={styles.chefModalRecipeMeta}>
+                                <Text style={styles.chefModalRecipeTime}>{formatTime(recipe.cooking_time_minutes)}</Text>
+                                {recipe.estimated_cost != null && (
+                                  <Text style={styles.chefModalRecipeCost}>€{Number(recipe.estimated_cost).toFixed(2)}</Text>
+                                )}
+                                {recipe.cuisine_type && (
+                                  <Text style={styles.chefModalRecipeCuisine}>{recipe.cuisine_type}</Text>
+                                )}
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </View>
                   </View>
                 </>
               )}
@@ -941,18 +1257,83 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
   },
+  chefRecipesButton: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  chefRecipesButtonText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: '#FFFFFF',
+  },
+  chefRecipesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    paddingBottom: 8,
+  },
+  chefRecipesTitle: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 18,
+    color: '#2D2D2D',
+  },
+  chefRecipesClose: {
+    fontSize: 18,
+    color: '#A09485',
+    padding: 4,
+  },
+  chefRecipesList: {
+    maxHeight: 240,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  chefRecipeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0EDE8',
+  },
+  chefRecipeThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: 10,
+  },
+  chefRecipeInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  chefRecipeName: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: '#2D2D2D',
+    marginBottom: 2,
+  },
+  chefRecipeDesc: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: '#8B7355',
+  },
   recipeImage: {
     width: '100%',
     height: '100%',
   },
   recipeContent: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   recipeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   recipeTitle: {
     fontFamily: 'PlayfairDisplay_700Bold',
@@ -980,15 +1361,21 @@ const styles = StyleSheet.create({
     color: '#FEFEFE',
     letterSpacing: 0.1,
   },
-  priceContainer: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  priceBadgeRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginRight: -20,
+    marginBottom: -12,
   },
-  priceText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 12,
+  priceBadge: {
+    backgroundColor: '#8B7355',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderTopLeftRadius: 12,
+  },
+  priceBadgeText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
     lineHeight: 16,
     color: '#FEFEFE',
     letterSpacing: 0.1,
@@ -999,7 +1386,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: '#6B6B6B',
-    marginBottom: 16,
+    marginBottom: 6,
     letterSpacing: 0.1,
   },
   dietaryTags: {
@@ -1482,6 +1869,83 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B6B6B',
   },
+  // Add to group
+  addToGroupSection: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E2DA',
+    paddingTop: 16,
+  },
+  addToGroupBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#E8845C',
+    borderRadius: 12,
+    paddingVertical: 14,
+  },
+  addToGroupBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  groupPickerList: {
+    marginTop: 10,
+    backgroundColor: '#FBF7F4',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8E2DA',
+    overflow: 'hidden',
+  },
+  groupPickerEmpty: {
+    padding: 16,
+    fontSize: 13,
+    color: '#A09485',
+    textAlign: 'center',
+  },
+  groupPickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E2DA',
+  },
+  groupPickerItemActive: {
+    backgroundColor: '#FFF3EE',
+  },
+  groupPickerName: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#4A3728',
+  },
+  groupCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#C0B5A8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  groupCheckboxChecked: {
+    backgroundColor: '#E8845C',
+    borderColor: '#E8845C',
+  },
+  groupPickerSaveBtn: {
+    backgroundColor: '#E8845C',
+    margin: 12,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  groupPickerSaveBtnText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   // Chef profile modal
   chefProfileTag: {
     fontFamily: 'Inter_500Medium',
@@ -1507,5 +1971,70 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FEFEFE',
     textTransform: 'capitalize',
+  },
+  chefModalRecipes: {
+    marginTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E2DA',
+    paddingTop: 16,
+  },
+  chefModalRecipesTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: '#2D2D2D',
+    marginBottom: 12,
+  },
+  chefModalRecipeCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    borderRadius: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E8E2DA',
+    overflow: 'hidden',
+  },
+  chefModalRecipeImageContainer: {
+    width: 90,
+    height: 90,
+  },
+  chefModalRecipeImage: {
+    width: '100%',
+    height: '100%',
+  },
+  chefModalRecipeContent: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    justifyContent: 'center',
+  },
+  chefModalRecipeTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#4A3728',
+  },
+  chefModalRecipeTag: {
+    fontSize: 11,
+    color: '#E8845C',
+    fontWeight: '500',
+    marginTop: 1,
+  },
+  chefModalRecipeMeta: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  chefModalRecipeTime: {
+    fontSize: 12,
+    color: '#8B7355',
+  },
+  chefModalRecipeCost: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  chefModalRecipeCuisine: {
+    fontSize: 12,
+    color: '#8B7355',
+    fontStyle: 'italic',
   },
 }); 

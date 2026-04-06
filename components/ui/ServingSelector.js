@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { lightHaptic } from '../../lib/haptics';
 
 const MIN_SERVINGS = 1;
-const MAX_SERVINGS = 12;
+const MAX_SERVINGS = 99;
 
 export default function ServingSelector({ count, onChange }) {
   const { t } = useTranslation();

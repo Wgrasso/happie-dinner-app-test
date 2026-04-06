@@ -1,30 +1,32 @@
 {
   "expo": {
-    "name": "Studenten Happie",
+    "name": "Happie",
     "slug": "happie-dinner",
     "scheme": "happie",
-    "version": "1.3.0",
+    "version": "1.5.1",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-happie.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FEFEFE"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/icon-ios.png",
+      "icon": "./assets/icon-happie.png",
       "bundleIdentifier": "com.willemgrasso.happie",
-      "buildNumber": "1.1.6",
+      "buildNumber": "1.2.0",
+      "associatedDomains": [
+        "webcredentials:studentenhappie.nl",
+        "applinks:studentenhappie.nl"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "Studenten Happie needs camera access to take recipe photos",
-        "NSPhotoLibraryUsageDescription": "Studenten Happie needs photo library access to select recipe photos",
+        "NSCameraUsageDescription": "Happie needs camera access to take recipe photos",
+        "NSPhotoLibraryUsageDescription": "Happie needs photo library access to select recipe photos",
         "UIBackgroundModes": [
           "remote-notification"
         ]
@@ -54,8 +56,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Studenten Happie needs access to your photos to add recipe images",
-          "cameraPermission": "Studenten Happie needs access to your camera to take recipe photos"
+          "photosPermission": "Happie needs access to your photos to add recipe images",
+          "cameraPermission": "Happie needs access to your camera to take recipe photos"
         }
       ],
       [

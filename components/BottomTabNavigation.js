@@ -1,6 +1,11 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { selectionHaptic } from '../lib/haptics';
+
+const ICON_COLOR = '#E8845C';
 
 export default function BottomTabNavigation({ currentScreen, onTabPress }) {
   const handleTabPress = (screen) => {
@@ -10,47 +15,52 @@ export default function BottomTabNavigation({ currentScreen, onTabPress }) {
     }
   };
 
+  const profileActive = currentScreen === 'profile';
+  const groupsActive = currentScreen === 'groups';
+  const inspirationActive = currentScreen === 'inspiration';
+
   return (
     <View style={styles.container}>
       <View style={styles.tabContainer}>
-        {/* Profile button - left side */}
-        <TouchableOpacity 
-          style={[styles.tab, currentScreen === 'profile' && styles.activeTab]}
+        {/* Profile button - P2: Chef's hat */}
+        <TouchableOpacity
+          style={[styles.tab, profileActive && styles.activeTab]}
           onPress={() => handleTabPress('profile')}
         >
-          <Image 
-            source={require('../assets/profile.png')}
-            style={[styles.tabIcon, currentScreen === 'profile' && styles.activeIcon]}
-            resizeMode="contain"
+          <MaterialCommunityIcons
+            name="chef-hat"
+            size={profileActive ? 36 : 32}
+            color={ICON_COLOR}
+            style={{ opacity: profileActive ? 1 : 0.45 }}
           />
         </TouchableOpacity>
-        
-        {/* Main/Groups button - center with raised circle */}
-        <TouchableOpacity 
+
+        {/* Main/Groups button - G4: People circle */}
+        <TouchableOpacity
           style={[styles.tab, styles.mainTab]}
           onPress={() => handleTabPress('groups')}
           hitSlop={{ top: 30, bottom: 10, left: 10, right: 10 }}
         >
           <View style={styles.mainTabCircle}>
-            <Image 
-              source={require('../assets/groups.png')}
-              style={[
-                styles.mainTabIcon, 
-                currentScreen === 'groups' && styles.activeMainIcon
-              ]}
-              resizeMode="contain"
+            <Ionicons
+              name={groupsActive ? "people-circle" : "people-circle-outline"}
+              size={groupsActive ? 56 : 52}
+              color={ICON_COLOR}
+              style={{ opacity: groupsActive ? 1 : 0.55 }}
             />
           </View>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.tab, currentScreen === 'inspiration' && styles.activeTab]}
+
+        {/* Inspiration button - I2: Search */}
+        <TouchableOpacity
+          style={[styles.tab, inspirationActive && styles.activeTab]}
           onPress={() => handleTabPress('inspiration')}
         >
-          <Image 
-            source={require('../assets/inspiration.png')}
-            style={[styles.tabIcon, currentScreen === 'inspiration' && styles.activeInspirationIcon]}
-            resizeMode="contain"
+          <Feather
+            name="search"
+            size={inspirationActive ? 34 : 30}
+            color={ICON_COLOR}
+            style={{ opacity: inspirationActive ? 1 : 0.45 }}
           />
         </TouchableOpacity>
       </View>
@@ -60,14 +70,14 @@ export default function BottomTabNavigation({ currentScreen, onTabPress }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'transparent', // Make nav bar transparent
+    backgroundColor: 'transparent',
     borderTopWidth: 1,
     borderTopColor: '#E8E2DA',
     position: 'absolute',
     bottom: 10,
     left: 0,
     right: 0,
-    zIndex: 999, // Ensure nav bar is always on top
+    zIndex: 999,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -77,7 +87,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 15,
     paddingHorizontal: 24,
-    backgroundColor: 'transparent', // Make tab container transparent
+    backgroundColor: 'transparent',
   },
   tab: {
     flex: 1,
@@ -87,65 +97,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
   },
-  activeTab: {
-    // backgroundColor: '#F8F6F3', // Removed to keep transparent
-  },
-  tabIcon: {
-    width: 46,
-    height: 46,
-    opacity: 0.5,
-  },
-  activeIcon: {
-    opacity: 1,
-    width: 50,
-    height: 50,
-  },
-  activeInspirationIcon: {
-    opacity: 1,
-    width: 50,
-    height: 50,
-  },
-  activeGuestIcon: {
-    opacity: 1,
-    width: 50,
-    height: 50,
-    tintColor: '#4A90E2',
-  },
-  // Styles voor de uitpuilende main knop
+  activeTab: {},
   mainTab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 1, // Extra ruimte bovenaan voor de uitpuilende cirkel
+    paddingTop: 1,
   },
   mainTabCircle: {
-    width: 73,
-    height: 80,
-    borderRadius: 40, // Aangepast voor de ovale vorm
-    backgroundColor: '#FEFEFE', // Witte cirkel, zelfde als nav bar achtergrond
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#FEFEFE',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
-    top: -20, // 25% van 80px = ~20px boven de nav bar
-    elevation: 10, // Ensure it's above everything for Android
-    zIndex: 1000, // Ensure it's above everything
+    top: -12,
+    elevation: 10,
+    zIndex: 1000,
     borderWidth: 1,
     borderColor: '#E8E2DA',
   },
-  mainTabIcon: {
-    width: 90,  // Groter dan normale tabIcon (46px)
-    height: 90,
-    opacity: 0.6,
-  },
-  activeMainIcon: {
-    width: 95,  // Nog groter wanneer actief
-    height: 95,
-    opacity: 1,
-  },
-  activeMainGuestIcon: {
-    width: 64,
-    height: 64,
-    opacity: 1,
-    tintColor: '#4A90E2',
-  },
-}); 
+});

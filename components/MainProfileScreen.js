@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   View,
-  SafeAreaView,
   TouchableOpacity,
   Image,
   ScrollView,
@@ -14,17 +13,19 @@ import {
   Keyboard,
   Pressable,
   Modal,
-  Animated,
-} from 'react-native';
+  Animated, SafeAreaView } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMyRecipes, deleteUserRecipe, addUserRecipe } from '../lib/userRecipesService';
 import { uploadRecipeImage } from '../lib/recipeImageService';
+import { getMyChefProfile } from '../lib/chefService';
 import { useTranslation } from 'react-i18next';
 import { lightHaptic, successHaptic } from '../lib/haptics';
 import { useToast } from './ui/Toast';
+import ChefProfileSetup from './ChefProfileSetup';
+import ChefDashboard from './ChefDashboard';
 
 const SafeDrawing = ({ source, style, resizeMode = 'contain' }) => {
   const [imageError, setImageError] = useState(false);
@@ -56,6 +57,11 @@ export default function MainProfileScreen({
   const [loading, setLoading] = useState(true);
   const [recipes, setRecipes] = useState([]);
   const [hasLoadedData, setHasLoadedData] = useState(false);
+
+  // Chef profile state
+  const [myChefProfile, setMyChefProfile] = useState(null);
+  const [chefProfileLoaded, setChefProfileLoaded] = useState(false);
+
   // Inline recipe creation state
   const [saving, setSaving] = useState(false);
   const [recipeName, setRecipeName] = useState('');
@@ -97,6 +103,26 @@ export default function MainProfileScreen({
     if (result.success) setRecipes(result.recipes || []);
   }, []);
 
+  // Load chef profile on mount
+  useEffect(() => {
+    const shouldLoad = isActive || shouldPreload;
+    if (!shouldLoad || chefProfileLoaded) return;
+
+    const loadChefProfile = async () => {
+      try {
+        const result = await getMyChefProfile();
+        if (result.success && result.chef) {
+          setMyChefProfile(result.chef);
+        }
+      } catch (e) {
+        // Chef profile not found — that's fine, show setup
+      } finally {
+        setChefProfileLoaded(true);
+      }
+    };
+    loadChefProfile();
+  }, [isActive, shouldPreload, chefProfileLoaded]);
+
   useEffect(() => {
     const shouldLoad = isActive || shouldPreload;
     if (!shouldLoad) return;
@@ -113,6 +139,26 @@ export default function MainProfileScreen({
       if (isActive && hasLoadedData) loadRecipes();
     }, [isActive, hasLoadedData, loadRecipes])
   );
+
+  // If user has a chef profile, render ChefDashboard
+  if (chefProfileLoaded && myChefProfile) {
+    return (
+      <ChefDashboard
+        chef={myChefProfile}
+        onChefUpdated={(updated) => setMyChefProfile(updated)}
+        navigation={navigation}
+      />
+    );
+  }
+
+  // If user has no chef profile and data is loaded, render ChefProfileSetup
+  if (chefProfileLoaded && !myChefProfile) {
+    return (
+      <ChefProfileSetup
+        onCreated={(newChef) => setMyChefProfile(newChef)}
+      />
+    );
+  }
 
   const resetForm = () => {
     setRecipeName('');
@@ -135,7 +181,7 @@ export default function MainProfileScreen({
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.7,
@@ -450,8 +496,10 @@ export default function MainProfileScreen({
                       <TouchableOpacity
                         style={styles.modalDeleteButton}
                         onPress={() => {
-                          closeRecipeModal();
-                          setTimeout(() => handleDeleteRecipe(selectedRecipe), 400);
+                          const recipeToDelete = { ...selectedRecipe };
+                          setRecipeModalVisible(false);
+                          setSelectedRecipe(null);
+                          setTimeout(() => handleDeleteRecipe(recipeToDelete), 100);
                         }}
                         activeOpacity={0.7}
                       >

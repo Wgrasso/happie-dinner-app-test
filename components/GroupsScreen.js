@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Image, Modal, Animated, Clipboard, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Image, Modal, Animated, Clipboard, Alert, SafeAreaView } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { createGroupInSupabase, joinGroupByCode, getUserGroups, leaveGroup, deleteGroup, getGroupMembers, setFavoriteGroup, getFavoriteGroupId } from '../lib/groupsService';
 import { getMealOptions } from '../lib/mealRequestService';

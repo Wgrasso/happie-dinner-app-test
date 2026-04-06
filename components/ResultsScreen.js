@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator, SafeAreaView } from 'react-native';
 import { getTopVotedMeals } from '../lib/mealRequestService';
 import { useTranslation } from 'react-i18next';
 

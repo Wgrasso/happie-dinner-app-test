@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, SafeAreaView, FlatList, TextInput,
-  TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator
-} from 'react-native';
+  StyleSheet, Text, View, FlatList, TextInput,
+  TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, SafeAreaView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
@@ -55,7 +54,17 @@ export default function GroupChatScreen({ route, navigation }) {
 
     const unsubscribe = subscribeToGroupMessages(groupId, (newMsg) => {
       setMessages(prev => {
+        // Skip if already exists (by real id)
         if (prev.some(m => m.id === newMsg.id)) return prev;
+        // Replace optimistic message from same user with same text
+        const optimisticIdx = prev.findIndex(m =>
+          m._optimistic && m.user_id === newMsg.user_id && m.message === newMsg.message
+        );
+        if (optimisticIdx !== -1) {
+          const updated = [...prev];
+          updated[optimisticIdx] = newMsg;
+          return updated;
+        }
         return [...prev, newMsg];
       });
     });
@@ -75,12 +84,29 @@ export default function GroupChatScreen({ route, navigation }) {
 
     setSending(true);
     setText('');
+
+    // Optimistic: show message immediately
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg = {
+      id: tempId,
+      user_id: currentUserId,
+      message: trimmed,
+      created_at: new Date().toISOString(),
+      _optimistic: true,
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+
     const res = await sendGroupMessage(groupId, trimmed, groupName);
-    if (!res.success) {
+    if (res.success && res.message) {
+      // Replace optimistic message with real one
+      setMessages(prev => prev.map(m => m.id === tempId ? res.message : m));
+    } else if (!res.success) {
+      // Remove optimistic message and restore text
+      setMessages(prev => prev.filter(m => m.id !== tempId));
       setText(trimmed);
     }
     setSending(false);
-  }, [text, sending, groupId, groupName]);
+  }, [text, sending, groupId, groupName, currentUserId]);
 
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
@@ -93,6 +119,21 @@ export default function GroupChatScreen({ route, navigation }) {
 
   const renderMessage = useCallback(({ item }) => {
     const isMe = item.user_id === currentUserId;
+    const isSystem = item.message?.startsWith('Happie team: ');
+    const displayMsg = isSystem ? item.message.replace('Happie team: ', '') : item.message;
+
+    if (isSystem) {
+      return (
+        <View style={styles.msgRow}>
+          <View style={styles.systemBubble}>
+            <Text style={styles.systemLabel}>Happie</Text>
+            <Text style={styles.systemText}>{displayMsg}</Text>
+            <Text style={styles.systemTime}>{formatTime(item.created_at)}</Text>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={[styles.msgRow, isMe && styles.msgRowMe]}>
         <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
@@ -122,7 +163,7 @@ export default function GroupChatScreen({ route, navigation }) {
       <KeyboardAvoidingView
         style={styles.chatArea}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -258,6 +299,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E8E2DA',
   },
+  systemBubble: {
+    backgroundColor: '#DBEAFE',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    maxWidth: '85%',
+    alignSelf: 'center',
+  },
+  systemLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter_700Bold',
+    color: '#E8845C',
+    marginBottom: 3,
+  },
+  systemText: {
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+    color: '#1A1A1A',
+    lineHeight: 20,
+  },
+  systemTime: {
+    fontSize: 10,
+    fontFamily: 'Inter_400Regular',
+    color: '#6B7280',
+    marginTop: 4,
+    textAlign: 'right',
+  },
   senderName: {
     fontSize: 12,
     fontFamily: 'Inter_600SemiBold',
@@ -299,12 +367,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 10,
     fontSize: 15,
     fontFamily: 'Inter_400Regular',
     color: '#2D2D2D',
     borderWidth: 1,
     borderColor: '#E8E2DA',
+    textAlignVertical: 'center',
   },
   sendButton: {
     width: 40,

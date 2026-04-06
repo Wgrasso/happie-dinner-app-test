@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Modal, Animated, ScrollView, PanResponder } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator, Dimensions, Modal, Animated, ScrollView, PanResponder, SafeAreaView } from 'react-native';
 import { getMealOptions, voteMealOption, getUserVotingProgress } from '../lib/mealRequestService';
 import { getOccasionMealOptions, voteOnOccasionMeal, getOccasionVotingProgress } from '../lib/specialOccasionService';
 import { useTranslation } from 'react-i18next';
@@ -278,6 +278,98 @@ export default function VotingScreen({ route, navigation }) {
   useEffect(() => {
     loadMealOptions();
   }, []);
+
+  // Real-time subscription for this voting session.
+  // - Watches the `meal_requests` row so if another member taps "new meals"
+  //   (which marks this request completed and creates a new one), or the
+  //   request is otherwise ended while we're still voting, we bail out with
+  //   a message instead of letting the user vote on a dead session.
+  // - Watches `meal_votes` for this request so that if the current user voted
+  //   from another device, their votes stay in sync here.
+  // Note: occasion voting is left untouched — this only covers regular group
+  // meal requests.
+  const sessionEndedRef = useRef(false);
+  useEffect(() => {
+    if (isOccasion || !requestId) return;
+
+    let channel = null;
+    let retryTimer = null;
+
+    const handleRequestUpdate = (payload) => {
+      const newStatus = payload.new?.status;
+      if (newStatus && newStatus !== 'active') {
+        // Only bail if the user hasn't already reached the completion view.
+        const total = mealOptionsRef.current?.length || 0;
+        const idx = currentIndexRef.current || 0;
+        if (!sessionEndedRef.current && total > 0 && idx < total) {
+          sessionEndedRef.current = true;
+          log.voting('Voting session ended remotely (status=' + newStatus + '), navigating back');
+          try {
+            alert('This voting round has ended. Returning to your group.');
+          } catch (_) {}
+          handleBackNavigation();
+        }
+      }
+    };
+
+    const handleVoteEvent = async (payload) => {
+      const row = payload.new;
+      if (!row?.user_id || !row?.meal_option_id) return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || row.user_id !== user.id) return;
+        // Self vote from another device — mirror it into local state so the
+        // UI doesn't show this card as unvoted if the user reopens the screen.
+        setVotes((prev) => {
+          if (prev[row.meal_option_id] === row.vote) return prev;
+          return { ...prev, [row.meal_option_id]: row.vote };
+        });
+      } catch (_) {}
+    };
+
+    const subscribe = () => {
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch (_) {}
+      }
+      channel = supabase
+        .channel(`voting-session-${requestId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'meal_requests',
+            filter: `id=eq.${requestId}`,
+          },
+          handleRequestUpdate
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'meal_votes',
+            filter: `request_id=eq.${requestId}`,
+          },
+          handleVoteEvent
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            retryTimer = setTimeout(subscribe, 3000);
+          }
+        });
+    };
+
+    subscribe();
+
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch (_) {}
+        channel = null;
+      }
+    };
+  }, [requestId, isOccasion]);
 
   const handleVote = async (vote) => {
     // Use refs for fresh values (avoids stale closure in PanResponder)
@@ -915,13 +1007,7 @@ export default function VotingScreen({ route, navigation }) {
                   {
                     scale: modalAnimation.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [0.7, 1],
-                    })
-                  },
-                  {
-                    translateY: modalAnimation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [50, 0],
+                      outputRange: [0.8, 1],
                     })
                   }
                 ],
@@ -1723,10 +1809,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   instructionNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#8B7355',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#E8845C',
     justifyContent: 'center',
     alignItems: 'center',
   },

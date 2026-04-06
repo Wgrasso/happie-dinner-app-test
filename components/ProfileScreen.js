@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, 
-  ScrollView, Alert, Image, ActivityIndicator, Modal, Dimensions, Share, Switch
-} from 'react-native';
+  StyleSheet, Text, View, TextInput, TouchableOpacity, 
+  ScrollView, Alert, Image, ActivityIndicator, Modal, Dimensions, Share, Switch, SafeAreaView } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
@@ -94,7 +93,7 @@ export default function ProfileScreen({ route, navigation }) {
     }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.5,

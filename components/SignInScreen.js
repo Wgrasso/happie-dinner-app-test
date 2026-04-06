@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ScrollView, Image, Keyboard, Pressable } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView, Image, Keyboard, Pressable, ActivityIndicator, SafeAreaView } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as AuthSession from 'expo-auth-session';
+import * as Crypto from 'expo-crypto';
 
 // Safe image component that handles missing drawings gracefully
 const SafeDrawing = ({ source, style, resizeMode = "contain" }) => {
@@ -37,7 +40,6 @@ export default function SignInScreen({ navigation }) {
 
     setResetLoading(true);
     try {
-      // Use Supabase default recovery redirect to avoid broken deep-link routes.
       const { error } = await supabase.auth.resetPasswordForEmail(email);
 
       if (error) {
@@ -53,6 +55,96 @@ export default function SignInScreen({ navigation }) {
       Alert.alert(t('common.error'), t('errors.generic'));
     } finally {
       setResetLoading(false);
+    }
+  };
+
+  const [appleAvailable, setAppleAvailable] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => {});
+    }
+  }, []);
+
+  const handleAppleSignIn = async () => {
+    setSocialLoading(true);
+    try {
+      const rawNonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        rawNonce
+      );
+
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        nonce: hashedNonce,
+      });
+
+      if (!credential.identityToken) {
+        Alert.alert('Error', 'Apple Sign In mislukt');
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken,
+        nonce: rawNonce,
+      });
+
+      if (error) {
+        Alert.alert('Error', error.message);
+      } else {
+        // Update name if provided by Apple (first time only)
+        if (credential.fullName?.givenName) {
+          const fullName = [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean).join(' ');
+          await supabase.auth.updateUser({ data: { full_name: fullName } });
+        }
+        navigation.navigate('MainTabs', { screen: 'groups' });
+      }
+    } catch (e) {
+      if (e.code !== 'ERR_REQUEST_CANCELED') {
+        Alert.alert('Error', e.message || 'Apple Sign In mislukt');
+      }
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setSocialLoading(true);
+    try {
+      const redirectUrl = AuthSession.makeRedirectUri({ path: 'auth/callback' });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) { Alert.alert('Error', error.message); return; }
+      if (!data?.url) { Alert.alert('Error', 'Kon Google login niet starten'); return; }
+
+      const result = await AuthSession.startAsync({ authUrl: data.url, returnUrl: redirectUrl });
+
+      if (result.type === 'success') {
+        const params = new URLSearchParams(result.url.split('#')[1] || result.url.split('?')[1] || '');
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (accessToken) {
+          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          navigation.navigate('MainTabs', { screen: 'groups' });
+        }
+      }
+    } catch (e) {
+      Alert.alert('Error', e.message || 'Google Sign In mislukt');
+    } finally {
+      setSocialLoading(false);
     }
   };
 
@@ -119,7 +211,7 @@ export default function SignInScreen({ navigation }) {
           {/* Header Section with Logo */}
           <View style={styles.header}>
             <Image 
-              source={require('../assets/nieuw_logo_studentenhappie.webp')}
+              source={require('../assets/splash-logo.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -137,6 +229,8 @@ export default function SignInScreen({ navigation }) {
                 placeholderTextColor="#A0A0A0"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoComplete="email"
+                textContentType="emailAddress"
                 editable={!loading}
               />
             </View>
@@ -150,6 +244,8 @@ export default function SignInScreen({ navigation }) {
                 placeholder={t('auth.password')}
                 placeholderTextColor="#A0A0A0"
                 secureTextEntry
+                autoComplete="password"
+                textContentType="password"
                 editable={!loading}
               />
             </View>
@@ -164,7 +260,7 @@ export default function SignInScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.forgotPassword}
               onPress={handleForgotPassword}
               disabled={resetLoading}
@@ -173,6 +269,30 @@ export default function SignInScreen({ navigation }) {
                 {resetLoading ? 'Verzenden...' : 'Wachtwoord vergeten?'}
               </Text>
             </TouchableOpacity>
+
+            {/* Social Sign In */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>of</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {socialLoading ? (
+              <ActivityIndicator size="small" color="#8B7355" style={{ marginVertical: 16 }} />
+            ) : (
+              <>
+                {appleAvailable && (
+                  <TouchableOpacity style={[styles.socialButton, { backgroundColor: '#000000' }]} onPress={handleAppleSignIn}>
+                    <Text style={[styles.socialIcon, { color: '#FFFFFF', fontSize: 20 }]}>{'\uF8FF'}</Text>
+                    <Text style={[styles.socialButtonText, { color: '#FFFFFF' }]}>Doorgaan met Apple</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.socialButton} onPress={handleGoogleSignIn}>
+                  <Image source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }} style={{ width: 20, height: 20 }} />
+                  <Text style={styles.socialButtonText}>Doorgaan met Google</Text>
+                </TouchableOpacity>
+              </>
+            )}
 
             </View>
 
@@ -244,16 +364,17 @@ const styles = StyleSheet.create({
   input: {
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
-    lineHeight: 24,
     color: '#2D2D2D',
-    backgroundColor: '#F8F6F3', // Light beige
+    backgroundColor: '#F8F6F3',
     borderWidth: 1,
     borderColor: '#E8E2DA',
     borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
     letterSpacing: 0.1,
     minHeight: 56,
+    textAlignVertical: 'center',
   },
   signInButton: {
     backgroundColor: '#8B7355',
@@ -346,6 +467,26 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: '#8B7355',
     letterSpacing: 0.2,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8F6F3',
+    borderWidth: 1,
+    borderColor: '#E8E2DA',
+    borderRadius: 14,
+    paddingVertical: 16,
+    marginBottom: 10,
+    gap: 10,
+  },
+  socialIcon: {
+    fontSize: 18,
+  },
+  socialButtonText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    color: '#2D2D2D',
   },
   backgroundDrawing: {
     position: 'absolute',

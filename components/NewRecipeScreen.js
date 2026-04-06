@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   View,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   TextInput,
@@ -12,8 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-  Alert,
-} from 'react-native';
+  Alert, SafeAreaView } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
@@ -200,7 +198,7 @@ export default function NewRecipeScreen({ navigation }) {
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.7,

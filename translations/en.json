@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Student Happie",
+    "name": "Happie.",
     "tagline": "Cook, Share, Enjoy Together"
   },
   "auth": {
@@ -81,7 +81,11 @@
     "create": "Create",
     "memberSingular": "member",
     "memberPlural": "members",
-    "groupNoLongerExists": "This group no longer exists"
+    "groupNoLongerExists": "This group no longer exists",
+    "codeCopied": "Code copied!",
+    "recipes": "Recipes",
+    "groupRecipes": "Group Recipes",
+    "noGroupRecipes": "No recipes shared with this group yet"
   },
   "dinner": {
     "sendRequest": "Send Dinner Request",
@@ -133,6 +137,9 @@
     "vote": "vote",
     "finalResults": "Final Results",
     "wishlist": "Chefs",
+    "chefs": "Chefs",
+    "houses": "Houses",
+    "noHouses": "No houses yet",
     "topRecipe1": "Top Recipe",
     "topRecipe2": "Top 2 Recipes",
     "topRecipes": "What's for dinner tonight?",
@@ -164,6 +171,7 @@
     "fat": "Fat",
     "cookingTime": "Cooking Time",
     "cost": "Cost",
+    "recipes": "Recipes",
     "dietaryInfo": "Dietary Information",
     "cuisineType": "Cuisine Type",
     "discoverNewRecipes": "Discover New Recipes",
@@ -208,7 +216,8 @@
     "changePhoto": "Change",
     "photoPermission": "Allow access to your photo library to pick a photo.",
     "cameraPermission": "Allow access to your camera to take a photo.",
-    "imagePickError": "Could not load photo"
+    "imagePickError": "Could not load photo",
+    "addPhoto": "Add photo"
   },
   "profile": {
     "title": "Profile",
@@ -268,8 +277,8 @@
     "updateProfileInfo": "Update your profile information",
     "inviteFriends": "Invite Friends",
     "inviteFriendsHint": "Share the app with your housemates",
-    "inviteTitle": "Join me on Student Happie!",
-    "inviteMessage": "Hey! Join me on Student Happie - the app that makes planning meals with housemates super easy. Download it here: https://apps.apple.com/app/happie/id6757129676"
+    "inviteTitle": "Join me on Happie!",
+    "inviteMessage": "Hey! Join me on Happie - the app that makes planning meals with housemates super easy. Download it here: https://apps.apple.com/app/happie/id6757129676"
   },
   "form": {
     "group": "Group",
@@ -400,6 +409,8 @@
     "share": "Share",
     "copy": "Copy",
     "copyCode": "Copy code",
+    "shareGroupCode": "Share group code",
+    "inviteMembers": "Invite group members",
     "settings": "Settings",
     "language": "Language",
     "notifications": "Notifications",
@@ -496,5 +507,55 @@
     "joinGroupsToSee": "Join groups to see contacts",
     "noGroup": "No group",
     "confirm": "Confirm ({{count}})"
+  },
+  "chef": {
+    "becomeChef": "Become a Chef",
+    "createProfile": "Create Chef Profile",
+    "createProfileSubtitle": "Create your chef profile and share your recipes with everyone",
+    "chefName": "Chef name",
+    "tag": "Username (@tag)",
+    "tagTaken": "This tag is already taken",
+    "description": "About you",
+    "descriptionPlaceholder": "Tell us about yourself...",
+    "descriptionHuis": "About your house",
+    "descriptionPlaceholderHuis": "Tell us about your house...",
+    "houseName": "House name",
+    "profileImage": "Profile photo",
+    "socialLinks": "Social links (optional)",
+    "myRecipes": "My Published Recipes",
+    "addRecipe": "Add Recipe",
+    "editProfile": "Edit Profile",
+    "profileCreated": "Chef profile created!",
+    "recipePublished": "Recipe published!",
+    "profileUpdated": "Profile updated!",
+    "editRecipe": "Edit recipe",
+    "recipeUpdated": "Recipe updated!",
+    "deleteRecipe": "Delete recipe",
+    "defaultServings": "Number of servings",
+    "addIngredient": "Add ingredient",
+    "addStep": "Add step",
+    "simpleInput": "Quick input",
+    "structuredInput": "Per item input",
+    "profileType": "Profile type",
+    "profileTypeChef": "Chef",
+    "profileTypeHuis": "House",
+    "profileTypeChefDesc": "Posting for yourself",
+    "profileTypeHuisDesc": "Posting for your house",
+    "visibility": "Who can see this?",
+    "visibilityPrivate": "Only me",
+    "visibilityPublic": "Everyone",
+    "visibilityGroups": "Groups only",
+    "visibilityPublicGroups": "Everyone + Groups",
+    "selectGroups": "Share with groups",
+    "sharedWithGroups": "Shared with {{count}} group(s)",
+    "noRecipesYet": "No recipes published yet",
+    "publicToAppear": "Share a recipe with \"Everyone\" to appear in the chefs list",
+    "estimatedCost": "Estimated price (€)",
+    "deleteAccount": "Delete chef profile",
+    "deleteAccountConfirm": "Are you sure you want to delete your chef profile? All your recipes will also be deleted. This cannot be undone.",
+    "accountDeleted": "Chef profile deleted",
+    "addToGroup": "Add recipe to group",
+    "addedToGroup": "Added to",
+    "addToGroupConfirm": "Add"
   }
 }

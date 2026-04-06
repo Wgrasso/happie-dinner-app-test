@@ -1,10 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ScrollView, Image, Modal, Animated } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView, Image, Modal, Animated, SafeAreaView } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { createOrUpdateProfile } from '../lib/profileService';
 import i18n, { saveLanguage } from '../lib/i18n';
-import Toast from './Toast';
 
 // Safe image component that handles missing drawings gracefully
 const SafeDrawing = ({ source, style, resizeMode = "contain" }) => {
@@ -24,7 +23,6 @@ const SafeDrawing = ({ source, style, resizeMode = "contain" }) => {
 
 export default function SignUpScreen({ navigation }) {
   const { t, i18n } = useTranslation();
-  const toastRef = useRef(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -138,7 +136,7 @@ export default function SignUpScreen({ navigation }) {
           {/* Header Section with Logo */}
           <View style={styles.header}>
             <Image 
-              source={require('../assets/nieuw_logo_studentenhappie.webp')}
+              source={require('../assets/splash-logo.png')}
               style={styles.smallLogo}
               resizeMode="contain"
             />
@@ -156,6 +154,8 @@ export default function SignUpScreen({ navigation }) {
                 placeholder={t('auth.fullName')}
                 placeholderTextColor="#A0A0A0"
                 autoCapitalize="words"
+                autoComplete="name"
+                textContentType="name"
                 editable={!loading}
               />
             </View>
@@ -170,6 +170,8 @@ export default function SignUpScreen({ navigation }) {
                 placeholderTextColor="#A0A0A0"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoComplete="email"
+                textContentType="emailAddress"
                 editable={!loading}
               />
             </View>
@@ -183,6 +185,8 @@ export default function SignUpScreen({ navigation }) {
                 placeholder={t('auth.password')}
                 placeholderTextColor="#A0A0A0"
                 secureTextEntry
+                autoComplete="password-new"
+                textContentType="newPassword"
                 editable={!loading}
               />
             </View>
@@ -196,6 +200,8 @@ export default function SignUpScreen({ navigation }) {
                 placeholder={t('auth.confirmPassword')}
                 placeholderTextColor="#A0A0A0"
                 secureTextEntry
+                autoComplete="password-new"
+                textContentType="newPassword"
                 editable={!loading}
               />
             </View>
@@ -311,7 +317,6 @@ export default function SignUpScreen({ navigation }) {
       </Modal>
       
       {/* Toast Component */}
-      <Toast ref={toastRef} />
     </SafeAreaView>
   );
 }
@@ -388,16 +393,17 @@ const styles = StyleSheet.create({
   input: {
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
-    lineHeight: 24,
     color: '#2D2D2D',
-    backgroundColor: '#F8F6F3', // Light beige
+    backgroundColor: '#F8F6F3',
     borderWidth: 1,
     borderColor: '#E8E2DA',
     borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
     letterSpacing: 0.1,
-    minHeight: 56, // Ensure consistent height
+    minHeight: 56,
+    textAlignVertical: 'center',
   },
   signUpButton: {
     backgroundColor: '#8B7355',

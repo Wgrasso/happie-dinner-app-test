@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Easing, Platform, View, Image } from 'react-native';
+import { Easing, Platform, View, Image, Linking } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -112,6 +112,48 @@ export default function App() {
   const navigationRef = useRef();
 
   const [initialRoute, setInitialRoute] = useState(null);
+  const [pendingJoinCode, setPendingJoinCode] = useState(null);
+
+  // Deep linking config: happie://join/CODE
+  const linking = {
+    prefixes: ['happie://', 'https://studentenhappie.nl'],
+    config: {
+      screens: {
+        MainTabs: {
+          path: 'join/:joinCode',
+        },
+      },
+    },
+    async getInitialURL() {
+      const url = await Linking.getInitialURL();
+      if (url) handleDeepLink(url);
+      return url;
+    },
+    subscribe(listener) {
+      const sub = Linking.addEventListener('url', ({ url }) => {
+        handleDeepLink(url);
+        listener(url);
+      });
+      return () => sub.remove();
+    },
+  };
+
+  const handleDeepLink = (url) => {
+    if (!url) return;
+    const joinMatch = url.match(/(?:happie:\/\/|studentenhappie\.nl\/)join\/([A-Z0-9]+)/i);
+    if (joinMatch) {
+      setPendingJoinCode(joinMatch[1].toUpperCase());
+      return;
+    }
+    // Password reset deep link — Supabase appends tokens as hash params
+    if (url.includes('auth/reset') || url.includes('type=recovery')) {
+      // Supabase JS client auto-handles the token exchange when the app opens
+      // Just navigate to sign in
+      if (navigationRef.current) {
+        navigationRef.current.navigate('SignIn');
+      }
+    }
+  };
 
   let [fontsLoaded] = useFonts({
     PlayfairDisplay_400Regular,
@@ -178,8 +220,8 @@ export default function App() {
     return (
       <View style={{ flex: 1, backgroundColor: '#FEFEFE', justifyContent: 'center', alignItems: 'center' }}>
         <Image
-          source={require('./assets/nieuw_logo_studentenhappie.webp')}
-          style={{ width: 240, height: 240 }}
+          source={require('./assets/splash-logo.png')}
+          style={{ width: 560, height: 280 }}
           resizeMode="contain"
         />
       </View>
@@ -190,7 +232,7 @@ export default function App() {
     <SafeAreaProvider>
     <AppStateProvider>
         <ToastProvider>
-      <NavigationContainer ref={navigationRef}>
+      <NavigationContainer ref={navigationRef} linking={linking}>
         <StatusBar style="dark" />
         <Stack.Navigator
           initialRouteName={initialRoute}
@@ -202,11 +244,15 @@ export default function App() {
             ...smoothSlideTransition,
           }}
         >
-          <Stack.Screen 
-            name="MainTabs" 
-            component={MainTabNavigator}
-                options={fadeTransition}
-          />
+          <Stack.Screen name="MainTabs" options={fadeTransition}>
+            {(props) => (
+              <MainTabNavigator
+                {...props}
+                pendingJoinCode={pendingJoinCode}
+                onJoinCodeHandled={() => setPendingJoinCode(null)}
+              />
+            )}
+          </Stack.Screen>
           <Stack.Screen 
             name="SignIn" 
             component={SignInScreen}

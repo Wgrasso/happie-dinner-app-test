@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Studenten Happie",
+    "name": "Happie.",
     "tagline": "Koken, Delen, Samen Genieten"
   },
   "auth": {
@@ -81,7 +81,11 @@
     "create": "Maken",
     "memberSingular": "lid",
     "memberPlural": "leden",
-    "groupNoLongerExists": "Deze groep bestaat niet meer"
+    "groupNoLongerExists": "Deze groep bestaat niet meer",
+    "codeCopied": "Code gekopieerd!",
+    "recipes": "Recepten",
+    "groupRecipes": "Groepsrecepten",
+    "noGroupRecipes": "Nog geen recepten gedeeld met deze groep"
   },
   "dinner": {
     "sendRequest": "Diner Verzoek Sturen",
@@ -133,6 +137,9 @@
     "vote": "stem",
     "finalResults": "Eindresultaten",
     "wishlist": "Chefs",
+    "chefs": "Chefs",
+    "houses": "Huizen",
+    "noHouses": "Nog geen huizen",
     "topRecipe1": "Top Recept",
     "topRecipe2": "Top 2 Recepten",
     "topRecipes": "Wat eten we vanavond?",
@@ -164,6 +171,7 @@
     "fat": "Vetten",
     "cookingTime": "Kooktijd",
     "cost": "Kosten",
+    "recipes": "Recepten",
     "dietaryInfo": "Dieetinformatie",
     "cuisineType": "Keuken Type",
     "discoverNewRecipes": "Ontdek Nieuwe Recepten",
@@ -207,7 +215,8 @@
     "changePhoto": "Wijzig",
     "photoPermission": "Geef toegang tot je fotobibliotheek om een foto te kiezen.",
     "cameraPermission": "Geef toegang tot je camera om een foto te maken.",
-    "imagePickError": "Kon foto niet laden"
+    "imagePickError": "Kon foto niet laden",
+    "addPhoto": "Foto toevoegen"
   },
   "profile": {
     "title": "Profiel",
@@ -267,8 +276,8 @@
     "updateProfileInfo": "Werk je profielinformatie bij",
     "inviteFriends": "Vrienden uitnodigen",
     "inviteFriendsHint": "Deel de app met je huisgenoten",
-    "inviteTitle": "Doe mee met Studenten Happie!",
-    "inviteMessage": "Hey! Doe mee met Studenten Happie - de app die maaltijden plannen met huisgenoten super makkelijk maakt. Download hier: https://apps.apple.com/app/happie/id6757129676"
+    "inviteTitle": "Doe mee met Happie!",
+    "inviteMessage": "Hey! Doe mee met Happie - de app die maaltijden plannen met huisgenoten super makkelijk maakt. Download hier: https://apps.apple.com/app/happie/id6757129676"
   },
   "form": {
     "group": "Groep",
@@ -399,6 +408,8 @@
     "share": "Delen",
     "copy": "Kopiëren",
     "copyCode": "Kopieer code",
+    "shareGroupCode": "Deel groepscode",
+    "inviteMembers": "Groepsleden uitnodigen",
     "settings": "Instellingen",
     "language": "Taal",
     "notifications": "Meldingen",
@@ -495,5 +506,55 @@
     "joinGroupsToSee": "Word lid van groepen om contacten te zien",
     "noGroup": "Geen groep",
     "confirm": "Bevestigen ({{count}})"
+  },
+  "chef": {
+    "becomeChef": "Word een Chef",
+    "createProfile": "Chef profiel aanmaken",
+    "createProfileSubtitle": "Maak je chef profiel aan en deel je recepten met iedereen",
+    "chefName": "Chef naam",
+    "tag": "Gebruikersnaam (@tag)",
+    "tagTaken": "Deze tag is al bezet",
+    "description": "Over jou",
+    "descriptionPlaceholder": "Vertel iets over jezelf...",
+    "descriptionHuis": "Over jullie",
+    "descriptionPlaceholderHuis": "Vertel iets over jullie huis...",
+    "houseName": "Huis naam",
+    "profileImage": "Profielfoto",
+    "socialLinks": "Sociale links (optioneel)",
+    "myRecipes": "Mijn recepten",
+    "addRecipe": "Recept toevoegen",
+    "editProfile": "Profiel bewerken",
+    "profileCreated": "Chef profiel aangemaakt!",
+    "recipePublished": "Recept gepubliceerd!",
+    "profileUpdated": "Profiel bijgewerkt!",
+    "editRecipe": "Recept bewerken",
+    "recipeUpdated": "Recept bijgewerkt!",
+    "deleteRecipe": "Recept verwijderen",
+    "defaultServings": "Aantal personen",
+    "addIngredient": "Ingrediënt toevoegen",
+    "addStep": "Stap toevoegen",
+    "simpleInput": "Snel invoeren",
+    "structuredInput": "Per stuk invoeren",
+    "profileType": "Profiel type",
+    "profileTypeChef": "Chef",
+    "profileTypeHuis": "Huis",
+    "profileTypeChefDesc": "Post voor jezelf",
+    "profileTypeHuisDesc": "Post voor je huis",
+    "visibility": "Wie kan dit zien?",
+    "visibilityPrivate": "Alleen ik",
+    "visibilityPublic": "Iedereen",
+    "visibilityGroups": "Alleen groepen",
+    "visibilityPublicGroups": "Iedereen + Groepen",
+    "selectGroups": "Deel met groepen",
+    "sharedWithGroups": "Gedeeld met {{count}} groep(en)",
+    "noRecipesYet": "Nog geen recepten geplaatst",
+    "publicToAppear": "Deel een recept met \"Iedereen\" om zichtbaar te worden in de chefs lijst",
+    "estimatedCost": "Geschatte prijs (€)",
+    "deleteAccount": "Chef profiel verwijderen",
+    "deleteAccountConfirm": "Weet je zeker dat je je chef profiel wilt verwijderen? Al je recepten worden ook verwijderd. Dit kan niet ongedaan worden.",
+    "accountDeleted": "Chef profiel verwijderd",
+    "addToGroup": "Recept toevoegen aan groep",
+    "addedToGroup": "Toegevoegd aan",
+    "addToGroupConfirm": "Toevoegen"
   }
 }
