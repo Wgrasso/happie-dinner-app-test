@@ -42,6 +42,8 @@ import { Feather } from '@expo/vector-icons';
 import { notifyOccasionParticipants } from '../lib/notificationService';
 import { sortTopMeals } from '../lib/sortTopMeals';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import GroupSwitcherDropdown, { loadGroupOrder, saveGroupOrder, sortGroupsByOrder } from './GroupSwitcherDropdown';
+import { getActiveShopperToday, startShopping, stopShopping } from '../lib/shoppingService';
 
 // Configure Dutch locale for calendar
 LocaleConfig.locales['nl'] = {
@@ -126,7 +128,7 @@ const YesNoToggle = ({ value, onChange, disabled = false }) => {
 
   const highlightRight = slideAnimation.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: ['#E8E2DA', '#E8E2DA', '#4CAF50'],
+    outputRange: ['#E8E2DA', '#E8E2DA', '#FF6B00'],
   });
 
   return (
@@ -459,7 +461,7 @@ const ExpandableGroupCard = React.memo(({
 
   // Status dot color based on my response
   const getStatusColor = () => {
-    if (myResponse === 'yes') return '#4CAF50';
+    if (myResponse === 'yes') return '#FF6B00';
     if (myResponse === 'no') return '#FF9800';
     return '#D0D0D0';
   };
@@ -468,10 +470,15 @@ const ExpandableGroupCard = React.memo(({
   const yesCount = members?.filter(m => memberResponses?.[m.user_id] === 'yes').length || 0;
   const noCount = members?.filter(m => memberResponses?.[m.user_id] === 'no').length || 0;
   const maxColumnCount = Math.max(yesCount, noCount, 1);
-  const attendeesHeight = 14 + 20 + (maxColumnCount * 22); // paddingTop + label + names (generous)
-  const actionButtonsHeight = recipeType !== 'no_voting' && myResponse === 'yes' ? 60 : 0;
+  // Avatar layout: rows of ~3-4 avatars per row, each row ~60px
+  const avatarRows = Math.ceil(maxColumnCount / 3);
+  const attendeesHeight = 14 + 30 + (avatarRows * 64); // paddingTop + label row + avatar rows
+  // Voting CTA: big (60px) or small (48px)
+  const hasCTA = recipeType !== 'no_voting' && myResponse === 'yes';
+  const isFirstVote = hasCTA && (!topMeals || topMeals.length === 0);
+  const actionButtonsHeight = hasCTA ? (isFirstVote ? 74 : 58) : 0;
   const top3CardCount = topMeals?.length > 0 ? Math.min(topMeals.length, 3) : 0;
-  const top3Height = recipeType !== 'no_voting' && top3CardCount > 0 ? (24 + top3CardCount * 70) : 0;
+  const top3Height = recipeType !== 'no_voting' && top3CardCount > 0 ? (28 + top3CardCount * 80) : 0;
   const threeDotsHeight = 48;
   const bottomPadding = 18;
   
@@ -492,7 +499,7 @@ const ExpandableGroupCard = React.memo(({
     toast.success(t('groups.codeCopied') || 'Code gekopieerd!');
     try {
       await Share.share({
-        message: `Join mijn groep op Happie.\n\nGroepscode: ${code}\n\nhttps://apps.apple.com/app/happie/id6757129676`,
+        message: `═══════════════════\n  HAPPIE GROEP JOINEN\n═══════════════════\n\nJe bent uitgenodigd! Open deze link:\nhttps://studentenhappie.nl/join/${code}\n\nOf download de app en vul de code in:\n\n🔑 Code: ${code}\n\n📲 https://apps.apple.com/app/happie/id6757129676\n\n═══════════════════`,
       });
     } catch (_) {}
   };
@@ -584,115 +591,234 @@ const ExpandableGroupCard = React.memo(({
         { maxHeight: expandedHeight, opacity: expandAnimation }
       ]}>
         <View style={cardStyles.expandedInner}>
-          {/* Two-column Attendees List - Labels always visible */}
+          {/* === SECTION 2: WHO'S EATING — Avatar-based layout === */}
           <View style={cardStyles.attendeesRow}>
             {/* Attending Column */}
-            <View style={cardStyles.attendeesColumn}>
-              <Text style={cardStyles.attendeesLabelGreen}>{t('common.attending')}</Text>
+            <View style={[cardStyles.attendeesColumn, cardStyles.attendeesColumnYes]}>
+              <View style={cardStyles.attendeesLabelRow}>
+                <Text style={cardStyles.attendeesLabelGreen}>{t('common.attending')}</Text>
+                {!loadingMembers && (
+                  <Text style={cardStyles.attendeesCount}>
+                    {members?.filter(m => memberResponses?.[m.user_id] === 'yes').length || 0}
+                  </Text>
+                )}
+              </View>
               {loadingMembers ? (
-                <ActivityIndicator size="small" color="#4CAF50" style={{ marginTop: 4 }} />
-              ) : members?.filter(m => memberResponses?.[m.user_id] === 'yes').length > 0 ? (
-                members
-                  .filter(m => memberResponses?.[m.user_id] === 'yes')
-                  .map(m => (
-                    <Text key={m.user_id} style={cardStyles.attendeeName}>
-                      {m.full_name || m.user_name || t('common.unknown')}
-                      {m.user_id === currentUserId && ` (${t('common.you')})`}
-                    </Text>
-                  ))
+                <ActivityIndicator size="small" color="#FF6B00" style={{ marginTop: 8 }} />
               ) : (
-                <Text style={cardStyles.noAttendees}>-</Text>
+                <View style={cardStyles.avatarRow}>
+                  {members?.filter(m => memberResponses?.[m.user_id] === 'yes').length > 0 ? (
+                    members
+                      .filter(m => memberResponses?.[m.user_id] === 'yes')
+                      .map(m => {
+                        const isMe = m.user_id === currentUserId;
+                        const displayName = m.full_name || m.user_name || '?';
+                        return (
+                          <View key={m.user_id} style={cardStyles.avatarItem}>
+                            <View style={[
+                              cardStyles.avatarCircle,
+                              cardStyles.avatarCircleYes,
+                              isMe && cardStyles.avatarCircleMe,
+                            ]}>
+                              <Text style={[cardStyles.avatarInitial, isMe && cardStyles.avatarInitialMe]}>
+                                {displayName.charAt(0).toUpperCase()}
+                              </Text>
+                            </View>
+                            <Text style={cardStyles.avatarName} numberOfLines={1}>
+                              {isMe ? t('common.you') : displayName.split(' ')[0]}
+                            </Text>
+                          </View>
+                        );
+                      })
+                  ) : (
+                    <Text style={cardStyles.noAttendees}>-</Text>
+                  )}
+                </View>
               )}
             </View>
 
             {/* Not Attending Column */}
-            <View style={cardStyles.attendeesColumn}>
-              <Text style={cardStyles.attendeesLabelRed}>{t('common.notAttending')}</Text>
+            <View style={[cardStyles.attendeesColumn, cardStyles.attendeesColumnNo]}>
+              <View style={cardStyles.attendeesLabelRow}>
+                <Text style={cardStyles.attendeesLabelRed}>{t('common.notAttending')}</Text>
+                {!loadingMembers && (
+                  <Text style={cardStyles.attendeesCountNo}>
+                    {members?.filter(m => memberResponses?.[m.user_id] === 'no').length || 0}
+                  </Text>
+                )}
+              </View>
               {loadingMembers ? (
-                <ActivityIndicator size="small" color="#f44336" style={{ marginTop: 4 }} />
-              ) : members?.filter(m => memberResponses?.[m.user_id] === 'no').length > 0 ? (
-                members
-                  .filter(m => memberResponses?.[m.user_id] === 'no')
-                  .map(m => (
-                    <Text key={m.user_id} style={cardStyles.attendeeNameNo}>
-                      {m.full_name || m.user_name || t('common.unknown')}
-                      {m.user_id === currentUserId && ` (${t('common.you')})`}
-                    </Text>
-                  ))
+                <ActivityIndicator size="small" color="#E57373" style={{ marginTop: 8 }} />
               ) : (
-                <Text style={cardStyles.noAttendees}>-</Text>
+                <View style={cardStyles.avatarRow}>
+                  {members?.filter(m => memberResponses?.[m.user_id] === 'no').length > 0 ? (
+                    members
+                      .filter(m => memberResponses?.[m.user_id] === 'no')
+                      .map(m => {
+                        const isMe = m.user_id === currentUserId;
+                        const displayName = m.full_name || m.user_name || '?';
+                        return (
+                          <View key={m.user_id} style={cardStyles.avatarItem}>
+                            <View style={[
+                              cardStyles.avatarCircle,
+                              cardStyles.avatarCircleNo,
+                              isMe && cardStyles.avatarCircleMeNo,
+                            ]}>
+                              <Text style={cardStyles.avatarInitial}>
+                                {displayName.charAt(0).toUpperCase()}
+                              </Text>
+                            </View>
+                            <Text style={cardStyles.avatarNameNo} numberOfLines={1}>
+                              {isMe ? t('common.you') : displayName.split(' ')[0]}
+                            </Text>
+                          </View>
+                        );
+                      })
+                  ) : (
+                    <Text style={cardStyles.noAttendees}>-</Text>
+                  )}
+                </View>
               )}
             </View>
           </View>
 
-          {/* Action Buttons Row - Only show if voting enabled and user responded yes */}
+          {/* === SECTION 3: VOTING CTA — Prominent when user hasn't voted === */}
           {recipeType !== 'no_voting' && myResponse === 'yes' && (
-            <View style={cardStyles.actionButtonsRow}>
-            <TouchableOpacity
-                style={[cardStyles.actionBtn, cardStyles.actionBtnFull]}
-              onPress={onStartVoting}
-              disabled={actionLoading}
-            >
-              {actionLoading ? (
-                  <ActivityIndicator color="#8B7355" size="small" />
-                ) : (
-                  <Text style={cardStyles.actionBtnText}>{t('common.voting')}</Text>
+            <View style={cardStyles.votingCTASection}>
+              {(!topMeals || topMeals.length === 0) ? (
+                /* No votes yet — big prominent CTA */
+                <TouchableOpacity
+                  style={cardStyles.votingCTABig}
+                  onPress={onStartVoting}
+                  disabled={actionLoading}
+                  activeOpacity={0.8}
+                >
+                  {actionLoading ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <>
+                      <Text style={cardStyles.votingCTAEmoji}>🗳</Text>
+                      <View style={cardStyles.votingCTATextWrap}>
+                        <Text style={cardStyles.votingCTATitle}>{t('meals.voteOnMeals') || 'Kies wat we eten vanavond'}</Text>
+                        <Text style={cardStyles.votingCTASubtitle}>{t('meals.tapToVote') || 'Stem op je favoriete gerecht'}</Text>
+                      </View>
+                      <Feather name="chevron-right" size={20} color="#FFFFFF" />
+                    </>
+                  )}
+                </TouchableOpacity>
+              ) : (
+                /* Already has votes — smaller action button */
+                <TouchableOpacity
+                  style={cardStyles.votingCTASmall}
+                  onPress={onStartVoting}
+                  disabled={actionLoading}
+                  activeOpacity={0.8}
+                >
+                  {actionLoading ? (
+                    <ActivityIndicator color="#FF6B00" size="small" />
+                  ) : (
+                    <>
+                      <Feather name="check-circle" size={16} color="#FF6B00" />
+                      <Text style={cardStyles.votingCTASmallText}>{t('common.voting')}</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
             </View>
           )}
 
-          {/* Top 3 inline preview - each row is tappable to show full recipe */}
-          {recipeType !== 'no_voting' && (topMeals?.length > 0 || topMealsLoading) && (
-            <View style={cardStyles.top3Section}>
-              <Text style={cardStyles.top3SectionTitle}>{t('meals.topRecipes')}</Text>
-              {topMeals && topMeals.length > 0 && (
-                <View style={cardStyles.top3Preview}>
-                  {topMeals.slice(0, 3).map((meal, idx) => {
-                    const name = meal.meal_data?.name || t('meals.recipe');
-                    const votes = meal.yes_votes ?? meal.vote_total ?? 0;
-                    const thumbnailUrl = meal.meal_data?.thumbnail_url;
-                    const cookingTime = meal.meal_data?.total_time_minutes;
-                    return (
-                      <TouchableOpacity
-                        key={meal.meal_option_id || idx}
-                        style={cardStyles.top3RecipeCard}
-                        onPress={() => onRecipePress?.(meal)}
-                        activeOpacity={0.7}
-                      >
-                        {thumbnailUrl ? (
-                          <Image 
-                            source={{ uri: thumbnailUrl }} 
-                            style={cardStyles.top3RecipeImage}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <View style={[cardStyles.top3RecipeImage, cardStyles.top3RecipeImagePlaceholder]}>
-                            <Text style={cardStyles.top3RecipeImageEmoji}>🍽</Text>
+          {/* === SECTION 1: DISH LIST — Redesigned recipe cards with vote bars === */}
+          {recipeType !== 'no_voting' && (topMeals?.length > 0 || topMealsLoading) && (() => {
+            // Sort by votes (highest first)
+            const sortedMeals = topMeals ? [...topMeals].sort((a, b) => {
+              const votesA = a.yes_votes ?? a.vote_total ?? 0;
+              const votesB = b.yes_votes ?? b.vote_total ?? 0;
+              return votesB - votesA;
+            }) : [];
+            const maxVotes = sortedMeals.length > 0 ? Math.max(1, sortedMeals[0]?.yes_votes ?? sortedMeals[0]?.vote_total ?? 0) : 1;
+
+            return (
+              <View style={cardStyles.top3Section}>
+                <Text style={cardStyles.top3SectionTitle}>{t('meals.topRecipes')}</Text>
+                {sortedMeals.length > 0 && (
+                  <View style={cardStyles.top3Preview}>
+                    {sortedMeals.slice(0, 3).map((meal, idx) => {
+                      const name = meal.meal_data?.name || t('meals.recipe');
+                      const votes = meal.yes_votes ?? meal.vote_total ?? 0;
+                      const thumbnailUrl = meal.meal_data?.thumbnail_url;
+                      const cookingTime = meal.meal_data?.total_time_minutes;
+                      const isTopVoted = idx === 0 && votes > 0;
+                      const voteRatio = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
+                      const tags = meal.meal_data?.tags;
+
+                      return (
+                        <TouchableOpacity
+                          key={meal.meal_option_id || idx}
+                          style={[
+                            cardStyles.top3RecipeCard,
+                            isTopVoted && cardStyles.top3RecipeCardTop,
+                          ]}
+                          onPress={() => onRecipePress?.(meal)}
+                          activeOpacity={0.7}
+                        >
+                          {/* Rank badge */}
+                          <View style={[
+                            cardStyles.top3RankBadge,
+                            { backgroundColor: idx === 0 ? '#FF6B00' : idx === 1 ? '#A09485' : '#C0B9AE' },
+                          ]}>
+                            <Text style={cardStyles.top3RankText}>{idx + 1}</Text>
                           </View>
-                        )}
-                        <View style={cardStyles.top3RecipeInfo}>
-                          <Text style={cardStyles.top3RecipeName} numberOfLines={1}>{name}</Text>
-                          <View style={cardStyles.top3RecipeMeta}>
-                            {cookingTime ? (
-                              <Text style={cardStyles.top3RecipeTime}>{cookingTime} min</Text>
-                            ) : null}
-                            <Text style={cardStyles.top3RecipeVotes}>{votes} {votes === 1 ? t('meals.vote') : t('meals.votes')}</Text>
+
+                          {/* Thumbnail */}
+                          {thumbnailUrl ? (
+                            <Image
+                              source={{ uri: thumbnailUrl }}
+                              style={cardStyles.top3RecipeImage}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <View style={[cardStyles.top3RecipeImage, cardStyles.top3RecipeImagePlaceholder]}>
+                              <Text style={cardStyles.top3RecipeImageEmoji}>🍽</Text>
+                            </View>
+                          )}
+
+                          {/* Info + vote bar */}
+                          <View style={cardStyles.top3RecipeInfo}>
+                            <Text style={[cardStyles.top3RecipeName, isTopVoted && cardStyles.top3RecipeNameTop]} numberOfLines={1}>{name}</Text>
+                            <View style={cardStyles.top3RecipeMeta}>
+                              {cookingTime ? (
+                                <Text style={cardStyles.top3RecipeTime}>⏱ {cookingTime} min</Text>
+                              ) : null}
+                              {tags && tags.length > 0 && tags.slice(0, 1).map((tag, ti) => (
+                                <View key={ti} style={cardStyles.top3RecipeTag}>
+                                  <Text style={cardStyles.top3RecipeTagText}>{tag}</Text>
+                                </View>
+                              ))}
+                            </View>
+                            {/* Vote progress bar */}
+                            <View style={cardStyles.voteBarContainer}>
+                              <View style={[cardStyles.voteBarFill, { width: `${voteRatio}%` }, isTopVoted && cardStyles.voteBarFillTop]} />
+                            </View>
                           </View>
-                        </View>
-                        <Text style={cardStyles.top3RecipeChevron}>›</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              )}
-              {topMealsLoading && (!topMeals || topMeals.length === 0) && (
-                <View style={cardStyles.top3Preview}>
-                  <ActivityIndicator size="small" color="#8B7355" />
-                </View>
-              )}
-            </View>
-          )}
+
+                          {/* Vote count */}
+                          <View style={cardStyles.top3VoteCount}>
+                            <Text style={[cardStyles.top3VoteNumber, isTopVoted && cardStyles.top3VoteNumberTop]}>{votes}</Text>
+                            <Text style={cardStyles.top3VoteLabel}>{votes === 1 ? t('meals.vote') : t('meals.votes')}</Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+                {topMealsLoading && (!topMeals || topMeals.length === 0) && (
+                  <View style={cardStyles.top3Preview}>
+                    <ActivityIndicator size="small" color="#8B7355" />
+                  </View>
+                )}
+              </View>
+            );
+          })()}
 
           {/* Bottom row: invite + recipes, menu right */}
           <View style={cardStyles.bottomRow}>
@@ -935,8 +1061,8 @@ const cardStyles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   responseBtnYesActive: {
-    backgroundColor: '#4CAF50',
-    shadowColor: '#4CAF50',
+    backgroundColor: '#FF6B00',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -975,20 +1101,33 @@ const cardStyles = StyleSheet.create({
     paddingVertical: 20,
     alignItems: 'center',
   },
-  // Two-column attendee layout (like occasions)
+  // === SECTION 2: Avatar-based attendee layout ===
   attendeesRow: {
     flexDirection: 'row',
     paddingTop: 14,
-    gap: 16,
+    gap: 10,
   },
   attendeesColumn: {
     flex: 1,
+    borderRadius: 12,
+    padding: 10,
+  },
+  attendeesColumnYes: {
+    backgroundColor: 'rgba(255, 107, 0, 0.06)',
+  },
+  attendeesColumnNo: {
+    backgroundColor: 'rgba(229, 115, 115, 0.06)',
+  },
+  attendeesLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   attendeesLabelGreen: {
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
-    color: '#4CAF50',
-    marginBottom: 6,
+    color: '#FF6B00',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -996,21 +1135,92 @@ const cardStyles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
     color: '#E57373',
-    marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  attendeeName: {
-    fontSize: 13,
-    fontFamily: 'Inter_400Regular',
-    color: '#2D2D2D',
-    paddingVertical: 3,
+  attendeesCount: {
+    fontSize: 12,
+    fontFamily: 'Inter_700Bold',
+    color: '#FF6B00',
+    backgroundColor: 'rgba(255, 107, 0, 0.12)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+    overflow: 'hidden',
   },
-  attendeeNameNo: {
-    fontSize: 13,
+  attendeesCountNo: {
+    fontSize: 12,
+    fontFamily: 'Inter_700Bold',
+    color: '#E57373',
+    backgroundColor: 'rgba(229, 115, 115, 0.12)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  avatarRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  avatarItem: {
+    alignItems: 'center',
+    width: 44,
+  },
+  avatarCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 3,
+  },
+  avatarCircleYes: {
+    backgroundColor: 'rgba(255, 107, 0, 0.15)',
+  },
+  avatarCircleNo: {
+    backgroundColor: 'rgba(229, 115, 115, 0.12)',
+  },
+  avatarCircleMe: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FF6B00',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: '#FF6B00',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatarCircleMeNo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E57373',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  avatarInitial: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#5A4A3A',
+  },
+  avatarInitialMe: {
+    color: '#FFFFFF',
+  },
+  avatarName: {
+    fontSize: 10,
+    fontFamily: 'Inter_400Regular',
+    color: '#5A4A3A',
+    textAlign: 'center',
+  },
+  avatarNameNo: {
+    fontSize: 10,
     fontFamily: 'Inter_400Regular',
     color: '#A09A92',
-    paddingVertical: 3,
+    textAlign: 'center',
   },
   noAttendees: {
     fontSize: 13,
@@ -1018,37 +1228,61 @@ const cardStyles = StyleSheet.create({
     color: '#CCC',
     fontStyle: 'italic',
   },
-  // Action buttons row
-  actionButtonsRow: {
-    flexDirection: 'row',
-    gap: 10,
+  // === SECTION 3: Voting CTA ===
+  votingCTASection: {
     marginTop: 14,
     paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: '#F0EDE8',
   },
-  actionBtn: {
+  votingCTABig: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF6B00',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    shadowColor: '#FF6B00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  votingCTAEmoji: {
+    fontSize: 22,
+    marginRight: 12,
+  },
+  votingCTATextWrap: {
     flex: 1,
+  },
+  votingCTATitle: {
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  votingCTASubtitle: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    color: 'rgba(255,255,255,0.8)',
+  },
+  votingCTASmall: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F5F2EE',
-    paddingVertical: 12,
-    borderRadius: 14,
+    backgroundColor: 'rgba(255, 107, 0, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 0, 0.2)',
+    paddingVertical: 10,
+    borderRadius: 12,
     gap: 6,
   },
-  actionBtnIcon: {
-    fontSize: 16,
-  },
-  actionBtnText: {
+  votingCTASmallText: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
-  actionBtnFull: {
-    flex: 1,
-  },
-  // Top 3 section
+  // === SECTION 1: Redesigned dish list ===
   top3Section: {
     marginTop: 12,
   },
@@ -1059,17 +1293,22 @@ const cardStyles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 0.3,
   },
-  // Top 3 recipe cards
   top3Preview: {
-    gap: 6,
+    gap: 8,
   },
   top3RecipeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F2EE',
-    borderRadius: 12,
-    padding: 8,
+    backgroundColor: '#F8F6F3',
+    borderRadius: 14,
+    padding: 10,
     paddingRight: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  top3RecipeCardTop: {
+    backgroundColor: 'rgba(255, 107, 0, 0.06)',
+    borderColor: 'rgba(255, 107, 0, 0.15)',
   },
   top3RankBadge: {
     width: 22,
@@ -1085,9 +1324,9 @@ const cardStyles = StyleSheet.create({
     color: '#FFFFFF',
   },
   top3RecipeImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     marginRight: 10,
   },
   top3RecipeImagePlaceholder: {
@@ -1104,29 +1343,69 @@ const cardStyles = StyleSheet.create({
   },
   top3RecipeName: {
     fontSize: 14,
-    fontFamily: 'Inter_500Medium',
-    color: '#3A3A3A',
-    marginBottom: 2,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#2D2D2D',
+    marginBottom: 3,
+  },
+  top3RecipeNameTop: {
+    color: '#FF6B00',
   },
   top3RecipeMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    marginBottom: 5,
   },
   top3RecipeTime: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter_400Regular',
     color: '#8B8885',
   },
-  top3RecipeVotes: {
-    fontSize: 12,
+  top3RecipeTag: {
+    backgroundColor: 'rgba(139, 115, 85, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  top3RecipeTagText: {
+    fontSize: 10,
     fontFamily: 'Inter_500Medium',
     color: '#8B7355',
   },
-  top3RecipeChevron: {
-    fontSize: 20,
-    color: '#C0B9AE',
-    marginLeft: 4,
+  // Vote progress bar
+  voteBarContainer: {
+    height: 4,
+    backgroundColor: 'rgba(139, 115, 85, 0.1)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  voteBarFill: {
+    height: '100%',
+    backgroundColor: '#C0B9AE',
+    borderRadius: 2,
+  },
+  voteBarFillTop: {
+    backgroundColor: '#FF6B00',
+  },
+  // Vote count badge
+  top3VoteCount: {
+    alignItems: 'center',
+    marginLeft: 10,
+    minWidth: 30,
+  },
+  top3VoteNumber: {
+    fontSize: 16,
+    fontFamily: 'Inter_700Bold',
+    color: '#8B7355',
+  },
+  top3VoteNumberTop: {
+    color: '#FF6B00',
+  },
+  top3VoteLabel: {
+    fontSize: 9,
+    fontFamily: 'Inter_400Regular',
+    color: '#A09A92',
+    textTransform: 'uppercase',
   },
   // Three-dot menu button
   threeDotsButton: {
@@ -1343,7 +1622,7 @@ const cardStyles = StyleSheet.create({
     color: '#999',
   },
   memberStatusTextYes: {
-    color: '#4CAF50',
+    color: '#FF6B00',
   },
   memberStatusTextNo: {
     color: '#FF9800',
@@ -1362,13 +1641,13 @@ const cardStyles = StyleSheet.create({
   },
   voteButtonAccepted: {
     marginTop: 16,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FF6B00',
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    shadowColor: '#4CAF50',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
@@ -1498,7 +1777,7 @@ const ExpandableOccasionCard = React.memo(({
 
   // Status dot color based on my response
   const getStatusColor = () => {
-    if (myResponse === 'yes') return '#4CAF50';
+    if (myResponse === 'yes') return '#FF6B00';
     if (myResponse === 'no') return '#FF9800';
     return '#D0D0D0';
   };
@@ -1597,7 +1876,7 @@ const ExpandableOccasionCard = React.memo(({
           {/* Response Summary */}
           <View style={occasionStyles.summarySection}>
             <View style={occasionStyles.summaryItem}>
-              <View style={[occasionStyles.summaryDot, { backgroundColor: '#4CAF50' }]} />
+              <View style={[occasionStyles.summaryDot, { backgroundColor: '#FF6B00' }]} />
               <Text style={occasionStyles.summaryText}>{counts.yes} {t('common.yes').toLowerCase()}</Text>
             </View>
             <View style={occasionStyles.summaryItem}>
@@ -1891,7 +2170,7 @@ const occasionStyles = StyleSheet.create({
     color: '#999',
   },
   memberStatusTextYes: {
-    color: '#4CAF50',
+    color: '#FF6B00',
   },
   memberStatusTextNo: {
     color: '#FF9800',
@@ -1910,13 +2189,13 @@ const occasionStyles = StyleSheet.create({
   },
   voteButtonAccepted: {
     marginTop: 12,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FF6B00',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    shadowColor: '#4CAF50',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -2043,18 +2322,33 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   
-  // Expanded card state
-  const [expandedGroupId, setExpandedGroupId] = useState(null);
-  const expandedGroupIdRef = useRef(null); // Ref to track current expanded group for async operations
+  // Selected group state (full-page view)
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const expandedGroupId = selectedGroupId; // alias for compatibility
+  const setExpandedGroupId = setSelectedGroupId; // alias for compatibility
+  const expandedGroupIdRef = useRef(null); // Ref to track current selected group for async operations
   const activeRequestIdRef = useRef(null); // Ref to track current request ID for polling
   const [expandedMembers, setExpandedMembers] = useState([]);
   const [expandedResponses, setExpandedResponses] = useState({});
   const [expandedLoading, setExpandedLoading] = useState(false);
   const [myResponse, setMyResponse] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
-  
+
   // Track my response for each group (for collapsed state display)
   const [allGroupResponses, setAllGroupResponses] = useState({});
+
+  // Group switcher dropdown state
+  const [showGroupSwitcher, setShowGroupSwitcher] = useState(false);
+  const [groupOrder, setGroupOrder] = useState(null);
+
+  // Group action modals (moved from ExpandableGroupCard to screen level)
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [showGroupRecipesModal, setShowGroupRecipesModal] = useState(false);
+
+  // Shopping state
+  const [activeShopper, setActiveShopper] = useState(null); // { user_id, user_name, started_at }
+  const [shoppingLoading, setShoppingLoading] = useState(false);
 
   // When midnight reset fires (refreshTrigger changes), clear all local response state
   // and reload everything fresh for the new day
@@ -2085,6 +2379,42 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       }, 500);
     }
   }, [refreshTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load saved group order on mount
+  useEffect(() => {
+    loadGroupOrder().then(order => {
+      if (order) setGroupOrder(order);
+    });
+  }, []);
+
+  // Sort groups by saved order
+  const sortedGroups = groupOrder ? sortGroupsByOrder(groups, groupOrder) : groups;
+
+  // Auto-select first group when groups load and none is selected
+  useEffect(() => {
+    if (sortedGroups.length > 0 && !selectedGroupId) {
+      const firstId = sortedGroups[0].group_id || sortedGroups[0].id;
+      setSelectedGroupId(firstId);
+      expandedGroupIdRef.current = firstId;
+    }
+    // If selected group was removed, switch to first
+    if (selectedGroupId && sortedGroups.length > 0) {
+      const exists = sortedGroups.some(g => (g.group_id || g.id) === selectedGroupId);
+      if (!exists) {
+        const firstId = sortedGroups[0].group_id || sortedGroups[0].id;
+        setSelectedGroupId(firstId);
+        expandedGroupIdRef.current = firstId;
+      }
+    }
+    // If no groups left, clear selection
+    if (sortedGroups.length === 0 && selectedGroupId) {
+      setSelectedGroupId(null);
+      expandedGroupIdRef.current = null;
+    }
+  }, [sortedGroups.length, selectedGroupId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Get the currently selected group object
+  const selectedGroup = sortedGroups.find(g => (g.group_id || g.id) === selectedGroupId) || null;
 
   // Unread chat messages per group
   const [unreadGroups, setUnreadGroups] = useState({});
@@ -2213,6 +2543,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // Create/Join modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showSharePrompt, setShowSharePrompt] = useState(false);
+  const [newGroupCode, setNewGroupCode] = useState('');
   const [groupName, setGroupName] = useState('');
   const [groupPhotoUri, setGroupPhotoUri] = useState(null);
   const [joinCode, setJoinCode] = useState('');
@@ -2331,7 +2663,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     celebration: { label: t('specialOccasion.occasionTypes.celebration'), color: '#9C27B0' },
     holiday: { label: t('specialOccasion.occasionTypes.holiday'), color: '#F44336' },
     graduation: { label: t('specialOccasion.occasionTypes.graduation'), color: '#2196F3' },
-    dinner: { label: t('specialOccasion.dinnerParty'), color: '#4CAF50' },
+    dinner: { label: t('specialOccasion.dinnerParty'), color: '#FF6B00' },
     bbq: { label: t('specialOccasion.barbecue'), color: '#FF9800' },
     other: { label: t('specialOccasion.specialMoment'), color: '#8B7355' },
   };
@@ -3511,12 +3843,16 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     return await contextLoadDailyResponses(groupId);
   };
 
-  // Handle card expansion
-  const handleCardToggle = async (group) => {
-    lightHaptic();
-    closeOpenSwipeable(); // Close any open swipe actions
-    const groupId = group.group_id || group.id;
-    
+  // Load data for a group (members, responses, top meals)
+  const loadGroupData = async (groupId) => {
+    closeOpenSwipeable();
+
+    // Load shopping status for this group
+    setActiveShopper(null);
+    getActiveShopperToday(groupId).then(result => {
+      if (result.success) setActiveShopper(result.shopper);
+    }).catch(() => {});
+
     // Collapse any expanded occasion card first
     if (expandedOccasionId) {
       setExpandedOccasionId(null);
@@ -3525,32 +3861,16 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       setMyOccasionResponse(null);
       setOccasionTopMeals([]);
     }
-    
-    if (expandedGroupId === groupId) {
-      // Don't collapse if this is the only group
-      if (groups.length === 1) return;
-      // Collapse
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setExpandedGroupId(null);
-      expandedGroupIdRef.current = null; // Keep ref in sync
-      activeRequestIdRef.current = null; // Keep ref in sync
-      setExpandedMembers([]);
-      setExpandedResponses({});
-      setMyResponse(null);
-      setTopMeals([]);
-      setActiveRequestId(null);
-      setActiveRecipeType(null);
-    } else {
-      // Expand - use preloaded data for INSTANT display (no loading spinner)
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      
+
+    {
+      // Switch to new group - use preloaded data for INSTANT display
       // CRITICAL: Clear old group's data FIRST before setting new group
       // This prevents flash of wrong Top 3 when switching directly between groups
       setTopMeals([]);
       setActiveRequestId(null);
       setActiveRecipeType(null);
-      
-      setExpandedGroupId(groupId);
+
+      setSelectedGroupId(groupId);
       expandedGroupIdRef.current = groupId; // Keep ref in sync
       
       // Try to get preloaded expansion data first (batch loaded on app start)
@@ -3826,6 +4146,12 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     }
   };
 
+  // Auto-load data when selected group changes
+  useEffect(() => {
+    if (!selectedGroupId || !currentUserId) return;
+    loadGroupData(selectedGroupId);
+  }, [selectedGroupId, currentUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Handle response change (accepts groupId to work for collapsed cards too)
   // Uses optimistic updates for instant feedback
   const handleResponseChange = async (groupId, userId, newValue) => {
@@ -4017,6 +4343,44 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   };
   
   // Handle recipe press (open recipe modal) - memoized for performance
+  // Handle shopping toggle
+  const handleStartShopping = async () => {
+    if (!selectedGroupId || shoppingLoading) return;
+    setShoppingLoading(true);
+    mediumHaptic();
+    try {
+      const result = await startShopping(selectedGroupId);
+      if (result.success) {
+        setActiveShopper(result.shopper);
+        successHaptic();
+      } else {
+        toast.error(result.error || 'Kon niet starten');
+      }
+    } catch {
+      toast.error('Er ging iets mis');
+    } finally {
+      setShoppingLoading(false);
+    }
+  };
+
+  const handleStopShopping = async () => {
+    if (!selectedGroupId || shoppingLoading) return;
+    setShoppingLoading(true);
+    lightHaptic();
+    try {
+      const result = await stopShopping(selectedGroupId);
+      if (result.success) {
+        setActiveShopper(null);
+      } else {
+        toast.error(result.error || 'Kon niet stoppen');
+      }
+    } catch {
+      toast.error('Er ging iets mis');
+    } finally {
+      setShoppingLoading(false);
+    }
+  };
+
   const handleRecipePress = useCallback((meal) => {
     lightHaptic();
     log.ui('Recipe pressed:', meal?.meal_data?.name);
@@ -4356,15 +4720,14 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         // Load groups immediately so the new group appears instantly
         contextLoadGroups(true).then(() => loadSpecialOccasionsIndependent());
 
-        // Show share popup after modal animation finishes
+        // Show share prompt popup after modal animation finishes
         const code = result.group?.join_code;
         if (code) {
           InteractionManager.runAfterInteractions(() => {
             setTimeout(() => {
-              Share.share({
-                message: `Join mijn groep op Happie.\n\nGroepscode: ${code}\n\nhttps://apps.apple.com/app/happie/id6757129676`,
-              }).catch(() => {});
-            }, 500);
+              setNewGroupCode(code);
+              setShowSharePrompt(true);
+            }, 400);
           });
         }
       } else {
@@ -4519,41 +4882,108 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Background Drawings - 3 layers for depth */}
-      <SafeDrawing 
-        source={require('../assets/drawing3.png')}
-        style={styles.backgroundDrawingMain}
-      />
-      <SafeDrawing 
-        source={require('../assets/drawing5.png')}
-        style={styles.backgroundDrawingSecondary}
-      />
-      <SafeDrawing 
-        source={require('../assets/drawing7.png')}
-        style={styles.backgroundDrawingAccent}
-      />
-
-      {/* Header - Always visible immediately */}
+      {/* Header with group switcher */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{(() => {
-            const locale = i18n.language === 'nl' ? 'nl-NL' : 'en-US';
-            const formatted = new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
-            return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-          })()}</Text>
+        {selectedGroup ? (
+          <TouchableOpacity
+            style={styles.headerContent}
+            onPress={() => { if (sortedGroups.length > 1) setShowGroupSwitcher(true); }}
+            activeOpacity={sortedGroups.length > 1 ? 0.7 : 1}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              {selectedGroup.photo_url ? (
+                <ExpoImage
+                  source={{ uri: selectedGroup.photo_url }}
+                  style={cardStyles.groupPhoto}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                />
+              ) : null}
+              <View>
+                <Text style={styles.headerTitle}>
+                  {selectedGroup.name || selectedGroup.group_name}
+                  {sortedGroups.length > 1 ? ' ▾' : ''}
+                </Text>
+                <Text style={styles.headerSubtitle}>
+                  {(selectedGroup.member_count ?? selectedGroup.memberCount ?? expandedMembers?.length ?? 0)} {t('common.members').toLowerCase()}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>{t('common.groups')}</Text>
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {selectedGroup && (
+            <>
+              <TouchableOpacity
+                style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                onPress={() => {
+                  const groupId = selectedGroupId;
+                  chatOpenGroupRef.current = groupId;
+                  setUnreadGroups(prev => { const n = { ...prev }; delete n[groupId]; return n; });
+                  const now = new Date().toISOString();
+                  chatLastReadRef.current[groupId] = now;
+                  const AsyncStorageMod = require('@react-native-async-storage/async-storage').default;
+                  AsyncStorageMod.setItem('chatLastRead', JSON.stringify(chatLastReadRef.current)).catch(() => {});
+                  navigation.navigate('GroupChat', {
+                    groupId,
+                    groupName: selectedGroup.name || selectedGroup.group_name,
+                    members: expandedMembers,
+                  });
+                }}
+              >
+                <Feather name="message-circle" size={24} color="#6B5B4A" />
+                {!!unreadGroups[selectedGroupId] && <View style={cardStyles.unreadDot} />}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+                onPress={() => setShowActionsMenu(true)}
+              >
+                <Feather name="settings" size={22} color="#8B8580" />
+              </TouchableOpacity>
+            </>
+          )}
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <Text style={styles.profileButtonText}>
+              {userName ? userName.charAt(0).toUpperCase() : '?'}
+            </Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.profileButton}
-          onPress={() => navigation.navigate('Profile')}
-        >
-          <Text style={styles.profileButtonText}>
-            {userName ? userName.charAt(0).toUpperCase() : '?'}
-          </Text>
-        </TouchableOpacity>
       </View>
 
-      {/* Groups List */}
-      <ScrollView 
+      {/* Group Switcher Dropdown */}
+      <GroupSwitcherDropdown
+        groups={sortedGroups}
+        activeGroupId={selectedGroupId}
+        onSelectGroup={(id) => {
+          if (id !== selectedGroupId) {
+            // Clear old data first
+            setTopMeals([]);
+            setActiveRequestId(null);
+            setActiveRecipeType(null);
+            setExpandedMembers([]);
+            setExpandedResponses({});
+            setMyResponse(null);
+            // Set new selection (useEffect will call loadGroupData)
+            setSelectedGroupId(id);
+            expandedGroupIdRef.current = id;
+          }
+        }}
+        onReorderGroups={(order) => setGroupOrder(order)}
+        visible={showGroupSwitcher}
+        onClose={() => setShowGroupSwitcher(false)}
+        onCreateGroup={() => setShowCreateModal(true)}
+        onJoinGroup={() => setShowJoinModal(true)}
+      />
+
+      {/* Main Content */}
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -4561,16 +4991,15 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={closeOpenSwipeable}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={handleRefresh}
             tintColor="#8B7355"
           />
         }
       >
 
-        {/* Groups section - shows skeletons while loading, empty state, or actual groups */}
-        {/* Show skeleton ONLY if loading AND no groups (cached or fresh) */}
+        {/* Loading / Empty / Full-page group content */}
         {(loading || contextGroupsLoading) && groups.length === 0 ? (
           <>
             <GroupCardSkeleton />
@@ -4578,57 +5007,278 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           </>
         ) : groups.length === 0 && !loading && !contextGroupsLoading ? (
           <EmptyGroups onAction={() => { lightHaptic(); setShowCreateModal(true); }} />
-        ) : groups.length > 0 && (
-          groups.map(group => {
-            const groupId = group.group_id || group.id;
-            const isExpanded = expandedGroupId === groupId;
-            // Get cached responses for attendance count when collapsed
-            const cachedResponses = getCachedDailyResponses(groupId) || {};
-            
-            // Diagnostic: log render state for expanded group
-            if (isExpanded) {
-            }
-            
-            return (
-              <ExpandableGroupCard
-                key={groupId}
-                group={group}
-                isExpanded={isExpanded}
-                onToggle={() => handleCardToggle(group)}
-                currentUserId={currentUserId}
-                memberResponses={isExpanded ? expandedResponses : cachedResponses}
-                members={isExpanded ? expandedMembers : []}
-                myResponse={isExpanded ? myResponse : allGroupResponses[groupId]}
-                onResponseChange={(userId, newValue) => handleResponseChange(groupId, userId, newValue)}
-                onStartVoting={() => handleStartVoting(group)}
-                loadingMembers={isExpanded && expandedLoading}
-                actionLoading={actionLoading}
-                topMeals={isExpanded ? topMeals : []}
-                topMealsLoading={isExpanded && topMealsLoading}
-                onRecipePress={(meal) => handleRecipePress(meal)}
-                recipeType={isExpanded ? activeRecipeType : 'voting'}
-                onLeaveGroup={() => handleLeaveGroup(group)}
-                onDeleteGroup={() => handleDeleteGroup(group)}
-                isCreator={group.created_by === currentUserId}
-                onOpenChat={() => {
-                  chatOpenGroupRef.current = groupId;
-                  setUnreadGroups(prev => { const n = { ...prev }; delete n[groupId]; return n; });
-                  // Save last read timestamp
-                  const now = new Date().toISOString();
-                  chatLastReadRef.current[groupId] = now;
-                  const AsyncStorageMod = require('@react-native-async-storage/async-storage').default;
-                  AsyncStorageMod.setItem('chatLastRead', JSON.stringify(chatLastReadRef.current)).catch(() => {});
-                  navigation.navigate('GroupChat', {
-                    groupId,
-                    groupName: group.name || group.group_name,
-                    members: isExpanded ? expandedMembers : [],
-                  });
-                }}
-                hasUnread={!!unreadGroups[groupId]}
-                onChangePhoto={() => handleChangeGroupPhoto(groupId)}
-              />
-            );
-          })
+        ) : selectedGroup && (
+          <View>
+            {/* === SECTION 1: PARTICIPATION (primary action) === */}
+            <View style={gpStyles.card}>
+              <Text style={gpStyles.cardTitle}>{'Eet je mee vanavond?'}</Text>
+              <View style={gpStyles.segmentedControl}>
+                <TouchableOpacity
+                  style={[
+                    gpStyles.segmentBtn,
+                    myResponse === 'yes' && gpStyles.segmentBtnYesActive
+                  ]}
+                  onPress={() => handleResponseChange(selectedGroupId, currentUserId, myResponse === 'yes' ? null : 'yes')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[gpStyles.segmentBtnText, myResponse === 'yes' && gpStyles.segmentBtnTextActive]}>
+                    {'Ik eet mee'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    gpStyles.segmentBtn,
+                    myResponse === 'no' && gpStyles.segmentBtnNoActive
+                  ]}
+                  onPress={() => handleResponseChange(selectedGroupId, currentUserId, myResponse === 'no' ? null : 'no')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[gpStyles.segmentBtnText, myResponse === 'no' && gpStyles.segmentBtnTextActive]}>
+                    {'Ik niet'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* === SECTION 2: LIVE PARTICIPATION FEEDBACK === */}
+            <View style={gpStyles.card}>
+              <View style={gpStyles.attendeesRow}>
+                <View style={gpStyles.attendeesCol}>
+                  <Text style={gpStyles.attendeesLabelYes}>{'EET MEE'}</Text>
+                  {expandedLoading ? (
+                    <ActivityIndicator size="small" color="#FF6B00" style={{ marginTop: 6 }} />
+                  ) : expandedMembers?.filter(m => expandedResponses?.[m.user_id] === 'yes').length > 0 ? (
+                    expandedMembers
+                      .filter(m => expandedResponses?.[m.user_id] === 'yes')
+                      .map(m => (
+                        <Text key={m.user_id} style={gpStyles.attendeeName}>
+                          {m.full_name || m.user_name || t('common.unknown')}
+                          {m.user_id === currentUserId && ` (${t('common.you')})`}
+                        </Text>
+                      ))
+                  ) : (
+                    <Text style={gpStyles.attendeesEmpty}>-</Text>
+                  )}
+                </View>
+                <View style={gpStyles.attendeesDivider} />
+                <View style={gpStyles.attendeesCol}>
+                  <Text style={gpStyles.attendeesLabelNo}>{'EET NIET MEE'}</Text>
+                  {expandedLoading ? (
+                    <ActivityIndicator size="small" color="#E57373" style={{ marginTop: 6 }} />
+                  ) : expandedMembers?.filter(m => expandedResponses?.[m.user_id] === 'no').length > 0 ? (
+                    expandedMembers
+                      .filter(m => expandedResponses?.[m.user_id] === 'no')
+                      .map(m => (
+                        <Text key={m.user_id} style={gpStyles.attendeeNameNo}>
+                          {m.full_name || m.user_name || t('common.unknown')}
+                          {m.user_id === currentUserId && ` (${t('common.you')})`}
+                        </Text>
+                      ))
+                  ) : (
+                    <Text style={gpStyles.attendeesEmpty}>-</Text>
+                  )}
+                </View>
+              </View>
+            </View>
+
+            {/* === SECTION 3: FOOD VOTING (interactive cards) === */}
+            {activeRecipeType !== 'no_voting' && myResponse === 'yes' && (
+              <View style={gpStyles.sectionSpaced}>
+                <View style={gpStyles.sectionHeader}>
+                  <Text style={gpStyles.sectionTitle}>{'Wat eten we vanavond?'}</Text>
+                  {actionLoading ? (
+                    <ActivityIndicator color="#8B7355" size="small" />
+                  ) : topMeals && topMeals.length > 0 ? (
+                    <TouchableOpacity
+                      style={gpStyles.voteBtnActive}
+                      onPress={() => handleStartVoting(selectedGroup)}
+                    >
+                      <Feather name="check-circle" size={14} color="#3D9A50" />
+                      <Text style={gpStyles.voteBtnActiveText}>{'Gestemd'}</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={gpStyles.voteBtn}
+                      onPress={() => handleStartVoting(selectedGroup)}
+                    >
+                      <Text style={gpStyles.voteBtnText}>{'Stem nu'}</Text>
+                      <Feather name="arrow-right" size={14} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {topMeals && topMeals.length > 0 ? (
+                  <View style={gpStyles.foodCards}>
+                    {topMeals.slice(0, 3).map((meal, idx) => {
+                      const name = meal.meal_data?.name || t('meals.recipe');
+                      const votes = meal.yes_votes ?? meal.vote_total ?? 0;
+                      const thumbnailUrl = meal.meal_data?.thumbnail_url;
+                      const cookingTime = meal.meal_data?.total_time_minutes;
+                      return (
+                        <TouchableOpacity
+                          key={meal.meal_option_id || idx}
+                          style={gpStyles.foodCard}
+                          onPress={() => handleRecipePress(meal)}
+                          activeOpacity={0.6}
+                        >
+                          {thumbnailUrl ? (
+                            <Image
+                              source={{ uri: thumbnailUrl }}
+                              style={gpStyles.foodCardImage}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <View style={[gpStyles.foodCardImage, gpStyles.foodCardImagePlaceholder]}>
+                              <Text style={{ fontSize: 24 }}>🍽</Text>
+                            </View>
+                          )}
+                          <View style={gpStyles.foodCardBody}>
+                            <Text style={gpStyles.foodCardName} numberOfLines={1}>{name}</Text>
+                            <View style={gpStyles.foodCardMeta}>
+                              {cookingTime ? (
+                                <View style={gpStyles.foodCardMetaItem}>
+                                  <Feather name="clock" size={12} color="#999" />
+                                  <Text style={gpStyles.foodCardMetaText}>{cookingTime} min</Text>
+                                </View>
+                              ) : null}
+                              <View style={gpStyles.foodCardMetaItem}>
+                                <Feather name="thumbs-up" size={12} color="#8B7355" />
+                                <Text style={[gpStyles.foodCardMetaText, { color: '#8B7355' }]}>{votes}</Text>
+                              </View>
+                            </View>
+                          </View>
+                          <Feather name="chevron-right" size={18} color="#CCC" />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ) : topMealsLoading ? (
+                  <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color="#8B7355" />
+                  </View>
+                ) : null}
+              </View>
+            )}
+
+            {/* Show top meals even when not voting (read-only) */}
+            {activeRecipeType !== 'no_voting' && myResponse !== 'yes' && topMeals?.length > 0 && (
+              <View style={gpStyles.sectionSpaced}>
+                <Text style={gpStyles.sectionTitle}>{t('meals.topRecipes') || 'Top recepten'}</Text>
+                <View style={gpStyles.foodCards}>
+                  {topMeals.slice(0, 3).map((meal, idx) => {
+                    const name = meal.meal_data?.name || t('meals.recipe');
+                    const votes = meal.yes_votes ?? meal.vote_total ?? 0;
+                    const thumbnailUrl = meal.meal_data?.thumbnail_url;
+                    const cookingTime = meal.meal_data?.total_time_minutes;
+                    return (
+                      <TouchableOpacity
+                        key={meal.meal_option_id || idx}
+                        style={gpStyles.foodCard}
+                        onPress={() => handleRecipePress(meal)}
+                        activeOpacity={0.6}
+                      >
+                        {thumbnailUrl ? (
+                          <Image source={{ uri: thumbnailUrl }} style={gpStyles.foodCardImage} resizeMode="cover" />
+                        ) : (
+                          <View style={[gpStyles.foodCardImage, gpStyles.foodCardImagePlaceholder]}>
+                            <Text style={{ fontSize: 24 }}>🍽</Text>
+                          </View>
+                        )}
+                        <View style={gpStyles.foodCardBody}>
+                          <Text style={gpStyles.foodCardName} numberOfLines={1}>{name}</Text>
+                          <View style={gpStyles.foodCardMeta}>
+                            {cookingTime ? (
+                              <View style={gpStyles.foodCardMetaItem}>
+                                <Feather name="clock" size={12} color="#999" />
+                                <Text style={gpStyles.foodCardMetaText}>{cookingTime} min</Text>
+                              </View>
+                            ) : null}
+                            <View style={gpStyles.foodCardMetaItem}>
+                              <Feather name="thumbs-up" size={12} color="#8B7355" />
+                              <Text style={[gpStyles.foodCardMetaText, { color: '#8B7355' }]}>{votes}</Text>
+                            </View>
+                          </View>
+                        </View>
+                        <Feather name="chevron-right" size={18} color="#CCC" />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* === SHOPPING STATUS === */}
+            {myResponse === 'yes' && (
+              <View style={gpStyles.sectionSpaced}>
+                {activeShopper ? (
+                  <View style={gpStyles.shoppingCard}>
+                    <View style={gpStyles.shoppingCardLeft}>
+                      <View style={gpStyles.shoppingIconWrap}>
+                        <Feather name="shopping-bag" size={20} color="#8B7355" />
+                      </View>
+                      <View style={gpStyles.shoppingCardInfo}>
+                        <Text style={gpStyles.shoppingCardName}>
+                          {activeShopper.user_id === currentUserId
+                            ? 'Jij bent boodschappen aan het doen'
+                            : `${activeShopper.user_name} is boodschappen aan het doen`}
+                        </Text>
+                      </View>
+                    </View>
+                    {activeShopper.user_id === currentUserId && (
+                      <TouchableOpacity
+                        style={gpStyles.shoppingStopBtn}
+                        onPress={handleStopShopping}
+                        disabled={shoppingLoading}
+                      >
+                        {shoppingLoading ? (
+                          <ActivityIndicator size="small" color="#999" />
+                        ) : (
+                          <Text style={gpStyles.shoppingStopText}>{'Stop'}</Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={gpStyles.shoppingBtn}
+                    onPress={handleStartShopping}
+                    disabled={shoppingLoading}
+                    activeOpacity={0.7}
+                  >
+                    {shoppingLoading ? (
+                      <ActivityIndicator size="small" color="#8B7355" />
+                    ) : (
+                      <>
+                        <Feather name="shopping-bag" size={18} color="#8B7355" />
+                        <Text style={gpStyles.shoppingBtnText}>{'Ik ga nu inkopen'}</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* === SECTION 4: SECONDARY ACTIONS === */}
+            <View style={gpStyles.sectionSpaced}>
+              <View style={gpStyles.secondaryRow}>
+                <TouchableOpacity style={gpStyles.secondaryBtn} onPress={() => {
+                  const code = selectedGroup.join_code;
+                  require('expo-clipboard').setStringAsync(code);
+                  toast.success(t('groups.codeCopied') || 'Code gekopieerd!');
+                  Share.share({
+                    message: `═══════════════════\n  HAPPIE GROEP JOINEN\n═══════════════════\n\nJe bent uitgenodigd! Open deze link:\nhttps://studentenhappie.nl/join/${code}\n\nOf download de app en vul de code in:\n\n🔑 Code: ${code}\n\n📲 https://apps.apple.com/app/happie/id6757129676\n\n═══════════════════`,
+                  }).catch(() => {});
+                }}>
+                  <Feather name="user-plus" size={16} color="#8B7355" />
+                  <Text style={gpStyles.secondaryBtnText}>{'Groepsleden uitnodigen'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={gpStyles.secondaryBtn} onPress={() => setShowGroupRecipesModal(true)}>
+                  <Feather name="book-open" size={16} color="#8B7355" />
+                  <Text style={gpStyles.secondaryBtnText}>{'Recepten'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
         )}
         
         {FEATURE_SPECIAL_OCCASIONS && (
@@ -4748,7 +5398,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                           <View style={styles.attendeesColumn}>
                             <Text style={styles.attendeesLabelGreen}>{t('common.attending')}</Text>
                             {occasionLoading ? (
-                              <ActivityIndicator size="small" color="#4CAF50" style={{ marginTop: 4 }} />
+                              <ActivityIndicator size="small" color="#FF6B00" style={{ marginTop: 4 }} />
                             ) : occasionMembers.filter(m => occasionResponses[m.user_id] === 'yes').length > 0 ? (
                               occasionMembers
                                 .filter(m => occasionResponses[m.user_id] === 'yes')
@@ -4900,7 +5550,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                               <View style={styles.attendeesColumn}>
                                 <Text style={styles.attendeesLabelGreen}>{t('common.attending')}</Text>
                                 {pastParticipantsLoading && !participants.length ? (
-                                  <ActivityIndicator size="small" color="#4CAF50" style={{ marginTop: 4 }} />
+                                  <ActivityIndicator size="small" color="#FF6B00" style={{ marginTop: 4 }} />
                                 ) : participants.filter(p => pastMemberResponses[p.user_id] === 'yes').length > 0 ? (
                                   participants
                                     .filter(p => pastMemberResponses[p.user_id] === 'yes')
@@ -4946,24 +5596,168 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         {/* Bottom Padding handled by scrollContent paddingBottom */}
       </ScrollView>
 
-      {/* Bottom Actions */}
-      <View style={styles.bottomActions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => { lightHaptic(); setShowCreateModal(true); }}
+      {/* Bottom Actions - only show when no groups */}
+      {groups.length === 0 && !loading && !contextGroupsLoading && (
+        <View style={styles.bottomActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => { lightHaptic(); setShowCreateModal(true); }}
+          >
+            <Text style={styles.actionButtonText}>+ Nieuwe Groep</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionButtonSecondary]}
+            onPress={() => { lightHaptic(); setShowJoinModal(true); }}
+          >
+            <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>
+              Join groep met code
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Group Actions Menu Modal */}
+      {selectedGroup && (
+        <Modal
+          visible={showActionsMenu}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowActionsMenu(false)}
         >
-          <Text style={styles.actionButtonText}>+ {t('common.newGroup')}</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.actionButtonSecondary]}
-          onPress={() => { lightHaptic(); setShowJoinModal(true); }}
+          <TouchableOpacity
+            style={cardStyles.menuOverlay}
+            activeOpacity={1}
+            onPress={() => setShowActionsMenu(false)}
+          >
+            <View style={cardStyles.menuContainer}>
+              <TouchableOpacity
+                style={cardStyles.menuItem}
+                onPress={() => {
+                  require('expo-clipboard').setStringAsync(selectedGroup.join_code);
+                  successHaptic();
+                  setShowActionsMenu(false);
+                }}
+              >
+                <Text style={cardStyles.menuItemText}>{t('common.copyCode')}</Text>
+                <Text style={cardStyles.menuItemCode}>{selectedGroup.join_code}</Text>
+              </TouchableOpacity>
+
+              <View style={cardStyles.menuDivider} />
+
+              <TouchableOpacity
+                style={cardStyles.menuItem}
+                onPress={() => { setShowActionsMenu(false); setShowMembersModal(true); }}
+              >
+                <Text style={cardStyles.menuItemText}>{t('common.members')}</Text>
+              </TouchableOpacity>
+
+              <View style={cardStyles.menuDivider} />
+
+              <TouchableOpacity
+                style={cardStyles.menuItem}
+                onPress={() => { setShowActionsMenu(false); setShowGroupRecipesModal(true); }}
+              >
+                <Text style={cardStyles.menuItemText}>{t('groups.recipes') || 'Recepten'}</Text>
+              </TouchableOpacity>
+
+              <View style={cardStyles.menuDivider} />
+
+              <TouchableOpacity
+                style={cardStyles.menuItem}
+                onPress={() => {
+                  setShowActionsMenu(false);
+                  handleChangeGroupPhoto(selectedGroupId);
+                }}
+              >
+                <Text style={cardStyles.menuItemText}>{selectedGroup.photo_url ? 'Foto wijzigen' : 'Groepsfoto toevoegen'}</Text>
+              </TouchableOpacity>
+
+              <View style={cardStyles.menuDivider} />
+
+              <TouchableOpacity
+                style={cardStyles.menuItem}
+                onPress={() => { setShowActionsMenu(false); handleLeaveGroup(selectedGroup); }}
+              >
+                <Text style={cardStyles.menuItemTextMuted}>{t('common.leave')}</Text>
+              </TouchableOpacity>
+
+              {selectedGroup.created_by === currentUserId && (
+                <>
+                  <View style={cardStyles.menuDivider} />
+                  <TouchableOpacity
+                    style={cardStyles.menuItem}
+                    onPress={() => { setShowActionsMenu(false); handleDeleteGroup(selectedGroup); }}
+                  >
+                    <Text style={cardStyles.menuItemTextDanger}>{t('common.delete')}</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              <View style={cardStyles.menuDivider} />
+
+              <TouchableOpacity
+                style={cardStyles.menuItemCancel}
+                onPress={() => setShowActionsMenu(false)}
+              >
+                <Text style={cardStyles.menuItemTextCancel}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+
+      {/* Members Modal */}
+      {selectedGroup && (
+        <Modal
+          visible={showMembersModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowMembersModal(false)}
         >
-          <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>
-            {t('common.joinWithCode')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={cardStyles.menuOverlay}
+            activeOpacity={1}
+            onPress={() => setShowMembersModal(false)}
+          >
+            <View style={cardStyles.membersContainer} onStartShouldSetResponder={() => true}>
+              <View style={cardStyles.membersHeader}>
+                <Text style={cardStyles.membersTitle}>{t('common.members')}</Text>
+                <TouchableOpacity onPress={() => setShowMembersModal(false)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                  <Text style={cardStyles.membersClose}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={cardStyles.membersList} showsVerticalScrollIndicator={false}>
+                {expandedMembers && expandedMembers.length > 0 ? expandedMembers.map(m => (
+                  <View key={m.user_id} style={cardStyles.memberRow}>
+                    <View style={cardStyles.memberAvatar}>
+                      <Text style={cardStyles.memberAvatarText}>
+                        {(m.full_name || m.user_name || '?').charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                    <Text style={cardStyles.memberName}>
+                      {m.full_name || m.user_name || t('common.unknown')}
+                      {m.user_id === currentUserId && ` (${t('common.you')})`}
+                    </Text>
+                  </View>
+                )) : (
+                  <Text style={cardStyles.membersEmpty}>{t('emptyStates.noMembers')}</Text>
+                )}
+              </ScrollView>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+
+      {/* Group Recipes Modal */}
+      {selectedGroup && (
+        <GroupRecipesScreen
+          visible={showGroupRecipesModal}
+          onClose={() => setShowGroupRecipesModal(false)}
+          groupId={selectedGroup.id}
+          groupName={selectedGroup.name}
+        />
+      )}
 
       {/* Recipe Details Modal */}
       <Modal visible={showRecipeModal} transparent animationType="fade">
@@ -5154,6 +5948,62 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               </TouchableOpacity>
             </View>
           </Pressable>
+        </View>
+      </Modal>
+
+      {/* Share Prompt Modal - shown after creating a group */}
+      <Modal visible={showSharePrompt} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            onPress={() => setShowSharePrompt(false)}
+            activeOpacity={1}
+          />
+          <View style={styles.simpleModal}>
+            <Text style={{ fontSize: 40, textAlign: 'center', marginBottom: 12 }}>🍽️</Text>
+            <Text style={styles.simpleModalTitle}>Alleen eten is niks aan!</Text>
+            <Text style={[styles.simpleModalSubtitle, { marginBottom: 8, color: '#6B6560', lineHeight: 20 }]}>
+              Deel deze groep met je vrienden zodat jullie samen kunnen plannen wat je gaat eten.
+            </Text>
+            <View style={{
+              backgroundColor: '#F5F2EE',
+              borderRadius: 12,
+              padding: 14,
+              marginBottom: 20,
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: '#E8E2DA',
+            }}>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999', marginBottom: 4 }}>Groepscode</Text>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 22, color: '#2D2D2D', letterSpacing: 2 }}>{newGroupCode}</Text>
+            </View>
+            <View style={styles.simpleModalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowSharePrompt(false)}
+              >
+                <Text style={styles.cancelButtonText}>Later</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, { flexDirection: 'row', justifyContent: 'center' }]}
+                onPress={() => {
+                  Clipboard.setStringAsync(newGroupCode);
+                  setShowSharePrompt(false);
+                  // Delay share sheet so modal closes first
+                  setTimeout(async () => {
+                    try {
+                      await Share.share({
+                        message: `═══════════════════\n  HAPPIE GROEP JOINEN\n═══════════════════\n\nJe bent uitgenodigd! Open deze link:\nhttps://studentenhappie.nl/join/${newGroupCode}\n\nOf download de app en vul de code in:\n\n🔑 Code: ${newGroupCode}\n\n📲 https://apps.apple.com/app/happie/id6757129676\n\n═══════════════════`,
+                      });
+                    } catch (_) {}
+                  }, 400);
+                }}
+              >
+                <Feather name="share" size={16} color="#FFF" style={{ marginRight: 6 }} />
+                <Text style={styles.confirmButtonText}>Deel groep</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
 
@@ -5407,37 +6257,287 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   );
 }
 
+// Redesigned full-page group styles
+const gpStyles = StyleSheet.create({
+  // --- Cards / Sections ---
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#EEEBE6',
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#2D2D2D',
+    marginBottom: 14,
+  },
+  sectionSpaced: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    color: '#2D2D2D',
+  },
+
+  // --- Segmented Control (participation) ---
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F0EB',
+    borderRadius: 10,
+    padding: 3,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentBtnYesActive: {
+    backgroundColor: '#3D9A50',
+  },
+  segmentBtnNoActive: {
+    backgroundColor: '#D45050',
+  },
+  segmentBtnText: {
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#9E9790',
+  },
+  segmentBtnTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // --- Attendees ---
+  attendeesRow: {
+    flexDirection: 'row',
+  },
+  attendeesCol: {
+    flex: 1,
+  },
+  attendeesDivider: {
+    width: 1,
+    backgroundColor: '#EEEBE6',
+    marginHorizontal: 16,
+  },
+  attendeesLabelYes: {
+    fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#3D9A50',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  attendeesLabelNo: {
+    fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#D45050',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  attendeeName: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    color: '#2D2D2D',
+    paddingVertical: 3,
+    lineHeight: 20,
+  },
+  attendeeNameNo: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    color: '#999',
+    paddingVertical: 3,
+    lineHeight: 20,
+  },
+  attendeesEmpty: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    color: '#CCC',
+  },
+
+  // --- Food voting cards ---
+  voteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#8B7355',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+  },
+  voteBtnText: {
+    fontSize: 13,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#FFFFFF',
+  },
+  voteBtnActive: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#EDF7EF',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+  },
+  voteBtnActiveText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    color: '#3D9A50',
+  },
+  foodCards: {
+    gap: 10,
+  },
+  foodCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#EEEBE6',
+    padding: 12,
+    gap: 12,
+  },
+  foodCardImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+  },
+  foodCardImagePlaceholder: {
+    backgroundColor: '#F3F0EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  foodCardBody: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  foodCardName: {
+    fontSize: 15,
+    fontFamily: 'Inter_500Medium',
+    color: '#2D2D2D',
+    marginBottom: 4,
+  },
+  foodCardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  foodCardMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  foodCardMetaText: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    color: '#999',
+  },
+
+  // --- Secondary action buttons ---
+  secondaryRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  secondaryBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E0DBD4',
+    backgroundColor: '#FAFAF8',
+  },
+  secondaryBtnText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    color: '#8B7355',
+  },
+
+  // --- Shopping ---
+  shoppingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 15,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#8B7355',
+    borderStyle: 'dashed',
+    backgroundColor: '#FAFAF8',
+  },
+  shoppingBtnText: {
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#8B7355',
+  },
+  shoppingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF8F0',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#F0E0CC',
+    padding: 14,
+  },
+  shoppingCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  shoppingIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F0E0CC',
+  },
+  shoppingCardInfo: {
+    flex: 1,
+  },
+  shoppingCardName: {
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
+    color: '#2D2D2D',
+    lineHeight: 20,
+  },
+  shoppingStopBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: '#F3F0EB',
+    marginLeft: 10,
+  },
+  shoppingStopText: {
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    color: '#999',
+  },
+});
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAF8F5',
-  },
-  // Background Drawings - 2 layers, spread far apart, very subtle
-  backgroundDrawingMain: {
-    position: 'absolute',
-    top: 90,
-    left: 5,
-    width: screenWidth * 0.35,
-    height: screenWidth * 0.35,
-    opacity: 0.04,
-    zIndex: -1,
-    transform: [{ rotate: '-20deg' }],
-  },
-  backgroundDrawingSecondary: {
-    position: 'absolute',
-    bottom: screenHeight * 0.15,
-    right: -screenWidth * 0.35,
-    width: screenWidth * 0.55,
-    height: screenWidth * 0.55,
-    opacity: 0.035,
-    zIndex: -1,
-    transform: [{ rotate: '15deg' }],
-  },
-  backgroundDrawingAccent: {
-    // Hidden - only use 2 drawings to avoid clutter
-    display: 'none',
-    position: 'absolute',
-    opacity: 0,
+    backgroundColor: '#F6F4F1',
   },
   loadingContainer: {
     flex: 1,
@@ -5463,23 +6563,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 8,
-    borderBottomWidth: 0,
-    borderBottomColor: 'transparent',
-    backgroundColor: 'transparent',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 14,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEBE6',
   },
   headerContent: {
     flex: 1,
     flexDirection: 'column',
   },
   headerTitle: {
-    fontSize: 34,
+    fontSize: 20,
     fontFamily: 'PlayfairDisplay_700Bold',
     color: '#2D2D2D',
-    letterSpacing: 0.5,
-    marginBottom: 6,
+    marginBottom: 2,
   },
   headerSubtitle: {
     fontSize: 15,
@@ -5488,22 +6587,22 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   profileButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#8B7355',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
+    marginLeft: 8,
     overflow: 'hidden',
   },
   profileButtonImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
   },
   profileButtonText: {
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
     color: '#FEFEFE',
   },
@@ -5520,8 +6619,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingTop: 20,
     paddingBottom: 120,
   },
   eatingLabel: {
@@ -5672,8 +6771,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   responseButtonYesActive: {
-    backgroundColor: '#4CAF50',
-    shadowColor: '#4CAF50',
+    backgroundColor: '#FF6B00',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -5716,7 +6815,7 @@ const styles = StyleSheet.create({
   attendeesLabelGreen: {
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
-    color: '#4CAF50',
+    color: '#FF6B00',
     marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -5752,14 +6851,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: 'center',
-    shadowColor: '#4CAF50',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
   },
   occasionActionBtnVote: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FF6B00',
   },
   occasionActionBtnText: {
     fontSize: 15,
@@ -5927,7 +7026,7 @@ const styles = StyleSheet.create({
   pastOccasionAvatarYes: {
     backgroundColor: '#E8F5E9',
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: '#FF6B00',
   },
   pastOccasionAvatarNo: {
     backgroundColor: '#FFF3E0',
@@ -6039,7 +7138,7 @@ const styles = StyleSheet.create({
   contactItemSelected: {
     backgroundColor: '#E8F5E9',
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: '#FF6B00',
   },
   contactName: {
     flex: 1,
@@ -6055,7 +7154,7 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     fontSize: 16,
-    color: '#4CAF50',
+    color: '#FF6B00',
     fontFamily: 'Inter_700Bold',
   },
   // Selected Participants
@@ -6100,42 +7199,28 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 18,
+    paddingHorizontal: 16,
+    paddingTop: 14,
     paddingBottom: 34,
-    backgroundColor: '#FAF8F5',
-    borderTopWidth: 0,
-    borderTopColor: 'transparent',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowColor: '#8B7355',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 8,
-    gap: 12,
+    backgroundColor: '#F6F4F1',
+    borderTopWidth: 1,
+    borderTopColor: '#EEEBE6',
+    gap: 10,
   },
   actionButton: {
     flex: 1,
     backgroundColor: '#8B7355',
-    paddingVertical: 16,
-    borderRadius: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
-    shadowColor: '#8B7355',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
   },
   actionButtonSecondary: {
     backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: '#C4B5A2',
-    shadowOpacity: 0,
-    elevation: 0,
+    borderWidth: 1,
+    borderColor: '#D5CFC7',
   },
   actionButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
     color: '#FEFEFE',
   },
@@ -6169,7 +7254,7 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   simpleModalTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: 'PlayfairDisplay_700Bold',
     color: '#2D2D2D',
     textAlign: 'center',

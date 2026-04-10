@@ -47,8 +47,11 @@ export const strakOrangeTheme = {
 
     error: '#CC2200',
     errorLight: '#FFE8D0',
-    success: '#2D8A40',
-    successLight: '#FFF3E8',
+    // Success stays in the warm orange family so success toasts don't clash
+    // with the "strak orange" brand. Using a distinct warm amber so it still
+    // reads as "yes / saved" without colliding with the bold orange primary.
+    success: '#D97706',
+    successLight: '#FEF3E0',
     warning: '#CC5500',
     warningLight: '#FFF3E8',
 
@@ -84,7 +87,9 @@ export const strakOrangeTheme = {
     voteYes: '#2D8A40', voteNo: '#CC2200',
 
     overlay: 'rgba(26,16,0,0.6)',
-    shadowColor: 'transparent',
+    // Shadow base — used by elevated cards, modals, hero CTAs.
+    // Warm near-black so shadows feel on-brand instead of cold gray.
+    shadowColor: '#1A1000',
 
     appleButton: '#1A1000', appleButtonText: '#FFFAF5',
     googleButton: '#FFFAF5', googleButtonText: '#1A1000',
@@ -98,12 +103,15 @@ export const strakOrangeTheme = {
   },
   spacing: { xs: 4, sm: 8, md: 14, base: 18, lg: 24, xl: 32, '2xl': 44, '3xl': 56, '4xl': 72 },
   borderRadius: { none: 0, sm: 0, md: 0, base: 0, lg: 0, xl: 0, '2xl': 0, full: 9999 },
+  // Layered elevation: flat at 'none'/'sm' to keep the strak feel, but md+
+  // tiers get real shadows so hero elements (CTAs, modals, elevated cards)
+  // read as elevated instead of blending into the cream background.
   shadows: {
     none: { shadowColor: 'transparent', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },
-    sm: { shadowColor: 'transparent', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },
-    md: { shadowColor: 'transparent', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },
-    lg: { shadowColor: 'transparent', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },
-    xl: { shadowColor: 'transparent', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },
+    sm: { shadowColor: '#1A1000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 2, elevation: 1 },
+    md: { shadowColor: '#1A1000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
+    lg: { shadowColor: '#1A1000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 14, elevation: 6 },
+    xl: { shadowColor: '#1A1000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18, shadowRadius: 22, elevation: 10 },
   },
   components: {
     button: { paddingVertical: 14, paddingHorizontal: 28, borderRadius: 0, fontWeight: '600', fontSize: 13 },

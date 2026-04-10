@@ -1134,30 +1134,112 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                     </View>
                   </View>
 
-                  {/* Visibility Picker */}
+                  {/* Visibility Picker — public is the default, rendered as hero */}
                   <Text style={styles.formLabel}>{t('chef.visibility') || 'Wie kan dit zien?'}</Text>
-                  <View style={styles.visibilityRow}>
-                    {VISIBILITY_OPTIONS.map((opt) => (
-                      <TouchableOpacity
-                        key={opt.key}
-                        style={[styles.visibilityOption, visibility === opt.key && styles.visibilityOptionActive]}
-                        onPress={() => { lightHaptic(); setVisibility(opt.key); }}
-                        activeOpacity={0.8}
-                      >
-                        <Feather
-                          name={opt.icon}
-                          size={16}
-                          color={visibility === opt.key ? theme.colors.textInverse : theme.colors.primary}
-                        />
-                        <Text style={[
-                          styles.visibilityOptionText,
-                          visibility === opt.key && styles.visibilityOptionTextActive,
-                        ]}>
-                          {t(`chef.${opt.label}`) || opt.key}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                  {(() => {
+                    const publicOpt = VISIBILITY_OPTIONS.find((o) => o.key === 'public');
+                    const others = VISIBILITY_OPTIONS.filter((o) => o.key !== 'public');
+                    const publicActive = visibility === 'public';
+                    return (
+                      <>
+                        {/* Primary: Public (highlighted hero card) */}
+                        {publicOpt && (
+                          <TouchableOpacity
+                            style={[
+                              styles.visibilityHero,
+                              publicActive && styles.visibilityHeroActive,
+                            ]}
+                            onPress={() => { lightHaptic(); setVisibility('public'); }}
+                            activeOpacity={0.85}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: publicActive }}
+                          >
+                            <View
+                              style={[
+                                styles.visibilityHeroIcon,
+                                publicActive && styles.visibilityHeroIconActive,
+                              ]}
+                            >
+                              <Feather
+                                name="globe"
+                                size={18}
+                                color={
+                                  publicActive
+                                    ? theme.colors.textInverse
+                                    : theme.colors.secondary
+                                }
+                              />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={[
+                                  styles.visibilityHeroTitle,
+                                  publicActive && styles.visibilityHeroTitleActive,
+                                ]}
+                              >
+                                {t(`chef.${publicOpt.label}`) || 'Iedereen'}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.visibilityHeroHint,
+                                  publicActive && styles.visibilityHeroHintActive,
+                                ]}
+                              >
+                                {t('chef.visibilityPublicHint') ||
+                                  'Zichtbaar voor alle gebruikers'}
+                              </Text>
+                            </View>
+                            {publicActive && (
+                              <Feather
+                                name="check-circle"
+                                size={20}
+                                color={theme.colors.textInverse}
+                              />
+                            )}
+                          </TouchableOpacity>
+                        )}
+
+                        {/* Secondary row: other 3 options as compact chips */}
+                        <View style={styles.visibilityChipRow}>
+                          {others.map((opt) => {
+                            const isActive = visibility === opt.key;
+                            return (
+                              <TouchableOpacity
+                                key={opt.key}
+                                style={[
+                                  styles.visibilityChip,
+                                  isActive && styles.visibilityChipActive,
+                                ]}
+                                onPress={() => { lightHaptic(); setVisibility(opt.key); }}
+                                activeOpacity={0.8}
+                                accessibilityRole="button"
+                                accessibilityState={{ selected: isActive }}
+                              >
+                                <Feather
+                                  name={opt.icon}
+                                  size={14}
+                                  color={
+                                    isActive
+                                      ? theme.colors.textInverse
+                                      : theme.colors.textSecondary
+                                  }
+                                />
+                                <Text
+                                  style={[
+                                    styles.visibilityChipText,
+                                    isActive && styles.visibilityChipTextActive,
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {t(`chef.${opt.label}`) || opt.key}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </>
+                    );
+                  })()}
 
                   {/* Group Selector (when visibility = groups) */}
                   {(visibility === 'groups' || visibility === 'public_groups') && (
@@ -2063,10 +2145,88 @@ const createStyles = (theme) => StyleSheet.create({
   imagePickerText: { fontSize: theme.typography.fontSize.sm + 1, color: theme.colors.primary },
 
   // Visibility
-  visibilityRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  visibilityOption: { flexBasis: '47%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: theme.borderRadius.md, backgroundColor: theme.colors.borderSubtle, borderWidth: 1, borderColor: theme.colors.border },
-  visibilityOptionActive: { backgroundColor: theme.colors.secondary, borderColor: theme.colors.secondary },
-  visibilityOptionText: { fontSize: theme.typography.fontSize.sm, fontWeight: '600', color: theme.colors.primary },
+  // Visibility hero (public = default)
+  visibilityHero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: theme.colors.surfaceWarm,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    marginTop: 4,
+  },
+  visibilityHeroActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+    shadowColor: theme.colors.shadowColor,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  visibilityHeroIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: `${theme.colors.secondary}1A`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  visibilityHeroIconActive: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
+  },
+  visibilityHeroTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: 2,
+  },
+  visibilityHeroTitleActive: {
+    color: theme.colors.textInverse,
+  },
+  visibilityHeroHint: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+  },
+  visibilityHeroHintActive: {
+    color: theme.colors.textInverse,
+    opacity: 0.85,
+  },
+  // Secondary chips row
+  visibilityChipRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 10,
+  },
+  visibilityChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 9,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  visibilityChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  visibilityChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.colors.textSecondary,
+    flexShrink: 1,
+  },
+  visibilityChipTextActive: {
+    color: theme.colors.textInverse,
+  },
   visibilityOptionTextActive: { color: theme.colors.textInverse },
 
   // Group selector

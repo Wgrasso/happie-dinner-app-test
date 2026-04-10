@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 12,
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     color: '#8B7355',
     letterSpacing: 1,
     marginBottom: 10,

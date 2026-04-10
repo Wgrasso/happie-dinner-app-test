@@ -7,30 +7,31 @@ const { width } = Dimensions.get('window');
 // Toast Context
 const ToastContext = createContext(null);
 
-// Toast types with their styling
+// Toast types with their styling — aligned to strak-orange palette.
+// Success is warm amber (not green) so it doesn't clash with the brand.
 const TOAST_CONFIG = {
   success: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: '#D97706',
     icon: '✓',
     defaultDuration: 3000,
   },
   error: {
-    backgroundColor: '#C62828',
+    backgroundColor: '#CC2200',
     icon: '✕',
     defaultDuration: 4000,
   },
   warning: {
-    backgroundColor: '#F57C00',
+    backgroundColor: '#CC5500',
     icon: '⚠',
     defaultDuration: 3500,
   },
   info: {
-    backgroundColor: '#1565C0',
+    backgroundColor: '#FF9F45',
     icon: 'ℹ',
     defaultDuration: 3000,
   },
   neutral: {
-    backgroundColor: '#424242',
+    backgroundColor: '#1A1000',
     icon: '',
     defaultDuration: 3000,
   },

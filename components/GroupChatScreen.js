@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 17,
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     color: '#2D2D2D',
   },
   headerSubtitle: {

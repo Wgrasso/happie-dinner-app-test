@@ -91,8 +91,13 @@ export default function ListEditor({
             <TouchableOpacity
               style={s.removeBtn}
               onPress={() => removeAt(idx)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityLabel="Verwijder"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={
+                numbered
+                  ? `Verwijder stap ${idx + 1}`
+                  : `Verwijder rij ${idx + 1}`
+              }
             >
               <Feather name="x" size={15} color={theme.colors.textTertiary} />
             </TouchableOpacity>
@@ -105,6 +110,9 @@ export default function ListEditor({
         style={s.addBtn}
         onPress={addRow}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={addLabel || 'Voeg rij toe'}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       >
         <Feather name="plus" size={15} color={theme.colors.primary} />
         <Text style={s.addBtnText}>{addLabel || '+ Voeg rij toe'}</Text>

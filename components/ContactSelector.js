@@ -409,8 +409,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkboxSelected: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    backgroundColor: '#FF6B00',
+    borderColor: '#FF6B00',
   },
   checkmark: {
     color: '#FEFEFE',

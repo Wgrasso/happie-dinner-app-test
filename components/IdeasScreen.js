@@ -1979,7 +1979,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   chefModalRecipesTitle: {
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 16,
     color: '#2D2D2D',
     marginBottom: 12,
@@ -2008,8 +2008,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chefModalRecipeTitle: {
+    fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 15,
-    fontWeight: '600',
     color: '#4A3728',
   },
   chefModalRecipeTag: {
@@ -2029,7 +2029,7 @@ const styles = StyleSheet.create({
   },
   chefModalRecipeCost: {
     fontSize: 12,
-    color: '#4CAF50',
+    color: '#FF6B00',
     fontWeight: '600',
   },
   chefModalRecipeCuisine: {
