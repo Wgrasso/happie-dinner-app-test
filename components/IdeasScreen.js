@@ -488,7 +488,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B7355" />
+          <ActivityIndicator size="large" color="#FF6B00" />
           <Text style={styles.loadingText}>{t('recipes.loadingRecipes')}</Text>
         </View>
       </SafeAreaView>
@@ -608,7 +608,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
 
             {chefsLoading ? (
               <View style={styles.emptyWishlist}>
-                <ActivityIndicator size="large" color="#8B7355" />
+                <ActivityIndicator size="large" color="#FF6B00" />
               </View>
             ) : chefs.length === 0 ? (
               <View style={styles.emptyWishlist}>
@@ -637,7 +637,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                             />
                           ) : (
                             <View style={[styles.recipeImage, { backgroundColor: '#E8E6E3', justifyContent: 'center', alignItems: 'center' }]}>
-                              <Text style={{ fontSize: 48, color: '#8B7355' }}>{chef.name.charAt(0)}</Text>
+                              <Text style={{ fontSize: 48, color: '#FF6B00' }}>{chef.name.charAt(0)}</Text>
                             </View>
                           )}
                           {chefRecipes.length > 0 && (
@@ -655,7 +655,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
 
                         <View style={styles.recipeContent}>
                           <Text style={styles.recipeTitle}>{chef.name}</Text>
-                          <Text style={[styles.recipeDescription, { color: '#8B7355', marginBottom: 8 }]}>@{chef.tag}</Text>
+                          <Text style={[styles.recipeDescription, { color: '#FF6B00', marginBottom: 8 }]}>@{chef.tag}</Text>
                           {chef.description && (
                             <Text style={styles.recipeDescription} numberOfLines={2}>{chef.description}</Text>
                           )}
@@ -710,7 +710,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
 
             {housesLoading ? (
               <View style={styles.emptyWishlist}>
-                <ActivityIndicator size="large" color="#8B7355" />
+                <ActivityIndicator size="large" color="#FF6B00" />
               </View>
             ) : houses.length === 0 ? (
               <View style={styles.emptyWishlist}>
@@ -738,7 +738,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                             />
                           ) : (
                             <View style={[styles.recipeImage, { backgroundColor: '#E8E6E3', justifyContent: 'center', alignItems: 'center' }]}>
-                              <Text style={{ fontSize: 48, color: '#8B7355' }}>{house.name.charAt(0)}</Text>
+                              <Text style={{ fontSize: 48, color: '#FF6B00' }}>{house.name.charAt(0)}</Text>
                             </View>
                           )}
                           {houseRecipes.length > 0 && (
@@ -756,7 +756,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
 
                         <View style={styles.recipeContent}>
                           <Text style={styles.recipeTitle}>{house.name}</Text>
-                          <Text style={[styles.recipeDescription, { color: '#8B7355', marginBottom: 8 }]}>@{house.tag}</Text>
+                          <Text style={[styles.recipeDescription, { color: '#FF6B00', marginBottom: 8 }]}>@{house.tag}</Text>
                           {house.description && (
                             <Text style={styles.recipeDescription} numberOfLines={2}>{house.description}</Text>
                           )}
@@ -1075,7 +1075,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                     />
                   ) : (
                     <View style={[styles.modalImage, { backgroundColor: '#E8E6E3', justifyContent: 'center', alignItems: 'center' }]}>
-                      <Text style={{ fontSize: 64, color: '#8B7355' }}>{selectedChef.name.charAt(0)}</Text>
+                      <Text style={{ fontSize: 64, color: '#FF6B00' }}>{selectedChef.name.charAt(0)}</Text>
                     </View>
                   )}
 
@@ -1214,7 +1214,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     lineHeight: 16,
-    color: '#8B7355',
+    color: '#FF6B00',
     textAlign: 'center',
     letterSpacing: 0.1,
     fontStyle: 'italic',
@@ -1318,7 +1318,7 @@ const styles = StyleSheet.create({
   chefRecipeDesc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   recipeImage: {
     width: '100%',
@@ -1349,7 +1349,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   timeContainer: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -1368,7 +1368,7 @@ const styles = StyleSheet.create({
     marginBottom: -12,
   },
   priceBadge: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderTopLeftRadius: 12,
@@ -1413,7 +1413,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   moreRecipesButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 8,
     paddingVertical: 16,
     paddingHorizontal: 32,
@@ -1436,7 +1436,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: '#8B7355',
+    color: '#FF6B00',
     textAlign: 'center',
     letterSpacing: 0.1,
     textDecorationLine: 'underline',
@@ -1492,13 +1492,13 @@ const styles = StyleSheet.create({
   backArrow: {
     fontFamily: 'Inter_500Medium',
     fontSize: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginRight: 6,
   },
   backText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.2,
   },
   modalContent: {
@@ -1533,7 +1533,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     lineHeight: 16,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginBottom: 6,
     letterSpacing: 0.3,
     textTransform: 'uppercase',
@@ -1573,7 +1573,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 12,
     lineHeight: 16,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.2,
     textTransform: 'capitalize',
   },
@@ -1582,11 +1582,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   viewRecipeButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingHorizontal: 36,
     paddingVertical: 16,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 3,
@@ -1638,7 +1638,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
@@ -1681,8 +1681,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTab: {
-    backgroundColor: '#8B7355',
-    shadowColor: '#8B7355',
+    backgroundColor: '#FF6B00',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1732,13 +1732,13 @@ const styles = StyleSheet.create({
   addIcon: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#8B7355',
+    color: '#FF6B00',
     lineHeight: 26,
   },
   modalAddIcon: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#8B7355',
+    color: '#FF6B00',
     marginRight: 8,
     lineHeight: 24,
   },
@@ -1803,7 +1803,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
     lineHeight: 20,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.2,
   },
   modalRemoveButton: {
@@ -1862,7 +1862,7 @@ const styles = StyleSheet.create({
   modalChefTagText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   modalChefName: {
     fontFamily: 'Inter_400Regular',
@@ -1950,7 +1950,7 @@ const styles = StyleSheet.create({
   chefProfileTag: {
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginTop: 4,
     marginBottom: 12,
   },
@@ -1961,7 +1961,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   chefLinkButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -2025,7 +2025,7 @@ const styles = StyleSheet.create({
   },
   chefModalRecipeTime: {
     fontSize: 12,
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   chefModalRecipeCost: {
     fontSize: 12,
@@ -2034,7 +2034,7 @@ const styles = StyleSheet.create({
   },
   chefModalRecipeCuisine: {
     fontSize: 12,
-    color: '#8B7355',
+    color: '#FF6B00',
     fontStyle: 'italic',
   },
 }); 

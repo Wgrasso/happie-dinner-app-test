@@ -267,7 +267,7 @@ const Top3Modal = React.memo(({ visible, onClose, loadMeals, onRecipePress }) =>
           </View>
           {loading ? (
             <View style={top3ModalStyles.loading}>
-              <ActivityIndicator size="large" color="#8B7355" />
+              <ActivityIndicator size="large" color="#FF6B00" />
             </View>
           ) : displayMeals.length === 0 ? (
             <Text style={top3ModalStyles.emptyText}>{t('meals.noVotesYet')}</Text>
@@ -314,7 +314,7 @@ const top3ModalStyles = StyleSheet.create({
     maxWidth: 360,
     maxHeight: '80%',
     overflow: 'hidden',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
     shadowRadius: 24,
@@ -331,11 +331,11 @@ const top3ModalStyles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   closeBtn: {
     fontSize: 20,
-    color: '#8B7355',
+    color: '#FF6B00',
     padding: 4,
   },
   loading: {
@@ -380,17 +380,17 @@ const top3ModalStyles = StyleSheet.create({
   recipeName: {
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 2,
   },
   voteCount: {
     fontSize: 13,
     fontFamily: 'Inter_400Regular',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   chevron: {
     fontSize: 22,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginLeft: 8,
   },
 });
@@ -579,7 +579,7 @@ const ExpandableGroupCard = React.memo(({
             onPress={(e) => { e.stopPropagation(); onOpenChat(); }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Feather name="message-circle" size={20} color="#8B7355" />
+            <Feather name="message-circle" size={20} color="#FF6B00" />
             {hasUnread && <View style={cardStyles.unreadDot} />}
           </TouchableOpacity>
         </View>
@@ -813,7 +813,7 @@ const ExpandableGroupCard = React.memo(({
                 )}
                 {topMealsLoading && (!topMeals || topMeals.length === 0) && (
                   <View style={cardStyles.top3Preview}>
-                    <ActivityIndicator size="small" color="#8B7355" />
+                    <ActivityIndicator size="small" color="#FF6B00" />
                   </View>
                 )}
               </View>
@@ -999,7 +999,7 @@ const cardStyles = StyleSheet.create({
     marginBottom: 14,
     borderWidth: 0,
     borderColor: 'transparent',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -1022,7 +1022,7 @@ const cardStyles = StyleSheet.create({
   name: {
     fontSize: 17,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 3,
   },
   attendanceCount: {
@@ -1289,7 +1289,7 @@ const cardStyles = StyleSheet.create({
   top3SectionTitle: {
     fontSize: 13,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
     marginBottom: 8,
     letterSpacing: 0.3,
   },
@@ -1344,7 +1344,7 @@ const cardStyles = StyleSheet.create({
   top3RecipeName: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 3,
   },
   top3RecipeNameTop: {
@@ -1370,7 +1370,7 @@ const cardStyles = StyleSheet.create({
   top3RecipeTagText: {
     fontSize: 10,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   // Vote progress bar
   voteBarContainer: {
@@ -1396,7 +1396,7 @@ const cardStyles = StyleSheet.create({
   top3VoteNumber: {
     fontSize: 16,
     fontFamily: 'Inter_700Bold',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   top3VoteNumberTop: {
     color: '#FF6B00',
@@ -1430,7 +1430,7 @@ const cardStyles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
   },
   // Actions menu modal
   menuOverlay: {
@@ -1446,7 +1446,7 @@ const cardStyles = StyleSheet.create({
     width: '100%',
     maxWidth: 300,
     overflow: 'hidden',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -1469,7 +1469,7 @@ const cardStyles = StyleSheet.create({
   inviteButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingVertical: 9,
     paddingHorizontal: 14,
     borderRadius: 10,
@@ -1490,12 +1490,12 @@ const cardStyles = StyleSheet.create({
   menuItemText: {
     fontSize: 16,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   menuItemCode: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
     marginTop: 4,
     letterSpacing: 1,
   },
@@ -1518,7 +1518,7 @@ const cardStyles = StyleSheet.create({
   menuItemTextCancel: {
     fontSize: 16,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   menuDivider: {
     height: 1,
@@ -1544,7 +1544,7 @@ const cardStyles = StyleSheet.create({
   membersTitle: {
     fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   membersClose: {
     fontSize: 18,
@@ -1557,7 +1557,7 @@ const cardStyles = StyleSheet.create({
   memberName: {
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   membersEmpty: {
     fontSize: 14,
@@ -1590,17 +1590,17 @@ const cardStyles = StyleSheet.create({
   memberAvatarText: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   memberName: {
     flex: 1,
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   youLabel: {
     fontFamily: 'Inter_400Regular',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   memberStatus: {
     paddingHorizontal: 12,
@@ -1629,11 +1629,11 @@ const cardStyles = StyleSheet.create({
   },
   voteButton: {
     marginTop: 16,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -1685,11 +1685,11 @@ const cardStyles = StyleSheet.create({
   top3ButtonText: {
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   top3ButtonChevron: {
     fontSize: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   groupActionsSection: {
     marginTop: 20,
@@ -1862,7 +1862,7 @@ const ExpandableOccasionCard = React.memo(({
               <Text style={occasionStyles.myResponseLabel}>{t('specialOccasion.areYouJoining')}</Text>
             {loadingMembers ? (
               <View style={occasionStyles.toggleLoading}>
-                <ActivityIndicator size="small" color="#8B7355" />
+                <ActivityIndicator size="small" color="#FF6B00" />
               </View>
             ) : (
               <YesNoToggle
@@ -1894,7 +1894,7 @@ const ExpandableOccasionCard = React.memo(({
           {/* Members List */}
           {loadingMembers ? (
             <View style={occasionStyles.loadingMembers}>
-              <ActivityIndicator size="small" color="#8B7355" />
+              <ActivityIndicator size="small" color="#FF6B00" />
             </View>
           ) : (
             <View style={occasionStyles.membersList}>
@@ -1957,7 +1957,7 @@ const occasionStyles = StyleSheet.create({
     borderWidth: 0,
     borderColor: 'transparent',
     borderLeftWidth: 4,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -1997,7 +1997,7 @@ const occasionStyles = StyleSheet.create({
   type: {
     fontSize: 16,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   dateBadge: {
     backgroundColor: '#F8F6F3',
@@ -2006,7 +2006,7 @@ const occasionStyles = StyleSheet.create({
     borderRadius: 10,
   },
   dateBadgeToday: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
   },
   dateText: {
     fontSize: 12,
@@ -2024,7 +2024,7 @@ const occasionStyles = StyleSheet.create({
   group: {
     fontSize: 13,
     fontFamily: 'Inter_400Regular',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   message: {
     fontSize: 14,
@@ -2060,7 +2060,7 @@ const occasionStyles = StyleSheet.create({
   time: {
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   expandedContent: {
     overflow: 'hidden',
@@ -2079,7 +2079,7 @@ const occasionStyles = StyleSheet.create({
   myResponseLabel: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 12,
     letterSpacing: 0.2,
   },
@@ -2138,17 +2138,17 @@ const occasionStyles = StyleSheet.create({
   memberAvatarText: {
     fontSize: 12,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   memberName: {
     flex: 1,
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   youLabel: {
     fontFamily: 'Inter_400Regular',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   memberStatus: {
     paddingHorizontal: 10,
@@ -2177,11 +2177,11 @@ const occasionStyles = StyleSheet.create({
   },
   voteButton: {
     marginTop: 12,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
@@ -2665,7 +2665,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     graduation: { label: t('specialOccasion.occasionTypes.graduation'), color: '#2196F3' },
     dinner: { label: t('specialOccasion.dinnerParty'), color: '#FF6B00' },
     bbq: { label: t('specialOccasion.barbecue'), color: '#FF9800' },
-    other: { label: t('specialOccasion.specialMoment'), color: '#8B7355' },
+    other: { label: t('specialOccasion.specialMoment'), color: '#FF6B00' },
   };
 
   // Get current user on mount and load data from context
@@ -4994,7 +4994,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#8B7355"
+            tintColor="#FF6B00"
           />
         }
       >
@@ -5087,13 +5087,13 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 <View style={gpStyles.sectionHeader}>
                   <Text style={gpStyles.sectionTitle}>{'Wat eten we vanavond?'}</Text>
                   {actionLoading ? (
-                    <ActivityIndicator color="#8B7355" size="small" />
+                    <ActivityIndicator color="#FF6B00" size="small" />
                   ) : topMeals && topMeals.length > 0 ? (
                     <TouchableOpacity
                       style={gpStyles.voteBtnActive}
                       onPress={() => handleStartVoting(selectedGroup)}
                     >
-                      <Feather name="check-circle" size={14} color="#3D9A50" />
+                      <Feather name="check-circle" size={14} color="#FF6B00" />
                       <Text style={gpStyles.voteBtnActiveText}>{'Gestemd'}</Text>
                     </TouchableOpacity>
                   ) : (
@@ -5142,8 +5142,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                                 </View>
                               ) : null}
                               <View style={gpStyles.foodCardMetaItem}>
-                                <Feather name="thumbs-up" size={12} color="#8B7355" />
-                                <Text style={[gpStyles.foodCardMetaText, { color: '#8B7355' }]}>{votes}</Text>
+                                <Feather name="thumbs-up" size={12} color="#FF6B00" />
+                                <Text style={[gpStyles.foodCardMetaText, { color: '#FF6B00' }]}>{votes}</Text>
                               </View>
                             </View>
                           </View>
@@ -5154,7 +5154,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   </View>
                 ) : topMealsLoading ? (
                   <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                    <ActivityIndicator size="small" color="#8B7355" />
+                    <ActivityIndicator size="small" color="#FF6B00" />
                   </View>
                 ) : null}
               </View>
@@ -5194,8 +5194,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                               </View>
                             ) : null}
                             <View style={gpStyles.foodCardMetaItem}>
-                              <Feather name="thumbs-up" size={12} color="#8B7355" />
-                              <Text style={[gpStyles.foodCardMetaText, { color: '#8B7355' }]}>{votes}</Text>
+                              <Feather name="thumbs-up" size={12} color="#FF6B00" />
+                              <Text style={[gpStyles.foodCardMetaText, { color: '#FF6B00' }]}>{votes}</Text>
                             </View>
                           </View>
                         </View>
@@ -5214,7 +5214,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   <View style={gpStyles.shoppingCard}>
                     <View style={gpStyles.shoppingCardLeft}>
                       <View style={gpStyles.shoppingIconWrap}>
-                        <Feather name="shopping-bag" size={20} color="#8B7355" />
+                        <Feather name="shopping-bag" size={20} color="#FF6B00" />
                       </View>
                       <View style={gpStyles.shoppingCardInfo}>
                         <Text style={gpStyles.shoppingCardName}>
@@ -5246,10 +5246,10 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     activeOpacity={0.7}
                   >
                     {shoppingLoading ? (
-                      <ActivityIndicator size="small" color="#8B7355" />
+                      <ActivityIndicator size="small" color="#FF6B00" />
                     ) : (
                       <>
-                        <Feather name="shopping-bag" size={18} color="#8B7355" />
+                        <Feather name="shopping-bag" size={18} color="#FF6B00" />
                         <Text style={gpStyles.shoppingBtnText}>{'Ik ga nu inkopen'}</Text>
                       </>
                     )}
@@ -5269,11 +5269,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     message: `═══════════════════\n  HAPPIE GROEP JOINEN\n═══════════════════\n\nJe bent uitgenodigd! Open deze link:\nhttps://studentenhappie.nl/join/${code}\n\nOf download de app en vul de code in:\n\n🔑 Code: ${code}\n\n📲 https://apps.apple.com/app/happie/id6757129676\n\n═══════════════════`,
                   }).catch(() => {});
                 }}>
-                  <Feather name="user-plus" size={16} color="#8B7355" />
+                  <Feather name="user-plus" size={16} color="#FF6B00" />
                   <Text style={gpStyles.secondaryBtnText}>{'Groepsleden uitnodigen'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={gpStyles.secondaryBtn} onPress={() => setShowGroupRecipesModal(true)}>
-                  <Feather name="book-open" size={16} color="#8B7355" />
+                  <Feather name="book-open" size={16} color="#FF6B00" />
                   <Text style={gpStyles.secondaryBtnText}>{'Recepten'}</Text>
                 </TouchableOpacity>
               </View>
@@ -5975,7 +5975,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               borderColor: '#E8E2DA',
             }}>
               <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999', marginBottom: 4 }}>Groepscode</Text>
-              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 22, color: '#2D2D2D', letterSpacing: 2 }}>{newGroupCode}</Text>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 22, color: '#1A1000', letterSpacing: 2 }}>{newGroupCode}</Text>
             </View>
             <View style={styles.simpleModalButtons}>
               <TouchableOpacity
@@ -6101,21 +6101,21 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     lightHaptic();
                   }}
                   markedDates={newOccasionDate ? {
-                    [newOccasionDate]: { selected: true, selectedColor: occasionLabels[newOccasionType]?.color || '#8B7355' }
+                    [newOccasionDate]: { selected: true, selectedColor: occasionLabels[newOccasionType]?.color || '#FF6B00' }
                   } : {}}
                   minDate={new Date().toISOString().split('T')[0]}
                   theme={{
                     backgroundColor: 'transparent',
                     calendarBackground: 'transparent',
                     textSectionTitleColor: '#8B8B8B',
-                    selectedDayBackgroundColor: occasionLabels[newOccasionType]?.color || '#8B7355',
+                    selectedDayBackgroundColor: occasionLabels[newOccasionType]?.color || '#FF6B00',
                     selectedDayTextColor: '#FFFFFF',
-                    todayTextColor: '#8B7355',
-                    dayTextColor: '#2D2D2D',
+                    todayTextColor: '#FF6B00',
+                    dayTextColor: '#1A1000',
                     textDisabledColor: '#D0D0D0',
-                    dotColor: '#8B7355',
-                    monthTextColor: '#2D2D2D',
-                    arrowColor: '#8B7355',
+                    dotColor: '#FF6B00',
+                    monthTextColor: '#1A1000',
+                    arrowColor: '#FF6B00',
                     textDayFontFamily: 'Inter_400Regular',
                     textMonthFontFamily: 'PlayfairDisplay_700Bold',
                     textDayHeaderFontFamily: 'Inter_500Medium',
@@ -6202,7 +6202,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                           <View style={occasionWizardStyles.groupItemLeft}>
                             <View style={[
                               occasionWizardStyles.groupCheckbox,
-                              isSelected && { backgroundColor: occasionLabels[newOccasionType]?.color || '#8B7355', borderColor: occasionLabels[newOccasionType]?.color || '#8B7355' },
+                              isSelected && { backgroundColor: occasionLabels[newOccasionType]?.color || '#FF6B00', borderColor: occasionLabels[newOccasionType]?.color || '#FF6B00' },
                             ]}>
                               {isSelected && <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>✓</Text>}
                             </View>
@@ -6271,7 +6271,7 @@ const gpStyles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 14,
   },
   sectionSpaced: {
@@ -6286,7 +6286,7 @@ const gpStyles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
 
   // --- Segmented Control (participation) ---
@@ -6304,10 +6304,12 @@ const gpStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   segmentBtnYesActive: {
-    backgroundColor: '#3D9A50',
+    // Warm orange for positive "I'm eating along" action — matches the
+    // strak-orange brand instead of the old green.
+    backgroundColor: '#FF6B00',
   },
   segmentBtnNoActive: {
-    backgroundColor: '#D45050',
+    backgroundColor: '#CC2200',
   },
   segmentBtnText: {
     fontSize: 15,
@@ -6333,7 +6335,7 @@ const gpStyles = StyleSheet.create({
   attendeesLabelYes: {
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
-    color: '#3D9A50',
+    color: '#FF6B00',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 8,
@@ -6341,7 +6343,7 @@ const gpStyles = StyleSheet.create({
   attendeesLabelNo: {
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
-    color: '#D45050',
+    color: '#CC2200',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 8,
@@ -6349,7 +6351,7 @@ const gpStyles = StyleSheet.create({
   attendeeName: {
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
-    color: '#2D2D2D',
+    color: '#1A1000',
     paddingVertical: 3,
     lineHeight: 20,
   },
@@ -6371,7 +6373,7 @@ const gpStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 8,
@@ -6393,7 +6395,7 @@ const gpStyles = StyleSheet.create({
   voteBtnActiveText: {
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
-    color: '#3D9A50',
+    color: '#FF6B00',
   },
   foodCards: {
     gap: 10,
@@ -6425,7 +6427,7 @@ const gpStyles = StyleSheet.create({
   foodCardName: {
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 4,
   },
   foodCardMeta: {
@@ -6464,7 +6466,7 @@ const gpStyles = StyleSheet.create({
   secondaryBtnText: {
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
 
   // --- Shopping ---
@@ -6476,14 +6478,14 @@ const gpStyles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#8B7355',
+    borderColor: '#FF6B00',
     borderStyle: 'dashed',
     backgroundColor: '#FAFAF8',
   },
   shoppingBtnText: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   shoppingCard: {
     flexDirection: 'row',
@@ -6517,7 +6519,7 @@ const gpStyles = StyleSheet.create({
   shoppingCardName: {
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
     lineHeight: 20,
   },
   shoppingStopBtn: {
@@ -6547,7 +6549,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#8B7355',
+    color: '#FF6B00',
     fontFamily: 'Inter_400Regular',
   },
   skeletonContainer: {
@@ -6577,20 +6579,20 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 2,
   },
   headerSubtitle: {
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.3,
   },
   profileButton: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
@@ -6612,7 +6614,7 @@ const styles = StyleSheet.create({
     left: 24,
     width: 50,
     height: 3,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 2,
   },
   scrollView: {
@@ -6644,7 +6646,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 24,
     fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 10,
   },
   emptyText: {
@@ -6671,7 +6673,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
@@ -6702,7 +6704,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
     marginHorizontal: 16,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -6715,7 +6717,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     borderWidth: 0,
     borderColor: 'transparent',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -6731,7 +6733,7 @@ const styles = StyleSheet.create({
   occasionType: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   occasionTime: {
     fontSize: 13,
@@ -6742,7 +6744,7 @@ const styles = StyleSheet.create({
   occasionExpandedTitle: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginTop: 14,
     marginBottom: 4,
   },
@@ -6831,7 +6833,7 @@ const styles = StyleSheet.create({
   attendeeName: {
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginTop: 3,
   },
   attendeeNameNo: {
@@ -6878,11 +6880,11 @@ const styles = StyleSheet.create({
   occasionTop3BtnText: {
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   occasionTop3BtnChevron: {
     fontSize: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   pastEventLabel: {
     fontSize: 12,
@@ -6906,13 +6908,13 @@ const styles = StyleSheet.create({
   createOccasionIcon: {
     fontSize: 20,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
     marginRight: 8,
   },
   createOccasionText: {
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   // Old Events Section (uses sectionDividerTouchable and sectionLabel styles)
   pastOccasionsContainer: {
@@ -6934,7 +6936,7 @@ const styles = StyleSheet.create({
   },
   pastOccasionTypeIndicator: {
     width: 4,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
   },
   pastOccasionContent: {
     flex: 1,
@@ -6943,7 +6945,7 @@ const styles = StyleSheet.create({
   pastOccasionTitle: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 2,
   },
   pastOccasionDate: {
@@ -7004,7 +7006,7 @@ const styles = StyleSheet.create({
   pastOccasionListTitle: {
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -7106,12 +7108,12 @@ const styles = StyleSheet.create({
   searchResultName: {
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   addIcon: {
     fontSize: 20,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   // Contacts Section
   contactsSection: {
@@ -7144,7 +7146,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   contactGroups: {
     fontSize: 12,
@@ -7176,7 +7178,7 @@ const styles = StyleSheet.create({
   participantChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
@@ -7209,7 +7211,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
@@ -7225,7 +7227,7 @@ const styles = StyleSheet.create({
     color: '#FEFEFE',
   },
   actionButtonTextSecondary: {
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   // Modal Styles
   modalOverlay: {
@@ -7247,7 +7249,7 @@ const styles = StyleSheet.create({
     padding: 28,
     width: screenWidth - 48,
     maxWidth: 380,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.12,
     shadowRadius: 32,
@@ -7256,7 +7258,7 @@ const styles = StyleSheet.create({
   simpleModalTitle: {
     fontSize: 22,
     fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     textAlign: 'center',
     marginBottom: 6,
   },
@@ -7306,7 +7308,7 @@ const styles = StyleSheet.create({
   groupPhotoLabel: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   modalInput: {
     borderWidth: 1,
@@ -7324,7 +7326,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
   },
   simpleModalButtons: {
@@ -7348,8 +7350,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
-    backgroundColor: '#8B7355',
-    shadowColor: '#8B7355',
+    backgroundColor: '#FF6B00',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
@@ -7371,7 +7373,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDFCFA',
     borderRadius: 24,
     overflow: 'hidden',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
     shadowRadius: 24,
@@ -7399,7 +7401,7 @@ const styles = StyleSheet.create({
   },
   recipeModalCloseText: {
     fontSize: 18,
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   recipeModalBody: {
     paddingHorizontal: 20,
@@ -7409,7 +7411,7 @@ const styles = StyleSheet.create({
   recipeModalTitle: {
     fontSize: 22,
     fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 12,
   },
   recipeModalMeta: {
@@ -7432,7 +7434,7 @@ const styles = StyleSheet.create({
   recipeModalMetaValue: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   recipeModalSection: {
     marginBottom: 16,
@@ -7440,7 +7442,7 @@ const styles = StyleSheet.create({
   recipeModalSectionTitle: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
   },
   recipeModalDescription: {
@@ -7465,7 +7467,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#E8845C',
+    backgroundColor: '#FF6B00',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
@@ -7522,7 +7524,7 @@ const occasionWizardStyles = StyleSheet.create({
     backgroundColor: '#E0DCD7',
   },
   progressDotActive: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     width: 24,
     borderRadius: 4,
   },
@@ -7539,7 +7541,7 @@ const occasionWizardStyles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginTop: 12,
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -7566,7 +7568,7 @@ const occasionWizardStyles = StyleSheet.create({
   },
   groupItemSelected: {
     backgroundColor: '#FAF7F2',
-    borderColor: '#8B7355',
+    borderColor: '#FF6B00',
   },
   groupItemLeft: {
     flexDirection: 'row',
@@ -7587,7 +7589,7 @@ const occasionWizardStyles = StyleSheet.create({
   groupName: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   groupMemberCount: {
     fontSize: 12,
@@ -7607,7 +7609,7 @@ const occasionWizardStyles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
     marginTop: 4,
     marginBottom: 4,
   },

@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     minWidth: 100,
     textAlign: 'center',
   },

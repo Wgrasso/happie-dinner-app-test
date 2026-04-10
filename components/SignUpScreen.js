@@ -410,12 +410,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   label: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
     lineHeight: 20,
-    color: '#1A1000',
+    color: '#7A6550',
     marginBottom: 8,
-    letterSpacing: 0.1,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   input: {
     fontFamily: 'Inter_400Regular',

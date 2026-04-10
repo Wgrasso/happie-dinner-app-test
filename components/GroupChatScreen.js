@@ -167,7 +167,7 @@ export default function GroupChatScreen({ route, navigation }) {
       >
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B7355" />
+            <ActivityIndicator size="large" color="#FF6B00" />
           </View>
         ) : messages.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 32,
-    color: '#8B7355',
+    color: '#FF6B00',
     fontFamily: 'Inter_400Regular',
     marginTop: -4,
   },
@@ -244,12 +244,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   headerSubtitle: {
     fontSize: 12,
     fontFamily: 'Inter_400Regular',
-    color: '#8B7355',
+    color: '#FF6B00',
     marginTop: 1,
   },
   chatArea: {
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   bubbleMe: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderBottomRightRadius: 4,
   },
   bubbleOther: {
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   systemLabel: {
     fontSize: 12,
     fontFamily: 'Inter_700Bold',
-    color: '#E8845C',
+    color: '#FF6B00',
     marginBottom: 3,
   },
   systemText: {
@@ -329,13 +329,13 @@ const styles = StyleSheet.create({
   senderName: {
     fontSize: 12,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
     marginBottom: 2,
   },
   msgText: {
     fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    color: '#2D2D2D',
+    color: '#1A1000',
     lineHeight: 20,
   },
   msgTextMe: {
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    color: '#2D2D2D',
+    color: '#1A1000',
     borderWidth: 1,
     borderColor: '#E8E2DA',
     textAlignVertical: 'center',
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,

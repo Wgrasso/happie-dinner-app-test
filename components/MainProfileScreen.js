@@ -299,7 +299,7 @@ export default function MainProfileScreen({
       <SafeAreaView style={styles.container}>
         <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B7355" />
+            <ActivityIndicator size="large" color="#FF6B00" />
             <Text style={styles.loadingText}>{t('loading.preparingStudentExperience') || 'Laden...'}</Text>
           </View>
         </Pressable>
@@ -564,12 +564,12 @@ export default function MainProfileScreen({
         ) : (
           <View style={styles.heroEmptyRow}>
             <TouchableOpacity style={styles.heroBtn} onPress={handlePickCamera} activeOpacity={0.8}>
-              <Feather name="camera" size={17} color="#8B7355" />
+              <Feather name="camera" size={17} color="#FF6B00" />
               <Text style={styles.heroBtnText}>{t('userRecipes.camera') || 'Camera'}</Text>
             </TouchableOpacity>
             <View style={styles.heroBtnDivider} />
             <TouchableOpacity style={styles.heroBtn} onPress={handlePickGallery} activeOpacity={0.8}>
-              <Feather name="image" size={17} color="#8B7355" />
+              <Feather name="image" size={17} color="#FF6B00" />
               <Text style={styles.heroBtnText}>{t('userRecipes.gallery') || 'Gallerij'}</Text>
             </TouchableOpacity>
           </View>
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 17,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 6,
   },
   emptyStateSubtext: {
@@ -719,24 +719,24 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 24,
     lineHeight: 30,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
   },
   cardSectionCount: {
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginTop: 2,
   },
   addCardBtn: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6B5640',
+    shadowColor: '#CC5500',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
@@ -793,7 +793,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 20,
     lineHeight: 26,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
     flex: 1,
     marginRight: 12,
@@ -803,7 +803,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   timeBadge: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -967,13 +967,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   submitBtn: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     height: 54,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 24,
-    shadowColor: '#6B5640',
+    shadowColor: '#CC5500',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.22,
     shadowRadius: 10,
@@ -1012,7 +1012,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEFEFE',
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
@@ -1038,13 +1038,13 @@ const styles = StyleSheet.create({
   backArrow: {
     fontFamily: 'Inter_500Medium',
     fontSize: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginRight: 6,
   },
   backText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.2,
   },
   modalContent: {
@@ -1062,7 +1062,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 26,
     lineHeight: 34,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 26,
     letterSpacing: 0.3,
   },
@@ -1079,7 +1079,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     lineHeight: 16,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginBottom: 6,
     letterSpacing: 0.3,
     textTransform: 'uppercase',
@@ -1088,7 +1088,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
     lineHeight: 22,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.1,
   },
   modalDietary: {
@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 14,
     letterSpacing: 0.2,
   },
@@ -1119,7 +1119,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 12,
     lineHeight: 16,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.2,
     textTransform: 'capitalize',
   },
@@ -1159,7 +1159,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,

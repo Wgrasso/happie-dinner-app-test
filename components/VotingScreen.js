@@ -731,7 +731,7 @@ export default function VotingScreen({ route, navigation }) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B7355" />
+          <ActivityIndicator size="large" color="#FF6B00" />
           <Text style={styles.loadingText}>Loading meal options...</Text>
         </View>
       </SafeAreaView>
@@ -1301,7 +1301,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     backgroundColor: 'rgba(139, 115, 85, 0.1)',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1313,13 +1313,13 @@ const styles = StyleSheet.create({
   backArrow: {
     fontFamily: 'Inter_500Medium',
     fontSize: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginRight: 6,
   },
   backText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.2,
   },
   headerCenter: {
@@ -1329,7 +1329,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
   },
   progressText: {
@@ -1349,7 +1349,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 2,
     transition: 'width 0.3s ease',
   },
@@ -1365,7 +1365,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 24,
     lineHeight: 30,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
     marginBottom: 8,
   },
@@ -1373,7 +1373,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
     lineHeight: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
     textAlign: 'center',
     letterSpacing: 0.1,
     fontStyle: 'italic',
@@ -1403,7 +1403,7 @@ const styles = StyleSheet.create({
     height: Math.min(500, Dimensions.get('window').height * 0.55),
     borderRadius: 20,
     backgroundColor: '#F8F6F3',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 8,
@@ -1427,7 +1427,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 22,
     lineHeight: 28,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
     marginBottom: 16,
   },
@@ -1438,7 +1438,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.1,
   },
   mealDescription: {
@@ -1473,13 +1473,13 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   likeButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -1510,7 +1510,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 28,
     lineHeight: 36,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
     textAlign: 'center',
     marginBottom: 16,
@@ -1534,11 +1534,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   backToGroupButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingHorizontal: 32,
     paddingVertical: 16,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 3,
@@ -1704,7 +1704,7 @@ const styles = StyleSheet.create({
   },
   modalCloseText: {
     fontSize: 20,
-    color: '#2D2D2D',
+    color: '#1A1000',
     fontFamily: 'Inter_600SemiBold',
   },
   modalContent: {
@@ -1721,7 +1721,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 24,
     lineHeight: 32,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
     marginBottom: 12,
   },
@@ -1732,7 +1732,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   modalTimeBadge: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -1768,7 +1768,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
     lineHeight: 22,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 12,
     letterSpacing: 0.2,
   },
@@ -1789,7 +1789,7 @@ const styles = StyleSheet.create({
   },
   ingredientBullet: {
     fontSize: 14,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginTop: 1,
   },
   ingredientText: {
@@ -1812,7 +1812,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#E8845C',
+    backgroundColor: '#FF6B00',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1841,7 +1841,7 @@ const styles = StyleSheet.create({
   nutritionValue: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 18,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 4,
   },
   nutritionLabel: {
@@ -1864,7 +1864,7 @@ const styles = StyleSheet.create({
   },
   modalLikeButton: {
     flex: 1,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -1909,7 +1909,7 @@ const styles = StyleSheet.create({
   votingModalChefText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   votingModalChefName: {
     fontFamily: 'Inter_400Regular',

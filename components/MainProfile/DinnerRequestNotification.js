@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     width: '90%',
     maxWidth: 400,
     position: 'relative',
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: {
       width: 0,
       height: 12,
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 28,
     lineHeight: 36,
-    color: '#2D2D2D',
+    color: '#1A1000',
     textAlign: 'center',
     marginBottom: 24,
     letterSpacing: 0.5,
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 18,
     lineHeight: 26,
-    color: '#2D2D2D',
+    color: '#1A1000',
     textAlign: 'center',
     marginBottom: 32,
     letterSpacing: 0.1,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 24,
     alignItems: 'center',
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: {
       width: 0,
       height: 3,
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   acceptButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
   },
   declineButton: {
     backgroundColor: '#6B6B6B',
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   navArrowText: {
     fontFamily: 'Inter_700Bold',
     fontSize: 24,
-    color: '#2D2D2D',
+    color: '#1A1000',
     lineHeight: 28,
   },
   disabledArrow: {

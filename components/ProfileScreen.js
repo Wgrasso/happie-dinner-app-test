@@ -476,7 +476,7 @@ export default function ProfileScreen({ route, navigation }) {
               <Switch
                 value={chatNotifications}
                 onValueChange={handleToggleChatNotifications}
-                trackColor={{ false: '#D0CCC7', true: '#8B7355' }}
+                trackColor={{ false: '#D0CCC7', true: '#FF6B00' }}
                 thumbColor="#FEFEFE"
               />
             </View>
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
   },
   backIcon: {
     fontSize: 28,
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   headerContent: {
     flex: 1,
@@ -667,14 +667,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 34,
     fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.3,
   },
 
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 2,
   },
   profileEmail: {
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 1,
     marginBottom: 10,
     marginLeft: 4,
@@ -757,7 +757,7 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontSize: 15,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   rowValue: {
     fontSize: 14,
@@ -798,7 +798,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   langOptionActive: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
   },
   langFlag: {
     fontSize: 16,
@@ -836,12 +836,12 @@ const styles = StyleSheet.create({
   },
   inviteIcon: {
     fontSize: 16,
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   inviteLabel: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 1,
   },
   inviteHint: {
@@ -924,7 +924,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 22,
     fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -943,7 +943,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     fontFamily: 'Inter_400Regular',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 16,
     minHeight: 56,
   },
@@ -969,7 +969,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     borderRadius: 14,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
   },
   modalSaveText: {
     fontSize: 15,

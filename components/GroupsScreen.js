@@ -1845,7 +1845,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   const getResponseIndicatorStyle = (status) => {
     switch (status) {
       case 'accepted':
-        return { backgroundColor: '#8B7355', color: '#FFFFFF' };
+        return { backgroundColor: '#FF6B00', color: '#FFFFFF' };
       case 'declined':
         return { backgroundColor: '#6B6B6B', color: '#FFFFFF' };
       case 'pending':
@@ -2993,7 +2993,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           
           {groupsLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#8B7355" />
+              <ActivityIndicator size="large" color="#FF6B00" />
               <Text style={styles.loadingText}>{t('common.loading')}</Text>
             </View>
           ) : groups.length === 0 ? (
@@ -3558,7 +3558,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                     <Text style={styles.groupModalSectionTitle}>{t('groups.members')}</Text>
                     {membersLoading ? (
                       <View style={styles.membersLoadingContainer}>
-                        <ActivityIndicator size="small" color="#8B7355" />
+                        <ActivityIndicator size="small" color="#FF6B00" />
                         <Text style={styles.membersLoadingText}>Loading members...</Text>
                       </View>
                     ) : membersError ? (
@@ -3824,7 +3824,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 32,
     lineHeight: 40,
-    color: '#2D2D2D',
+    color: '#1A1000',
     textAlign: 'center',
     letterSpacing: 0.5,
     marginBottom: 8,
@@ -3844,11 +3844,11 @@ const styles = StyleSheet.create({
   },
   createButton: {
     flex: 1,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -3865,7 +3865,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#8B7355',
+    borderColor: '#FF6B00',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -3874,7 +3874,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
     lineHeight: 24,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.2,
   },
   groupsContainer: {
@@ -3884,7 +3884,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 24,
     lineHeight: 30,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 20,
     letterSpacing: 0.3,
   },
@@ -3908,7 +3908,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 20,
     lineHeight: 26,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
     letterSpacing: 0.3,
   },
@@ -3945,7 +3945,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 20,
     lineHeight: 26,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 4,
     letterSpacing: 0.3,
   },
@@ -3957,7 +3957,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   groupBadge: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -3997,13 +3997,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.1,
   },
   leaveButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#8B7355',
+    borderColor: '#FF6B00',
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -4014,7 +4014,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.1,
   },
   deleteButton: {
@@ -4064,7 +4064,7 @@ const styles = StyleSheet.create({
     padding: 32,
     width: '100%',
     maxWidth: 400,
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: {
       width: 0,
       height: 12,
@@ -4078,7 +4078,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 26,
     lineHeight: 34,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 16,
     letterSpacing: 0.3,
     textAlign: 'center',
@@ -4113,7 +4113,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 300,
     maxWidth: '90%',
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
@@ -4127,7 +4127,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 24,
     lineHeight: 30,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 24,
     letterSpacing: 0.3,
     textAlign: 'center',
@@ -4140,7 +4140,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
     letterSpacing: 0.1,
   },
@@ -4148,7 +4148,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
     lineHeight: 24,
-    color: '#2D2D2D',
+    color: '#1A1000',
     backgroundColor: 'rgba(248, 246, 243, 0.8)',
     borderWidth: 1,
     borderColor: '#E8E6E3',
@@ -4181,11 +4181,11 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     flex: 1,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -4222,7 +4222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 300,
     maxWidth: '90%',
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
@@ -4236,7 +4236,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 26,
     lineHeight: 34,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 16,
     letterSpacing: 0.3,
     textAlign: 'center',
@@ -4251,12 +4251,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   alertButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 32,
     alignItems: 'center',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -4348,11 +4348,11 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '9deg' }],
   },
   signInButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 32,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -4380,7 +4380,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.1,
   },
    compactButtonContainer: {
@@ -4413,7 +4413,7 @@ const styles = StyleSheet.create({
    compactLeaveButton: {
      backgroundColor: 'transparent',
      borderWidth: 1,
-     borderColor: '#8B7355',
+     borderColor: '#FF6B00',
      borderRadius: 6,
      paddingVertical: 8,
      paddingHorizontal: 16,
@@ -4424,7 +4424,7 @@ const styles = StyleSheet.create({
      fontFamily: 'Inter_500Medium',
      fontSize: 13,
      lineHeight: 18,
-     color: '#8B7355',
+     color: '#FF6B00',
      letterSpacing: 0.1,
    },
   shinyGroupCard: {
@@ -4446,7 +4446,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 32,
     alignItems: 'stretch',
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
@@ -4465,7 +4465,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.1,
   },
   detailValueModal: {
@@ -4482,7 +4482,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
     lineHeight: 20,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 1.5,
     textAlign: 'right',
     flex: 1,
@@ -4502,7 +4502,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#8B7355',
+    color: '#FF6B00',
     textAlign: 'right',
   },
   mealRequestDetail: {
@@ -4527,12 +4527,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   requestMealButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 32,
     alignItems: 'center',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -4546,12 +4546,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   viewVotingButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 32,
     alignItems: 'center',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -4611,7 +4611,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEFEFE',
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: {
       width: 0,
       height: 12,
@@ -4629,7 +4629,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEFEFE',
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: {
       width: 0,
       height: 12,
@@ -4652,11 +4652,11 @@ const styles = StyleSheet.create({
   },
   
   membersButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 12,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -4682,21 +4682,21 @@ const styles = StyleSheet.create({
   backArrow: {
     fontFamily: 'Inter_500Medium',
     fontSize: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginRight: 6,
   },
   
   backText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.2,
   },
   headerGroupName: {
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 20,
     lineHeight: 26,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
     flex: 1,
     textAlign: 'center',
@@ -4722,7 +4722,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 26,
     lineHeight: 34,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 26,
     letterSpacing: 0.3,
     textAlign: 'center',
@@ -4744,7 +4744,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     lineHeight: 16,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginBottom: 6,
     letterSpacing: 0.3,
     textTransform: 'uppercase',
@@ -4755,7 +4755,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
     lineHeight: 22,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.1,
     textAlign: 'center',
   },
@@ -4768,7 +4768,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 14,
     letterSpacing: 0.2,
   },
@@ -4797,18 +4797,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 20,
     lineHeight: 26,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 2,
     flex: 1,
   },
   
   copyButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 16,
     marginLeft: 12,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -4839,7 +4839,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 18,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.1,
   },
   
@@ -4867,11 +4867,11 @@ const styles = StyleSheet.create({
   },
   
   requestMealButtonNew: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingHorizontal: 36,
     paddingVertical: 16,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 3,
@@ -4890,11 +4890,11 @@ const styles = StyleSheet.create({
   },
   
   viewVotingButtonNew: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingHorizontal: 36,
     paddingVertical: 16,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 3,
@@ -4941,7 +4941,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 16,
     lineHeight: 22,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.2,
     textAlign: 'center',
     marginBottom: 16,
@@ -4949,12 +4949,12 @@ const styles = StyleSheet.create({
   },
   
   voteButtonNew: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingHorizontal: 36,
     paddingVertical: 16,
     marginBottom: 12,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 3,
@@ -4974,12 +4974,12 @@ const styles = StyleSheet.create({
   },
   
   revealButtonNew: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingHorizontal: 36,
     paddingVertical: 16,
     marginBottom: 12,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 3,
@@ -5047,7 +5047,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 20,
     lineHeight: 26,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -5062,11 +5062,11 @@ const styles = StyleSheet.create({
   },
   
   retryButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -5089,7 +5089,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
     textAlign: 'center',
   },
@@ -5118,7 +5118,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 16,
     lineHeight: 22,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 3,
     letterSpacing: 0.2,
   },
@@ -5182,7 +5182,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
     letterSpacing: 0.3,
   },
@@ -5208,7 +5208,7 @@ const styles = StyleSheet.create({
   mealCountLabel: {
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 16,
     textAlign: 'center',
     letterSpacing: 0.1,
@@ -5219,7 +5219,7 @@ const styles = StyleSheet.create({
   sliderValue: {
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 24,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginBottom: 12,
     letterSpacing: 0.3,
   },
@@ -5229,7 +5229,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sliderThumb: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     width: 20,
     height: 20,
   },
@@ -5263,7 +5263,7 @@ const styles = StyleSheet.create({
   sliderLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 12,
     textAlign: 'center',
     letterSpacing: 0.1,
@@ -5295,12 +5295,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   editProfileButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 8,
     paddingVertical: 16,
     paddingHorizontal: 32,
     alignItems: 'center',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -5330,7 +5330,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
     letterSpacing: 0.1,
   },
@@ -5353,7 +5353,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: 'center',
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: {
       width: 0,
       height: 3,
@@ -5363,7 +5363,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   acceptButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
   },
   declineButton: {
     backgroundColor: '#6B6B6B',
@@ -5409,7 +5409,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
     lineHeight: 22,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
     letterSpacing: 0.1,
   },
@@ -5445,7 +5445,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 20,
     lineHeight: 28,
-    color: '#2D2D2D',
+    color: '#1A1000',
     textAlign: 'center',
     marginBottom: 8,
     letterSpacing: 0.5,
@@ -5465,7 +5465,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -5480,7 +5480,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -5499,7 +5499,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
     lineHeight: 22,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 4,
     letterSpacing: 0.1,
   },
@@ -5507,7 +5507,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginBottom: 4,
     letterSpacing: 0.1,
   },
@@ -5553,7 +5553,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#8B7355',
+    borderColor: '#FF6B00',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -5563,7 +5563,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 15,
     lineHeight: 20,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.2,
   },
   
@@ -5604,7 +5604,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
     lineHeight: 22,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 12,
     textAlign: 'center',
     letterSpacing: 0.2,
@@ -5624,7 +5624,7 @@ const styles = StyleSheet.create({
   },
   memberResponseEating: {
     backgroundColor: 'rgba(139, 115, 85, 0.1)',
-    borderColor: '#8B7355',
+    borderColor: '#FF6B00',
   },
   memberResponseNotEating: {
     backgroundColor: 'rgba(107, 107, 107, 0.1)',
@@ -5638,7 +5638,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   memberResponseEatingText: {
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   memberResponseNotEatingText: {
     color: '#6B6B6B',
@@ -5660,7 +5660,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
     lineHeight: 22,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 12,
     textAlign: 'center',
     letterSpacing: 0.2,
@@ -5678,11 +5678,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(139, 115, 85, 0.2)',
   },
   requestMealButtonNew: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingHorizontal: 32,
     paddingVertical: 16,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 3,

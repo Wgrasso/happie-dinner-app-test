@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
   },
   dotLarge: {
     width: 8,

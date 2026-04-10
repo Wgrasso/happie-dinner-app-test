@@ -74,7 +74,7 @@ const GroupRow = ({ group, idx, isActive, onSelectGroup, onClose, isDragging, on
         disabled={isDragging}
       >
         <View style={dStyles.dragHandleWrap}>
-          <Feather name="menu" size={16} color={isDragging ? '#8B7355' : '#CCC'} />
+          <Feather name="menu" size={16} color={isDragging ? '#FF6B00' : '#CCC'} />
         </View>
 
         {group.photo_url ? (
@@ -287,7 +287,7 @@ export default function GroupSwitcherDropdown({
             onPress={() => { lightHaptic(); onClose(); onJoinGroup?.(); }}
             activeOpacity={0.7}
           >
-            <Feather name="log-in" size={16} color="#8B7355" />
+            <Feather name="log-in" size={16} color="#FF6B00" />
             <Text style={dStyles.actionBtnSecondaryText}>Join groep met code</Text>
           </TouchableOpacity>
         </View>
@@ -355,7 +355,7 @@ const dStyles = StyleSheet.create({
     borderRadius: 10,
   },
   avatarPlaceholder: {
-    backgroundColor: '#E8845C',
+    backgroundColor: '#FF6B00',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -370,19 +370,19 @@ const dStyles = StyleSheet.create({
   name: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   members: {
     fontSize: 11,
     fontFamily: 'Inter_400Regular',
-    color: '#8B7355',
+    color: '#FF6B00',
     marginTop: 1,
   },
   checkBadge: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#3D9A50',
+    backgroundColor: '#FF6B00',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -414,14 +414,14 @@ const dStyles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionBtnPrimaryText: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   actionBtnSecondary: {
     flexDirection: 'row',
@@ -433,6 +433,6 @@ const dStyles = StyleSheet.create({
   actionBtnSecondaryText: {
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
 });

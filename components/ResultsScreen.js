@@ -104,7 +104,7 @@ export default function ResultsScreen({ route, navigation }) {
       case 0: return '#FFD700'; // Gold
       case 1: return '#C0C0C0'; // Silver
       case 2: return '#CD7F32'; // Bronze
-      default: return '#8B7355';
+      default: return '#FF6B00';
     }
   };
 
@@ -112,7 +112,7 @@ export default function ResultsScreen({ route, navigation }) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B7355" />
+          <ActivityIndicator size="large" color="#FF6B00" />
           <Text style={styles.loadingText}>{t('voting.calculatingResults')}</Text>
         </View>
       </SafeAreaView>
@@ -266,7 +266,7 @@ export default function ResultsScreen({ route, navigation }) {
                         styles.progressFill,
                         { 
                           width: `${meal.yes_percentage || 0}%`,
-                          backgroundColor: '#8B7355'
+                          backgroundColor: '#FF6B00'
                         }
                       ]} 
                     />
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 24,
     lineHeight: 30,
-    color: '#2D2D2D',
+    color: '#1A1000',
     textAlign: 'center',
     marginBottom: 16,
     letterSpacing: 0.3,
@@ -382,12 +382,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   retryButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingHorizontal: 32,
     paddingVertical: 16,
     marginBottom: 16,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 3,
@@ -438,13 +438,13 @@ const styles = StyleSheet.create({
   backArrow: {
     fontFamily: 'Inter_500Medium',
     fontSize: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
     marginRight: 6,
   },
   backText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.2,
   },
   headerCenter: {
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
   },
   headerSubtext: {
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 28,
     lineHeight: 36,
-    color: '#2D2D2D',
+    color: '#1A1000',
     textAlign: 'center',
     letterSpacing: 0.3,
     marginBottom: 8,
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 20,
     lineHeight: 26,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.3,
     marginBottom: 12,
   },
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 18,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.1,
   },
   resultDescription: {
@@ -602,14 +602,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 18,
     lineHeight: 22,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 2,
   },
   statPercentage: {
     fontFamily: 'Inter_500Medium',
     fontSize: 12,
     lineHeight: 16,
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   progressBar: {
     height: 6,
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 20,
     lineHeight: 26,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
     letterSpacing: 0.3,
   },
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.2,
     marginBottom: 12,
   },

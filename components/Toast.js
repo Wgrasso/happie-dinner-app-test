@@ -61,7 +61,7 @@ const Toast = forwardRef((props, ref) => {
   if (!visible) return null;
 
   const backgroundColor = type === 'success' ? '#FF6B00' : 
-                          type === 'error' ? '#F44336' : '#8B7355';
+                          type === 'error' ? '#F44336' : '#FF6B00';
 
   return (
     <Animated.View 

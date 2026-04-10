@@ -167,7 +167,7 @@ const ContactSelector = ({
           {/* Contact List */}
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#8B7355" />
+              <ActivityIndicator size="large" color="#FF6B00" />
               <Text style={styles.loadingText}>{t('contacts.loading')}</Text>
             </View>
           ) : filteredContacts.length === 0 ? (
@@ -272,13 +272,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 4,
   },
   selectedCount: {
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   searchContainer: {
     padding: 16,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    color: '#2D2D2D',
+    color: '#1A1000',
   },
   quickActions: {
     flexDirection: 'row',
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   quickActionText: {
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   loadingContainer: {
     flex: 1,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 13,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
     backgroundColor: '#F8F6F3',
     paddingVertical: 8,
     paddingHorizontal: 20,
@@ -375,12 +375,12 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   avatarSelected: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
   },
   avatarText: {
     fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   avatarTextSelected: {
     color: '#FEFEFE',
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   contactName: {
     fontSize: 16,
     fontFamily: 'Inter_500Medium',
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 2,
   },
   contactGroups: {
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
   },
   confirmButtonDisabled: {
     backgroundColor: '#D0CCC7',

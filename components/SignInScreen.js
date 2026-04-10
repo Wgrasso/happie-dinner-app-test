@@ -298,7 +298,7 @@ export default function SignInScreen({ navigation }) {
             </View>
 
             {socialLoading ? (
-              <ActivityIndicator size="small" color="#8B7355" style={{ marginVertical: 16 }} />
+              <ActivityIndicator size="small" color="#FF6B00" style={{ marginVertical: 16 }} />
             ) : (
               <>
                 {appleAvailable && (

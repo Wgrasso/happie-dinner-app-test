@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 18,
     fontFamily: 'Inter_700Bold',
-    color: '#8B7355',
+    color: '#FF6B00',
   },
   splashOverlay: {
     position: 'absolute',
