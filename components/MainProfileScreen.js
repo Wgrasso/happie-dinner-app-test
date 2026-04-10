@@ -20,7 +20,7 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMyRecipes, deleteUserRecipe, addUserRecipe } from '../lib/userRecipesService';
 import { uploadRecipeImage } from '../lib/recipeImageService';
-import { getMyChefProfile } from '../lib/chefService';
+import { getMyChefProfile, ensureChefProfile } from '../lib/chefService';
 import { useTranslation } from 'react-i18next';
 import { lightHaptic, successHaptic } from '../lib/haptics';
 import { useToast } from './ui/Toast';
@@ -110,12 +110,15 @@ export default function MainProfileScreen({
 
     const loadChefProfile = async () => {
       try {
-        const result = await getMyChefProfile();
+        // ensureChefProfile returns the existing profile OR auto-creates a
+        // minimal one pre-filled with the user's name. No onboarding step.
+        const result = await ensureChefProfile();
         if (result.success && result.chef) {
           setMyChefProfile(result.chef);
         }
       } catch (e) {
-        // Chef profile not found — that's fine, show setup
+        // Silent — user can still use the rest of the app, chef features
+        // simply won't be available until they retry.
       } finally {
         setChefProfileLoaded(true);
       }
@@ -151,7 +154,8 @@ export default function MainProfileScreen({
     );
   }
 
-  // If user has no chef profile and data is loaded, render ChefProfileSetup
+  // Fallback: if ensureChefProfile failed (network, RLS, offline, …) we
+  // still give the user the legacy manual setup rather than a dead screen.
   if (chefProfileLoaded && !myChefProfile) {
     return (
       <ChefProfileSetup

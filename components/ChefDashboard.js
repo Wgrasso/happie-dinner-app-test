@@ -20,7 +20,7 @@ import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { updateChefProfile, deleteChefProfile } from '../lib/chefService';
+import { updateChefProfile, deleteChefProfile, isChefPublicReady } from '../lib/chefService';
 import { getMyChefRecipes, addChefRecipe, updateChefRecipe, deleteChefRecipe, shareRecipeWithGroups } from '../lib/recipesService';
 import { uploadRecipeImage } from '../lib/recipeImageService';
 import { importRecipeFromUrl } from '../lib/recipeUrlImporter';
@@ -102,7 +102,10 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
   const [editingIngIdx, setEditingIngIdx] = useState(0);
   const [steps, setSteps] = useState(['']);
   const [editingStepIdx, setEditingStepIdx] = useState(0);
-  const [visibility, setVisibility] = useState('public');
+  // Default to private so recipes never leak by accident. Users must
+  // explicitly pick "Iedereen" to go public, and that option is gated
+  // behind a complete chef profile (photo + name).
+  const [visibility, setVisibility] = useState('private');
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [saving, setSaving] = useState(false);
   // URL import — primary path. Full form stays hidden until import succeeds
@@ -238,7 +241,7 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
     setIngredients([{ qty: '', unit: '', name: '' }]);
     setSteps(['']);
     setRecipeImageUri(null);
-    setVisibility('public');
+    setVisibility('private');
     setSelectedGroups([]);
     setShowAddForm(false);
     setUrlInput('');
@@ -735,6 +738,34 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
             </View>
           )}
 
+          {/* Profile-incomplete banner — nudges the user to add a photo so
+              they can share publicly, without blocking private recipe saving */}
+          {!isChefPublicReady(chef) && (
+            <TouchableOpacity
+              style={styles.profileNotice}
+              onPress={() => { lightHaptic(); openEditProfile(); }}
+              activeOpacity={0.85}
+            >
+              <View style={styles.profileNoticeIcon}>
+                <Feather name="camera" size={16} color={theme.colors.textInverse} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.profileNoticeTitle}>
+                  {t('chef.profileIncompleteTitle') || 'Maak je chef-profiel compleet'}
+                </Text>
+                <Text style={styles.profileNoticeHint}>
+                  {t('chef.profileIncompleteHint') ||
+                    'Voeg een foto toe om recepten met iedereen te delen. Je eigen recepten blijven gewoon privé.'}
+                </Text>
+              </View>
+              <View style={styles.profileNoticeBtn}>
+                <Text style={styles.profileNoticeBtnText}>
+                  {t('common.complete') || 'Afmaken'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
           {/* Section Header: Recipes */}
           <View style={styles.sectionHeader}>
             <View>
@@ -1191,25 +1222,48 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                     </View>
                   </View>
 
-                  {/* Visibility Picker — public is the default, rendered as hero */}
+                  {/* Visibility Picker — public is the hero, but locked until
+                      the chef profile has a photo + name. Recipes default to
+                      private so nothing leaks accidentally. */}
                   <Text style={styles.formLabel}>{t('chef.visibility') || 'Wie kan dit zien?'}</Text>
                   {(() => {
                     const publicOpt = VISIBILITY_OPTIONS.find((o) => o.key === 'public');
                     const others = VISIBILITY_OPTIONS.filter((o) => o.key !== 'public');
                     const publicActive = visibility === 'public';
+                    const publicReady = isChefPublicReady(chef);
+                    const handlePublicTap = () => {
+                      lightHaptic();
+                      if (!publicReady) {
+                        Alert.alert(
+                          t('chef.completeProfileTitle') || 'Profiel eerst afmaken',
+                          t('chef.completeProfileMessage') ||
+                            'Voeg een profielfoto en een chefsnaam toe voordat je recepten met iedereen deelt.',
+                          [
+                            { text: t('common.cancel') || 'Annuleren', style: 'cancel' },
+                            {
+                              text: t('chef.editProfile') || 'Profiel bewerken',
+                              onPress: () => openEditProfile?.(),
+                            },
+                          ],
+                        );
+                        return;
+                      }
+                      setVisibility('public');
+                    };
                     return (
                       <>
-                        {/* Primary: Public (highlighted hero card) */}
+                        {/* Primary: Public (highlighted hero card, locked when incomplete) */}
                         {publicOpt && (
                           <TouchableOpacity
                             style={[
                               styles.visibilityHero,
                               publicActive && styles.visibilityHeroActive,
+                              !publicReady && styles.visibilityHeroLocked,
                             ]}
-                            onPress={() => { lightHaptic(); setVisibility('public'); }}
+                            onPress={handlePublicTap}
                             activeOpacity={0.85}
                             accessibilityRole="button"
-                            accessibilityState={{ selected: publicActive }}
+                            accessibilityState={{ selected: publicActive, disabled: !publicReady }}
                           >
                             <View
                               style={[
@@ -1218,7 +1272,7 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                               ]}
                             >
                               <Feather
-                                name="globe"
+                                name={publicReady ? 'globe' : 'lock'}
                                 size={18}
                                 color={
                                   publicActive
@@ -1242,17 +1296,26 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                                   publicActive && styles.visibilityHeroHintActive,
                                 ]}
                               >
-                                {t('chef.visibilityPublicHint') ||
-                                  'Zichtbaar voor alle gebruikers'}
+                                {publicReady
+                                  ? t('chef.visibilityPublicHint') ||
+                                    'Zichtbaar voor alle gebruikers'
+                                  : t('chef.visibilityPublicLockedHint') ||
+                                    'Maak eerst je chef-profiel compleet'}
                               </Text>
                             </View>
-                            {publicActive && (
+                            {publicActive ? (
                               <Feather
                                 name="check-circle"
                                 size={20}
                                 color={theme.colors.textInverse}
                               />
-                            )}
+                            ) : !publicReady ? (
+                              <Feather
+                                name="chevron-right"
+                                size={18}
+                                color={theme.colors.textTertiary}
+                              />
+                            ) : null}
                           </TouchableOpacity>
                         )}
 
@@ -1297,6 +1360,19 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                       </>
                     );
                   })()}
+
+                  {/* Privacy reassurance line — important so users trust
+                      that their recipes are private by default */}
+                  <Text style={styles.privacyHint}>
+                    {visibility === 'private'
+                      ? t('chef.privacyHintPrivate') ||
+                        'Alleen jij kunt dit recept zien'
+                      : visibility === 'public'
+                      ? t('chef.privacyHintPublic') ||
+                        'Dit recept wordt gedeeld met alle gebruikers'
+                      : t('chef.privacyHintGroups') ||
+                        'Alleen de geselecteerde groepen kunnen dit zien'}
+                  </Text>
 
                   {/* Group Selector (when visibility = groups) */}
                   {(visibility === 'groups' || visibility === 'public_groups') && (
@@ -2255,6 +2331,60 @@ const createStyles = (theme) => StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 10,
     elevation: 4,
+  },
+  visibilityHeroLocked: {
+    opacity: 0.72,
+    borderStyle: 'dashed',
+  },
+  // "Profile incomplete" banner shown at the top of ChefDashboard
+  profileNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: `${theme.colors.secondary}14`,
+    borderWidth: 1,
+    borderColor: `${theme.colors.secondary}55`,
+    marginBottom: 14,
+  },
+  profileNoticeIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: theme.colors.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileNoticeTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: 2,
+  },
+  profileNoticeHint: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    lineHeight: 16,
+  },
+  profileNoticeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: theme.colors.secondary,
+  },
+  profileNoticeBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.colors.textInverse,
+  },
+  // Private-by-default reassurance line under the visibility picker
+  privacyHint: {
+    marginTop: 10,
+    fontSize: 11,
+    color: theme.colors.textTertiary,
+    textAlign: 'center',
+    lineHeight: 15,
   },
   visibilityHeroIcon: {
     width: 40,
