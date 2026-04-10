@@ -424,6 +424,7 @@
     "loadingImages": "Afbeeldingen laden..."
   },
   "common": {
+    "complete": "Afmaken",
     "loading": "Laden...",
     "error": "Fout",
     "success": "Succes",

@@ -425,6 +425,7 @@
     "loadingImages": "Loading images..."
   },
   "common": {
+    "complete": "Complete",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
