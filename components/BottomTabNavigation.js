@@ -188,6 +188,12 @@ const createStyles = (theme) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
+      // Match side tabs' height so the absolute circle (top: -12) anchors
+      // to the same baseline as it did pre-refactor. Without this the
+      // container collapses to the circle's content height and the whole
+      // tab slides down.
+      height: 60,
+      paddingHorizontal: 16,
       paddingTop: 1,
     },
     mainTabCircle: {
