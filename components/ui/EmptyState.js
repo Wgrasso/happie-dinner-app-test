@@ -1,52 +1,77 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../lib/ThemeContext';
+import PrimaryButton from './PrimaryButton';
 
-// Chef hat illustration using the app's drawing
-const ChefHatIllustration = ({ size = 100 }) => (
-  <Image 
+// Chef hat illustration using the app's drawing.
+// Rendered inside a coral-tinted double-ring for visual warmth.
+const ChefHatIllustration = ({ size = 60 }) => (
+  <Image
     source={require('../../assets/drawing9.png')}
-    style={{ width: size, height: size, opacity: 0.85 }}
+    style={{ width: size, height: size, opacity: 0.9 }}
     resizeMode="contain"
   />
 );
 
-// Empty State Component
-const EmptyState = ({ 
-  title, 
-  description, 
-  actionLabel, 
+/**
+ * EmptyState — warm illustrated placeholder for empty lists.
+ *
+ * Legacy API preserved: title, description, actionLabel, onAction, compact,
+ * showChefHat. Now wrapped in a soft warm-surface card with decorative coral
+ * rings behind the chef-hat illustration so empty screens have real presence
+ * instead of looking like "nothing loaded yet".
+ *
+ * New optional props:
+ *   actionIcon?: Feather name — shown in the CTA button
+ *   actionVariant?: 'primary' | 'accent' — defaults to 'accent' (coral)
+ *   boxed?: boolean — when true (default), wraps content in a warm card
+ */
+const EmptyState = ({
+  title,
+  description,
+  actionLabel,
   onAction,
+  actionIcon,
+  actionVariant = 'accent',
   compact = false,
-  showChefHat = true
+  showChefHat = true,
+  boxed = true,
 }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(
+    () => createStyles(theme, compact, boxed),
+    [theme, compact, boxed],
+  );
+
   return (
-    <View style={[styles.container, compact && styles.containerCompact]}>
+    <View style={styles.container}>
       {showChefHat && (
-        <View style={[styles.illustrationWrapper, compact && styles.illustrationWrapperCompact]}>
-          <ChefHatIllustration size={compact ? 42 : 60} />
+        <View style={styles.rings}>
+          <View style={styles.ringOuter} />
+          <View style={styles.ringMid} />
+          <View style={styles.illustrationWrapper}>
+            <ChefHatIllustration size={compact ? 44 : 60} />
+          </View>
         </View>
       )}
-      
-      <Text style={[styles.title, compact && styles.titleCompact]}>
-        {title}
-      </Text>
-      
-      {description && (
-        <Text style={[styles.description, compact && styles.descriptionCompact]}>
-          {description}
-        </Text>
-      )}
-      
-      {actionLabel && onAction && (
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={onAction}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.actionButtonText}>{actionLabel}</Text>
-        </TouchableOpacity>
-      )}
+
+      <Text style={styles.title}>{title}</Text>
+
+      {description ? <Text style={styles.description}>{description}</Text> : null}
+
+      {actionLabel && onAction ? (
+        <View style={styles.actionWrap}>
+          <PrimaryButton
+            label={actionLabel}
+            onPress={onAction}
+            icon={actionIcon}
+            variant={actionVariant}
+            fullWidth={false}
+            size="md"
+          />
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -133,64 +158,79 @@ export const EmptyOccasions = ({ onAction, compact = false }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 32,
-  },
-  containerCompact: {
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-  },
-  illustrationWrapper: {
-    width: 68,
-    height: 68,
-    marginBottom: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  illustrationWrapperCompact: {
-    width: 48,
-    height: 48,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#2D2D2D',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  titleCompact: {
-    fontSize: 19,
-  },
-  description: {
-    fontSize: 16,
-    fontFamily: 'Inter_400Regular',
-    color: '#8B8B8B',
-    textAlign: 'center',
-    lineHeight: 23,
-    maxWidth: 340,
-  },
-  descriptionCompact: {
-    fontSize: 15,
-    maxWidth: 300,
-  },
-  actionButton: {
-    marginTop: 20,
-    backgroundColor: '#8B7355',
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 12,
-  },
-  actionButtonText: {
-    fontSize: 15,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#FFFFFF',
-  },
-});
+const createStyles = (theme, compact, boxed) => {
+  const tint = `${theme.colors.secondary}14`;
+  const tintSoft = `${theme.colors.secondary}08`;
+  const ringSize = compact ? 100 : 130;
+  const midSize = compact ? 76 : 96;
+  const innerSize = compact ? 58 : 74;
+
+  return StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: compact ? 28 : 44,
+      paddingHorizontal: compact ? 20 : 32,
+      borderRadius: 20,
+      backgroundColor: boxed
+        ? theme.colors.surfaceWarm || theme.colors.surface
+        : 'transparent',
+      marginVertical: boxed ? 16 : 0,
+    },
+    rings: {
+      width: ringSize,
+      height: ringSize,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: compact ? 14 : 18,
+    },
+    ringOuter: {
+      position: 'absolute',
+      width: ringSize,
+      height: ringSize,
+      borderRadius: ringSize / 2,
+      backgroundColor: tintSoft,
+    },
+    ringMid: {
+      position: 'absolute',
+      width: midSize,
+      height: midSize,
+      borderRadius: midSize / 2,
+      backgroundColor: tint,
+    },
+    illustrationWrapper: {
+      width: innerSize,
+      height: innerSize,
+      borderRadius: innerSize / 2,
+      backgroundColor: theme.colors.modal,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: theme.colors.secondary,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.18,
+      shadowRadius: 12,
+      elevation: 4,
+    },
+    title: {
+      fontSize: compact ? 18 : 22,
+      fontFamily: 'PlayfairDisplay_700Bold',
+      color: theme.colors.text,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    description: {
+      fontSize: compact ? 13 : 15,
+      fontFamily: 'Inter_400Regular',
+      color: theme.colors.textTertiary,
+      textAlign: 'center',
+      lineHeight: compact ? 18 : 22,
+      maxWidth: compact ? 280 : 340,
+    },
+    actionWrap: {
+      marginTop: 20,
+    },
+  });
+};
 
 export default EmptyState;
 

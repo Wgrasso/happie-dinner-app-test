@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,167 +10,24 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
-  Animated,
-  Alert, SafeAreaView } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
+  SafeAreaView,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
 import { lightHaptic, successHaptic } from '../lib/haptics';
 import { useToast } from './ui/Toast';
 import { addUserRecipe } from '../lib/userRecipesService';
 import { uploadRecipeImage } from '../lib/recipeImageService';
+import { importRecipeFromUrl } from '../lib/recipeUrlImporter';
+import { useTheme } from '../lib/ThemeContext';
+import PhotoPickerCard from './ui/PhotoPickerCard';
+import Input from './ui/Input';
+import PrimaryButton from './ui/PrimaryButton';
+import SecondaryButton from './ui/SecondaryButton';
+import ListEditor from './ui/ListEditor';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAX_CONTENT_WIDTH = 560;
-
-/* ──────────────────────────────────────────────
-   FormInput — soft filled input with icon + focus glow
-   ────────────────────────────────────────────── */
-function FormInput({ label, icon, suffix, multiline, inputProps, style }) {
-  const [focused, setFocused] = useState(false);
-
-  return (
-    <View style={[fi.wrapper, style]}>
-      {label ? <Text style={fi.label}>{label}</Text> : null}
-      <View style={[fi.row, focused && fi.rowFocused]}>
-        <View style={fi.iconBox}>
-          <Feather name={icon} size={17} color={focused ? '#8B7355' : '#B0A392'} />
-        </View>
-        <TextInput
-          style={[fi.input, multiline && fi.textArea]}
-          placeholderTextColor="#C4BAB0"
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          multiline={multiline}
-          {...inputProps}
-        />
-        {suffix && <View style={fi.suffixBox}>{suffix}</View>}
-      </View>
-    </View>
-  );
-}
-
-const fi = StyleSheet.create({
-  wrapper: { marginBottom: 18 },
-  label: {
-    fontSize: 12,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#6B5D4D',
-    marginBottom: 7,
-    marginLeft: 2,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0EBE5',
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  rowFocused: {
-    borderColor: '#C9B99A',
-    backgroundColor: '#FFFCF7',
-    shadowColor: '#8B7355',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  iconBox: {
-    width: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: 'Inter_400Regular',
-    color: '#3D3227',
-    paddingVertical: Platform.OS === 'ios' ? 15 : 13,
-    paddingRight: 16,
-  },
-  textArea: {
-    minHeight: 105,
-    textAlignVertical: 'top',
-    paddingTop: Platform.OS === 'ios' ? 15 : 13,
-  },
-  suffixBox: {
-    paddingRight: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
-
-/* ──────────────────────────────────────────────
-   Animated Primary Button
-   ────────────────────────────────────────────── */
-function PrimaryButton({ onPress, disabled, saving, label }) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const onPressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.965,
-      useNativeDriver: true,
-      speed: 50,
-      bounciness: 4,
-    }).start();
-  };
-
-  const onPressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 50,
-      bounciness: 4,
-    }).start();
-  };
-
-  return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <TouchableOpacity
-        style={[pb.btn, disabled && pb.btnDisabled]}
-        onPress={onPress}
-        disabled={disabled}
-        activeOpacity={0.85}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-      >
-        {saving ? (
-          <ActivityIndicator color="#FFF" size="small" />
-        ) : (
-          <Text style={pb.text}>{label}</Text>
-        )}
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
-
-const pb = StyleSheet.create({
-  btn: {
-    backgroundColor: '#8B7355',
-    height: 56,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#6B5640',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  btnDisabled: { opacity: 0.5 },
-  text: {
-    fontSize: 16,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
-});
 
 /* ──────────────────────────────────────────────
    Main Screen
@@ -178,56 +35,61 @@ const pb = StyleSheet.create({
 export default function NewRecipeScreen({ navigation }) {
   const { t } = useTranslation();
   const toast = useToast();
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { s, imp } = styles;
+
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [cookingTime, setCookingTime] = useState('30');
   const [cuisine, setCuisine] = useState('');
   const [imageUri, setImageUri] = useState(null);
+  const [ingredients, setIngredients] = useState(['']);
+  const [steps, setSteps] = useState(['']);
+  const [urlInput, setUrlInput] = useState('');
+  const [importing, setImporting] = useState(false);
+  // Form is hidden by default — URL import is the primary path.
+  // Shown after a successful import or when the user explicitly picks manual.
+  const [showForm, setShowForm] = useState(false);
 
-  /* ── image picker ── */
-  const pickFromGallery = async () => {
-    lightHaptic();
-    try {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert(
-          t('common.permissionRequired') || 'Toestemming nodig',
-          t('userRecipes.photoPermission') || 'Geef toegang tot je fotobibliotheek om een foto te kiezen.',
-        );
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.7,
-      });
-      if (!result.canceled && result.assets[0]) setImageUri(result.assets[0].uri);
-    } catch {
-      toast.error(t('userRecipes.imagePickError') || 'Kon foto niet laden');
+  /* ── import from URL ── */
+  const handleImport = async () => {
+    const url = urlInput.trim();
+    if (!url) {
+      toast.error(t('userRecipes.urlRequired') || 'Voer een link in');
+      return;
     }
-  };
-
-  const pickFromCamera = async () => {
+    setImporting(true);
     lightHaptic();
     try {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert(
-          t('common.permissionRequired') || 'Toestemming nodig',
-          t('userRecipes.cameraPermission') || 'Geef toegang tot je camera om een foto te maken.',
-        );
+      const result = await importRecipeFromUrl(url);
+      if (!result.success) {
+        toast.error(result.error || 'Kon recept niet importeren');
         return;
       }
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.7,
-      });
-      if (!result.canceled && result.assets[0]) setImageUri(result.assets[0].uri);
-    } catch {
-      toast.error(t('userRecipes.imagePickError') || 'Kon foto niet maken');
+      const r = result.recipe;
+      if (r.name) setName(r.name);
+      if (r.description) setDescription(r.description);
+      if (r.cooking_time_minutes) setCookingTime(String(r.cooking_time_minutes));
+      if (r.cuisine_type) setCuisine(r.cuisine_type);
+      if (r.image) setImageUri(r.image);
+      setIngredients(r.ingredients?.length ? r.ingredients : ['']);
+      setSteps(r.steps?.length ? r.steps : ['']);
+      setShowForm(true);
+      successHaptic();
+      if (result.partial) {
+        toast.success(
+          t('userRecipes.importedPartial') ||
+            'Deels geïmporteerd — vul de rest zelf aan',
+        );
+      } else {
+        toast.success(t('userRecipes.imported') || 'Recept geïmporteerd!');
+      }
+    } catch (e) {
+      toast.error(e?.message || 'Kon recept niet importeren');
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -243,16 +105,28 @@ export default function NewRecipeScreen({ navigation }) {
     try {
       let finalImageUrl = null;
       if (imageUri) {
-        const upload = await uploadRecipeImage(imageUri);
-        if (upload.success) finalImageUrl = upload.url;
-        else console.warn('Image upload failed:', upload.error);
+        // Remote URLs (from URL import) are saved directly. Only local URIs
+        // (from camera/gallery) need uploading to Supabase storage.
+        if (/^https?:\/\//i.test(imageUri)) {
+          finalImageUrl = imageUri;
+        } else {
+          const upload = await uploadRecipeImage(imageUri);
+          if (upload.success) finalImageUrl = upload.url;
+          else console.warn('Image upload failed:', upload.error);
+        }
       }
+      const cleanedIngredients = ingredients
+        .map((i) => (i || '').trim())
+        .filter(Boolean);
+      const cleanedSteps = steps.map((s) => (s || '').trim()).filter(Boolean);
       const result = await addUserRecipe({
         name: trimmedName,
         description: description.trim() || null,
         cooking_time_minutes: parseInt(cookingTime, 10) || 30,
         cuisine_type: cuisine.trim() || null,
         image: finalImageUrl,
+        ingredients: cleanedIngredients,
+        steps: cleanedSteps,
       });
       if (result.success) {
         successHaptic();
@@ -289,7 +163,7 @@ export default function NewRecipeScreen({ navigation }) {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Feather name="arrow-left" size={20} color="#7A6B57" />
+            <Feather name="arrow-left" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -312,127 +186,149 @@ export default function NewRecipeScreen({ navigation }) {
               </Text>
             </View>
 
-            {/* ─── Fields ─── */}
-            <FormInput
+            {/* ─── Import from URL (primary shortcut) ─── */}
+            <View style={imp.card}>
+              <View style={imp.headerRow}>
+                <View style={imp.iconCircle}>
+                  <Feather name="link" size={15} color={theme.colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={imp.title}>
+                    {t('userRecipes.importTitle') || 'Importeer van website'}
+                  </Text>
+                  <Text style={imp.subtitle}>
+                    {t('userRecipes.importSubtitle') ||
+                      'Plak een recept-link en wij vullen alles in'}
+                  </Text>
+                </View>
+              </View>
+              <View style={imp.inputRow}>
+                <TextInput
+                  style={imp.input}
+                  placeholder="https://..."
+                  placeholderTextColor={theme.colors.textPlaceholder}
+                  value={urlInput}
+                  onChangeText={setUrlInput}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                  returnKeyType="go"
+                  onSubmitEditing={handleImport}
+                  editable={!importing}
+                />
+                <TouchableOpacity
+                  style={[imp.btn, importing && imp.btnDisabled]}
+                  onPress={handleImport}
+                  disabled={importing}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('userRecipes.import') || 'Importeer'}
+                >
+                  {importing ? (
+                    <ActivityIndicator size="small" color={theme.colors.textInverse} />
+                  ) : (
+                    <Feather name="download" size={16} color={theme.colors.textInverse} />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* ─── Enter manually (only when form hidden) ─── */}
+            {!showForm && (
+              <SecondaryButton
+                icon="edit-3"
+                underline
+                label={t('userRecipes.enterManually') || 'Of voer handmatig in'}
+                onPress={() => setShowForm(true)}
+              />
+            )}
+
+            {/* ─── Manual form (hidden until import succeeds or user opts in) ─── */}
+            {showForm && (<>
+            <Input
               label={t('userRecipes.name') || 'Naam'}
               icon="edit-3"
-              inputProps={{
-                value: name,
-                onChangeText: setName,
-                placeholder: t('userRecipes.namePlaceholder') || 'bijv. Pasta Carbonara',
-                autoFocus: true,
-                returnKeyType: 'next',
-              }}
+              value={name}
+              onChangeText={setName}
+              placeholder={t('userRecipes.namePlaceholder') || 'bijv. Pasta Carbonara'}
+              autoFocus
+              returnKeyType="next"
             />
 
-            <FormInput
+            <Input
               label={t('userRecipes.description') || 'Omschrijving'}
               icon="align-left"
               multiline
-              inputProps={{
-                value: description,
-                onChangeText: setDescription,
-                placeholder: t('userRecipes.descriptionPlaceholder') || 'Korte omschrijving van je recept',
-                numberOfLines: 3,
-              }}
+              value={description}
+              onChangeText={setDescription}
+              placeholder={t('userRecipes.descriptionPlaceholder') || 'Korte omschrijving van je recept'}
+              numberOfLines={3}
             />
 
             {/* Cooking time + Cuisine — side by side */}
             <View style={s.row}>
-              <FormInput
+              <Input
                 label={t('userRecipes.cookingTime') || 'Bereidingstijd'}
                 icon="clock"
                 suffix={<Text style={s.suffixLabel}>min</Text>}
                 style={s.rowHalf}
-                inputProps={{
-                  value: cookingTime,
-                  onChangeText: setCookingTime,
-                  placeholder: '30',
-                  keyboardType: 'number-pad',
-                  maxLength: 4,
-                  returnKeyType: 'next',
-                }}
+                value={cookingTime}
+                onChangeText={setCookingTime}
+                placeholder="30"
+                keyboardType="number-pad"
+                maxLength={4}
+                returnKeyType="next"
               />
-              <FormInput
+              <Input
                 label={t('userRecipes.cuisine') || 'Keuken'}
                 icon="globe"
-                suffix={<Feather name="chevron-down" size={16} color="#B5A898" />}
+                suffix={<Feather name="chevron-down" size={16} color={theme.colors.textPlaceholder} />}
                 style={s.rowHalf}
-                inputProps={{
-                  value: cuisine,
-                  onChangeText: setCuisine,
-                  placeholder: t('userRecipes.cuisinePlaceholder') || 'bijv. Italiaans',
-                  returnKeyType: 'done',
-                }}
+                value={cuisine}
+                onChangeText={setCuisine}
+                placeholder={t('userRecipes.cuisinePlaceholder') || 'bijv. Italiaans'}
+                returnKeyType="done"
               />
             </View>
 
-            {/* ─── Photo area ─── */}
-            {imageUri ? (
-              <View style={ip.filledWrap}>
-                <ExpoImage
-                  source={{ uri: imageUri }}
-                  style={ip.filledImage}
-                  contentFit="cover"
-                  transition={200}
-                />
-                <View style={ip.filledOverlay}>
-                  <TouchableOpacity
-                    style={ip.changeBtn}
-                    onPress={pickFromGallery}
-                    activeOpacity={0.8}
-                  >
-                    <Feather name="repeat" size={14} color="#FFF" />
-                    <Text style={ip.changeBtnText}>
-                      {t('userRecipes.changePhoto') || 'Wijzig'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={ip.removeBtn}
-                    onPress={() => setImageUri(null)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Feather name="trash-2" size={15} color="#FFF" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <View style={ip.emptyRow}>
-                <TouchableOpacity
-                  style={ip.emptyBtn}
-                  onPress={pickFromCamera}
-                  activeOpacity={0.8}
-                >
-                  <Feather name="camera" size={18} color="#8B7355" />
-                  <Text style={ip.emptyBtnText}>
-                    {t('userRecipes.camera') || 'Camera'}
-                  </Text>
-                </TouchableOpacity>
+            {/* ─── Photo area (shared component) ─── */}
+            <View style={{ marginBottom: 24, marginTop: 4 }}>
+              <PhotoPickerCard
+                value={imageUri}
+                onChange={setImageUri}
+                showCameraOption={!imageUri}
+              />
+            </View>
 
-                <View style={ip.emptyDivider} />
+            {/* ─── Ingredients ─── */}
+            <ListEditor
+              label={t('userRecipes.ingredients') || 'Ingrediënten'}
+              items={ingredients}
+              onChange={setIngredients}
+              placeholder={t('userRecipes.ingredientPlaceholder') || 'bijv. 200g pasta'}
+              addLabel={t('userRecipes.addIngredient') || 'Ingrediënt toevoegen'}
+            />
 
-                <TouchableOpacity
-                  style={ip.emptyBtn}
-                  onPress={pickFromGallery}
-                  activeOpacity={0.8}
-                >
-                  <Feather name="image" size={18} color="#8B7355" />
-                  <Text style={ip.emptyBtnText}>
-                    {t('userRecipes.gallery') || 'Gallerij'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            {/* ─── Steps ─── */}
+            <ListEditor
+              label={t('userRecipes.steps') || 'Stappen'}
+              items={steps}
+              onChange={setSteps}
+              placeholder={t('userRecipes.stepPlaceholder') || 'Beschrijf stap'}
+              addLabel={t('userRecipes.addStep') || 'Stap toevoegen'}
+              numbered
+              multiline
+            />
 
             {/* ─── Submit ─── */}
             <View style={{ marginTop: 6 }}>
               <PrimaryButton
                 onPress={handleSubmit}
-                disabled={saving}
-                saving={saving}
+                loading={saving}
                 label={t('userRecipes.createRecipe') || 'Recept aanmaken'}
               />
             </View>
+            </>)}
 
             <View style={{ height: 72 }} />
           </View>
@@ -443,152 +339,142 @@ export default function NewRecipeScreen({ navigation }) {
 }
 
 /* ──────────────────────────────────────────────
-   Screen styles
+   Themed stylesheets (consumed via useMemo)
    ────────────────────────────────────────────── */
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FAF7F3' },
-  flex: { flex: 1 },
+const createStyles = (theme) => ({
+  s: StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.colors.background },
+    flex: { flex: 1 },
 
-  /* Header */
-  headerRow: {
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 4 : 10,
-    paddingBottom: 4,
-  },
-  backBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#EDE8E1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    /* Header */
+    headerRow: {
+      paddingHorizontal: 16,
+      paddingTop: Platform.OS === 'ios' ? 4 : 10,
+      paddingBottom: 4,
+    },
+    backBtn: {
+      width: 42,
+      height: 42,
+      borderRadius: 14,
+      backgroundColor: theme.colors.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  /* Scroll */
-  scroll: { flex: 1 },
-  scrollContent: {
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingBottom: 24,
-  },
-  inner: {
-    width: '100%',
-    maxWidth: MAX_CONTENT_WIDTH,
-    paddingHorizontal: 22,
-  },
+    /* Scroll */
+    scroll: { flex: 1 },
+    scrollContent: {
+      flexGrow: 1,
+      alignItems: 'center',
+      paddingBottom: 24,
+    },
+    inner: {
+      width: '100%',
+      maxWidth: MAX_CONTENT_WIDTH,
+      paddingHorizontal: 22,
+    },
 
-  /* Title */
-  titleBlock: {
-    marginTop: 6,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    color: '#3D3227',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-    color: '#9B8E7E',
-    lineHeight: 20,
-  },
+    /* Title */
+    titleBlock: {
+      marginTop: 6,
+      marginBottom: 20,
+    },
+    title: {
+      fontSize: 28,
+      fontFamily: 'PlayfairDisplay_700Bold',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    subtitle: {
+      fontSize: 14,
+      fontFamily: 'Inter_400Regular',
+      color: theme.colors.textTertiary,
+      lineHeight: 20,
+    },
 
-  /* Row layout */
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  rowHalf: {
-    flex: 1,
-    marginBottom: 18,
-  },
+    /* Row layout */
+    row: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    rowHalf: {
+      flex: 1,
+      marginBottom: 18,
+    },
 
-  /* Suffix */
-  suffixLabel: {
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
-    color: '#A89880',
-  },
-});
+    /* Suffix */
+    suffixLabel: {
+      fontSize: 13,
+      fontFamily: 'Inter_500Medium',
+      color: theme.colors.textTertiary,
+    },
+  }),
 
-/* ──────────────────────────────────────────────
-   Image picker styles
-   ────────────────────────────────────────────── */
-const ip = StyleSheet.create({
-  /* ── Filled (has image) ── */
-  filledWrap: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: 24,
-    marginTop: 4,
-  },
-  filledImage: {
-    width: '100%',
-    height: 210,
-  },
-  filledOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(0,0,0,0.30)',
-  },
-  changeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 12,
-    gap: 6,
-  },
-  changeBtnText: {
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
-    color: '#FFF',
-  },
-  removeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  /* ── URL import card ── */
+  imp: StyleSheet.create({
+    card: {
+      backgroundColor: theme.colors.card,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderColor: theme.colors.border,
+      padding: 16,
+      marginBottom: 24,
+      shadowColor: theme.colors.primary,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.06,
+      shadowRadius: 10,
+      elevation: 2,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 14,
+    },
+    iconCircle: {
+      width: 34,
+      height: 34,
+      borderRadius: 12,
+      backgroundColor: theme.colors.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: 14,
+      fontFamily: 'Inter_600SemiBold',
+      color: theme.colors.text,
+      marginBottom: 2,
+    },
+    subtitle: {
+      fontSize: 12,
+      fontFamily: 'Inter_400Regular',
+      color: theme.colors.textTertiary,
+      lineHeight: 16,
+    },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    input: {
+      flex: 1,
+      backgroundColor: theme.colors.surfaceAlt,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: Platform.OS === 'ios' ? 13 : 10,
+      fontSize: 14,
+      fontFamily: 'Inter_400Regular',
+      color: theme.colors.text,
+    },
+    btn: {
+      width: 48,
+      height: 46,
+      borderRadius: 14,
+      backgroundColor: theme.colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    btnDisabled: { opacity: 0.6 },
+  }),
 
-  /* ── Empty (no image) ── */
-  emptyRow: {
-    flexDirection: 'row',
-    borderRadius: 16,
-    backgroundColor: '#EDE8E1',
-    borderWidth: 1,
-    borderColor: '#DDD7CF',
-    marginBottom: 26,
-    overflow: 'hidden',
-  },
-  emptyBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 18,
-    gap: 8,
-  },
-  emptyDivider: {
-    width: 1,
-    backgroundColor: '#DDD7CF',
-    marginVertical: 10,
-  },
-  emptyBtnText: {
-    fontSize: 14,
-    fontFamily: 'Inter_500Medium',
-    color: '#6B5D4D',
-  },
 });
