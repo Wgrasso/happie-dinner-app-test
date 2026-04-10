@@ -4758,7 +4758,12 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       if (!result.canceled && result.assets[0]) {
         const uploadResult = await uploadGroupPhoto(result.assets[0].uri);
         if (uploadResult.success && uploadResult.url) {
-          await updateGroupPhoto(groupId, uploadResult.url);
+          const updateResult = await updateGroupPhoto(groupId, uploadResult.url);
+          if (updateResult?.success === false) {
+            // DB update blocked (RLS or constraint) — surface the reason.
+            toast.error(`Kon foto niet opslaan: ${updateResult.error || 'onbekend'}`);
+            return;
+          }
           successHaptic();
           toast.success('Groepsfoto bijgewerkt');
           await new Promise(r => setTimeout(r, 500));
@@ -4767,8 +4772,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           toast.error(uploadResult.error || 'Upload mislukt');
         }
       }
-    } catch {
-      toast.error('Kon foto niet laden');
+    } catch (e) {
+      console.error('Group photo change exception:', e);
+      toast.error(e?.message || 'Kon foto niet laden');
     }
   };
 
@@ -6370,32 +6376,42 @@ const gpStyles = StyleSheet.create({
   },
 
   // --- Food voting cards ---
+  // Bigger, more inviting "Stem nu" CTA — taller, bolder, with a warm
+  // shadow so it feels like the primary action on the group card.
   voteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     backgroundColor: '#FF6B00',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
+    paddingVertical: 13,
+    paddingHorizontal: 22,
+    borderRadius: 12,
+    shadowColor: '#1A1000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
   },
   voteBtnText: {
-    fontSize: 13,
-    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+    fontFamily: 'Inter_700Bold',
     color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   voteBtnActive: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#EDF7EF',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
+    gap: 6,
+    backgroundColor: '#FFF3E8',
+    paddingVertical: 13,
+    paddingHorizontal: 22,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#FF6B00',
   },
   voteBtnActiveText: {
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
     color: '#FF6B00',
   },
   foodCards: {

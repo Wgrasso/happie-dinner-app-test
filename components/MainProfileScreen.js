@@ -21,6 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { getMyRecipes, deleteUserRecipe, addUserRecipe } from '../lib/userRecipesService';
 import { uploadRecipeImage } from '../lib/recipeImageService';
 import { getMyChefProfile, ensureChefProfile } from '../lib/chefService';
+import { checkAndSendInactiveReminder } from '../lib/inactiveReminder';
 import { useTranslation } from 'react-i18next';
 import { lightHaptic, successHaptic } from '../lib/haptics';
 import { useToast } from './ui/Toast';
@@ -122,6 +123,10 @@ export default function MainProfileScreen({
       } finally {
         setChefProfileLoaded(true);
       }
+      // Fire-and-forget: check if this user should receive an inactive
+      // reminder push. Internally cooldown-gated so it is safe to call
+      // on every app launch.
+      checkAndSendInactiveReminder().catch(() => {});
     };
     loadChefProfile();
   }, [isActive, shouldPreload, chefProfileLoaded]);

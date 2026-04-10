@@ -31,6 +31,7 @@ import PrimaryButton from './ui/PrimaryButton';
 import Input from './ui/Input';
 import ListEditor from './ui/ListEditor';
 import EmptyState from './ui/EmptyState';
+import NotificationsDashboard from './NotificationsDashboard';
 import { lightHaptic, successHaptic } from '../lib/haptics';
 import { useToast } from './ui/Toast';
 import { useAppState } from '../lib/AppStateContext';
@@ -114,6 +115,7 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
   const [importing, setImporting] = useState(false);
   const [showFullForm, setShowFullForm] = useState(false);
   // Accordion: only one form section expanded at a time.
+  const [showNotificationsDash, setShowNotificationsDash] = useState(false);
   const [expandedSection, setExpandedSection] = useState('basis');
   const toggleSection = (key) => {
     lightHaptic();
@@ -193,6 +195,20 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
     setLoading(true);
     loadRecipes().finally(() => setLoading(false));
   }, [loadRecipes]);
+
+  // First-time experience: when the user has zero recipes, open the add
+  // form automatically so they land on the URL-import card instead of an
+  // empty state. We only do this once per mount to avoid re-opening the
+  // form after they close it and still have zero recipes.
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    if (loading) return;
+    if (recipes.length === 0) {
+      autoOpenedRef.current = true;
+      setShowAddForm(true);
+    }
+  }, [loading, recipes.length]);
 
   // Format a single ingredient for display
   const formatIngredient = (ing) => {
@@ -714,10 +730,22 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
               {chef?.description ? (
                 <Text style={styles.profileDescription} numberOfLines={3}>{chef.description}</Text>
               ) : null}
-              <TouchableOpacity style={styles.editProfileBtn} onPress={openEditProfile} activeOpacity={0.8}>
-                <Feather name="edit-2" size={13} color={theme.colors.primary} />
-                <Text style={styles.editProfileBtnText}>{t('chef.editProfile') || 'Profiel bewerken'}</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                <TouchableOpacity style={styles.editProfileBtn} onPress={openEditProfile} activeOpacity={0.8}>
+                  <Feather name="edit-2" size={13} color={theme.colors.primary} />
+                  <Text style={styles.editProfileBtnText}>{t('chef.editProfile') || 'Profiel bewerken'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.editProfileBtn}
+                  onPress={() => { lightHaptic(); setShowNotificationsDash(true); }}
+                  activeOpacity={0.8}
+                >
+                  <Feather name="bell" size={13} color={theme.colors.primary} />
+                  <Text style={styles.editProfileBtnText}>
+                    {t('notifications.dashboardTitle') || 'Notificaties'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
@@ -1427,10 +1455,12 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
             </View>
           )}
 
-          {/* Recipe List */}
+          {/* Recipe List — hidden when the add form is open so the user isn't
+              looking at a redundant "add your first recipe" CTA while they're
+              literally already adding one. */}
           {loading ? (
             <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 30 }} />
-          ) : recipes.length === 0 ? (
+          ) : recipes.length === 0 && !showAddForm ? (
             <EmptyState
               title={t('chef.noRecipesYet') || 'Nog geen recepten geplaatst'}
               description={
@@ -1441,7 +1471,7 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
               actionIcon="plus"
               onAction={() => { lightHaptic(); setShowAddForm(true); }}
             />
-          ) : (
+          ) : recipes.length === 0 && showAddForm ? null : (
             <>
             {recipes.map((r) => (
               <TouchableOpacity
@@ -1494,6 +1524,11 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
           <View style={{ height: 100 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <NotificationsDashboard
+        visible={showNotificationsDash}
+        onClose={() => setShowNotificationsDash(false)}
+      />
 
       {/* Recipe Detail Modal */}
       <Modal
