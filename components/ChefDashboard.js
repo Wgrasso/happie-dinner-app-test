@@ -676,11 +676,18 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-      <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss}>
+      {/* The outer Pressable used to wrap ScrollView to dismiss the keyboard
+          on tap, but it swallowed touch-starts in some regions so scroll
+          didn't initiate from nested cards. Using keyboardDismissMode="on-drag"
+          on the ScrollView gives the same result (keyboard closes when the
+          user starts scrolling) without blocking any gesture. */}
         <ScrollView
+          style={{ flex: 1 }}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          nestedScrollEnabled
         >
           {/* Chef Profile Header */}
           <View style={styles.profileHeader}>
@@ -708,8 +715,8 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                 <Text style={styles.profileDescription} numberOfLines={3}>{chef.description}</Text>
               ) : null}
               <TouchableOpacity style={styles.editProfileBtn} onPress={openEditProfile} activeOpacity={0.8}>
-                <Feather name="edit-2" size={13} color={theme.colors.secondary} />
-                <Text style={styles.editProfileBtnText}>{t('chef.editProfile') || 'Bewerken'}</Text>
+                <Feather name="edit-2" size={13} color={theme.colors.primary} />
+                <Text style={styles.editProfileBtnText}>{t('chef.editProfile') || 'Profiel bewerken'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1221,10 +1228,17 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                       />
                     </View>
                   </View>
+                </View>
+              </FormSection>
 
-                  {/* Visibility Picker — public is the hero, but locked until
-                      the chef profile has a photo + name. Recipes default to
-                      private so nothing leaks accidentally. */}
+              <View style={styles.sectionDivider} />
+
+              {/* ═══ VISIBILITY PICKER (always visible — never collapsed) ═══
+                  Intentionally OUT of the Geavanceerd accordion because users
+                  need to see who will receive the recipe at a glance while
+                  editing. Public is still the hero, locked until the chef
+                  profile has a photo + name. */}
+              <View style={styles.visibilityBlock}>
                   <Text style={styles.formLabel}>{t('chef.visibility') || 'Wie kan dit zien?'}</Text>
                   {(() => {
                     const publicOpt = VISIBILITY_OPTIONS.find((o) => o.key === 'public');
@@ -1396,8 +1410,7 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                       )}
                     </View>
                   )}
-                </View>
-              </FormSection>
+              </View>
 
               <View style={styles.sectionDivider} />
 
@@ -1462,9 +1475,13 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                 <TouchableOpacity
                   style={styles.editRecipeBtn}
                   onPress={(e) => { e.stopPropagation(); openEditRecipe(r); }}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('chef.editRecipe') || 'Recept bewerken'}
                 >
-                  <Feather name="edit-2" size={15} color={theme.colors.primary} />
+                  <Feather name="edit-2" size={18} color={theme.colors.primary} />
+                  <Text style={styles.editRecipeBtnText}>
+                    {t('common.edit') || 'Bewerk'}
+                  </Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -1476,7 +1493,6 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
 
           <View style={{ height: 100 }} />
         </ScrollView>
-      </Pressable>
       </KeyboardAvoidingView>
 
       {/* Recipe Detail Modal */}
@@ -1982,8 +1998,28 @@ const createStyles = (theme) => StyleSheet.create({
   typeBadgeHuis: { backgroundColor: '#5B9BD5' },
   typeBadgeText: { fontSize: theme.typography.fontSize.xs, fontWeight: '700', color: theme.colors.textInverse },
   profileTag: { fontSize: theme.typography.fontSize.md, color: theme.colors.primary, marginTop: 2 },
-  editProfileBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: theme.borderRadius.sm, backgroundColor: theme.colors.secondaryLight, borderWidth: 1, borderColor: theme.colors.secondaryLight },
-  editProfileBtnText: { fontSize: theme.typography.fontSize.sm, color: theme.colors.secondary, fontWeight: '600' },
+  // Ghost-style "Profiel bewerken" pill: transparent bg + bordered in the
+  // brand orange so the text stays readable. Previous version had orange
+  // text on an orange background → invisible.
+  editProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: theme.colors.primary,
+  },
+  editProfileBtnText: {
+    fontSize: 13,
+    color: theme.colors.primary,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
   profileDescription: { fontSize: theme.typography.fontSize.sm + 1, color: theme.colors.textSecondary, marginTop: 4, lineHeight: 18 },
 
   // Social Links
@@ -2378,6 +2414,12 @@ const createStyles = (theme) => StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.textInverse,
   },
+  // Always-visible visibility picker container (outside the accordion)
+  visibilityBlock: {
+    paddingTop: 10,
+    paddingBottom: 6,
+    paddingHorizontal: 4,
+  },
   // Private-by-default reassurance line under the visibility picker
   privacyHint: {
     marginTop: 10,
@@ -2498,7 +2540,26 @@ const createStyles = (theme) => StyleSheet.create({
   cardTime: { fontSize: theme.typography.fontSize.sm, color: theme.colors.primary },
   cardCost: { fontSize: theme.typography.fontSize.sm, color: theme.colors.success, fontWeight: '600' },
   cardCuisine: { fontSize: theme.typography.fontSize.sm, color: theme.colors.primary, fontStyle: 'italic' },
-  editRecipeBtn: { padding: 12, justifyContent: 'flex-end', alignSelf: 'stretch' },
+  // Recipe edit button — dedicated right block with its own background and
+  // left border so it feels like a "tap me" target instead of a tiny icon
+  // glued onto the corner. Width matches ~1/6 of the card width.
+  editRecipeBtn: {
+    width: 64,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderLeftWidth: 1,
+    borderLeftColor: theme.colors.border,
+  },
+  editRecipeBtnText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: theme.colors.primary,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
 
   // Ingredient display row (collapsed)
   ingredientDisplayRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: theme.colors.modal, borderRadius: theme.borderRadius.md, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 6, borderWidth: 1, borderColor: theme.colors.border },

@@ -92,6 +92,8 @@
     "codeCopied": "Code gekopieerd!",
     "recipes": "Recepten",
     "groupRecipes": "Groepsrecepten",
+    "noGroupRecipesTitle": "Nog geen recepten in deze groep",
+    "noGroupRecipesHint": "Voeg recepten toe op de Chefs-pagina en kies \"Groepen\" bij het delen om ze hier te zien.",
     "noGroupRecipes": "Nog geen recepten gedeeld met deze groep"
   },
   "dinner": {
@@ -230,7 +232,7 @@
     "sectionRecipe": "Ingrediënten & Stappen",
     "sectionRecipeHint": "Voeg ingrediënten en stappen toe",
     "sectionAdvanced": "Geavanceerd",
-    "sectionAdvancedHint": "Prijs, porties, zichtbaarheid",
+    "sectionAdvancedHint": "Prijs en aantal porties",
     "importTitle": "Recept van een website?",
     "importSubtitle": "Plak een link en we vullen alles automatisch in",
     "import": "Importeer",
@@ -425,6 +427,7 @@
   },
   "common": {
     "complete": "Afmaken",
+    "edit": "Bewerk",
     "loading": "Laden...",
     "error": "Fout",
     "success": "Succes",
@@ -550,7 +553,7 @@
     "sectionRecipe": "Ingrediënten & Stappen",
     "sectionRecipeHint": "Voeg ingrediënten en stappen toe",
     "sectionAdvanced": "Geavanceerd",
-    "sectionAdvancedHint": "Prijs, porties, zichtbaarheid",
+    "sectionAdvancedHint": "Prijs en aantal porties",
     "addFirstRecipe": "Voeg eerste recept toe",
     "visibilityPublicHint": "Zichtbaar voor alle gebruikers",
     "visibilityPublicLockedHint": "Maak eerst je chef-profiel compleet",

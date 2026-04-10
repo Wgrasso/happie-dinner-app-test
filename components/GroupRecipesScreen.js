@@ -98,9 +98,19 @@ export default function GroupRecipesScreen({ visible, onClose, groupId, groupNam
             <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 40 }} />
           ) : recipes.length === 0 ? (
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="food-off" size={48} color={theme.colors.buttonDisabled} />
+              <View style={styles.emptyIconCircle}>
+                <MaterialCommunityIcons
+                  name="chef-hat"
+                  size={36}
+                  color={theme.colors.primary}
+                />
+              </View>
+              <Text style={styles.emptyTitle}>
+                {t('groups.noGroupRecipesTitle') || 'Nog geen recepten in deze groep'}
+              </Text>
               <Text style={styles.emptyText}>
-                {t('groups.noGroupRecipes') || 'Nog geen recepten gedeeld met deze groep'}
+                {t('groups.noGroupRecipesHint') ||
+                  'Voeg recepten toe op de Chefs-pagina en kies "Groepen" bij het delen om ze hier te zien.'}
               </Text>
             </View>
           ) : (
@@ -244,8 +254,34 @@ const createStyles = (theme) => StyleSheet.create({
   subtitle: { fontSize: theme.typography.fontSize.sm + 1, color: theme.colors.primary, marginTop: 2 },
   closeBtn: { width: 36, height: 36, borderRadius: theme.borderRadius.lg, backgroundColor: theme.colors.borderSubtle, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: 16, paddingTop: 12 },
-  emptyState: { alignItems: 'center', paddingVertical: 50 },
-  emptyText: { fontSize: theme.typography.fontSize.md, color: theme.colors.primary, marginTop: 12, textAlign: 'center', paddingHorizontal: 30 },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 50,
+    paddingHorizontal: 32,
+  },
+  emptyIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: `${theme.colors.secondary}14`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.text,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: theme.colors.textTertiary,
+    textAlign: 'center',
+    lineHeight: 18,
+    maxWidth: 300,
+  },
 
   // Recipe cards
   recipeCard: { backgroundColor: theme.colors.modal, borderRadius: theme.borderRadius.base, marginBottom: 12, borderWidth: 1, borderColor: theme.colors.border, overflow: 'hidden' },

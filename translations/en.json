@@ -92,6 +92,8 @@
     "codeCopied": "Code copied!",
     "recipes": "Recipes",
     "groupRecipes": "Group Recipes",
+    "noGroupRecipesTitle": "No recipes in this group yet",
+    "noGroupRecipesHint": "Add recipes on the Chefs page and pick \"Groups\" when sharing to see them here.",
     "noGroupRecipes": "No recipes shared with this group yet"
   },
   "dinner": {
@@ -231,7 +233,7 @@
     "sectionRecipe": "Ingredients & Steps",
     "sectionRecipeHint": "Add ingredients and steps",
     "sectionAdvanced": "Advanced",
-    "sectionAdvancedHint": "Price, servings, visibility",
+    "sectionAdvancedHint": "Price and servings",
     "importTitle": "Recipe from a website?",
     "importSubtitle": "Paste a link and we'll fill everything in automatically",
     "import": "Import",
@@ -426,6 +428,7 @@
   },
   "common": {
     "complete": "Complete",
+    "edit": "Edit",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
@@ -551,7 +554,7 @@
     "sectionRecipe": "Ingredients & Steps",
     "sectionRecipeHint": "Add ingredients and steps",
     "sectionAdvanced": "Advanced",
-    "sectionAdvancedHint": "Price, servings, visibility",
+    "sectionAdvancedHint": "Price and servings",
     "addFirstRecipe": "Add your first recipe",
     "visibilityPublicHint": "Visible to all users",
     "visibilityPublicLockedHint": "Complete your chef profile first",
