@@ -6304,12 +6304,13 @@ const gpStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   segmentBtnYesActive: {
-    // Warm orange for positive "I'm eating along" action — matches the
-    // strak-orange brand instead of the old green.
-    backgroundColor: '#FF6B00',
+    // Green for semantic "yes" — matches the universal yes/no color language
+    // used on the voting screen. Kept separate from the brand orange so
+    // yes/no remain unambiguous.
+    backgroundColor: '#3D9A50',
   },
   segmentBtnNoActive: {
-    backgroundColor: '#CC2200',
+    backgroundColor: '#CC4444',
   },
   segmentBtnText: {
     fontSize: 15,
@@ -6335,7 +6336,7 @@ const gpStyles = StyleSheet.create({
   attendeesLabelYes: {
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
-    color: '#FF6B00',
+    color: '#3D9A50',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 8,
@@ -6343,7 +6344,7 @@ const gpStyles = StyleSheet.create({
   attendeesLabelNo: {
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
-    color: '#CC2200',
+    color: '#CC4444',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 8,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator, Dimensions, Modal, Animated, ScrollView, PanResponder, SafeAreaView } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { getMealOptions, voteMealOption, getUserVotingProgress } from '../lib/mealRequestService';
 import { getOccasionMealOptions, voteOnOccasionMeal, getOccasionVotingProgress } from '../lib/specialOccasionService';
 import { useTranslation } from 'react-i18next';
@@ -816,6 +817,20 @@ export default function VotingScreen({ route, navigation }) {
             Continuing where you left off
           </Text>
         )}
+        {/* Swipe hint — arrows + text, moved up from on-card position */}
+        <View style={styles.swipeHintRow}>
+          <View style={[styles.swipeHintSide, styles.swipeHintSideNo]}>
+            <Feather name="arrow-left" size={14} color="#CC4444" />
+            <Text style={styles.swipeHintSideTextNo}>{t('meals.dislike') || 'Nee'}</Text>
+          </View>
+          <Text style={styles.swipeHintCenterText}>
+            {t('voting.swipeHint') || 'Swipe om te stemmen'}
+          </Text>
+          <View style={[styles.swipeHintSide, styles.swipeHintSideYes]}>
+            <Text style={styles.swipeHintSideTextYes}>{t('meals.like') || 'Ja'}</Text>
+            <Feather name="arrow-right" size={14} color="#3D9A50" />
+          </View>
+        </View>
       </View>
 
       {/* Card Stack Container */}
@@ -943,10 +958,6 @@ export default function VotingScreen({ route, navigation }) {
             </View>
           </TouchableOpacity>
             
-            {/* Swipe hint indicator */}
-            <View style={styles.swipeHint}>
-              <Text style={styles.swipeHintText}>{t('voting.swipeHint')}</Text>
-            </View>
           </Animated.View>
         </View>
       </View>
@@ -1473,13 +1484,15 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   likeButton: {
-    backgroundColor: '#FF6B00',
+    // Green for semantic "yes" — matches the green overlay that appears
+    // when swiping right on a card.
+    backgroundColor: '#3D9A50',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#FF6B00',
+    shadowColor: '#3D9A50',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -1613,18 +1626,46 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
     letterSpacing: 3,
   },
-  swipeHint: {
-    position: 'absolute',
-    bottom: 8,
-    left: 0,
-    right: 0,
+  // New swipe hint row — lives in the header above the cards, not on them.
+  // Arrow + "Nee" on the left, centered hint text, "Ja" + arrow on the right.
+  swipeHintRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+    paddingHorizontal: 18,
+    gap: 10,
   },
-  swipeHintText: {
+  swipeHintSide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  swipeHintSideNo: {
+    backgroundColor: 'rgba(204, 68, 68, 0.1)',
+  },
+  swipeHintSideYes: {
+    backgroundColor: 'rgba(61, 154, 80, 0.1)',
+  },
+  swipeHintSideTextNo: {
     fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-    color: '#8B8885',
-    opacity: 0.7,
+    fontWeight: '600',
+    color: '#CC4444',
+  },
+  swipeHintSideTextYes: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3D9A50',
+  },
+  swipeHintCenterText: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#9A8770',
+    fontWeight: '500',
   },
   
   // Tap indicator styles
