@@ -196,14 +196,15 @@ const styles = StyleSheet.create({
   },
   toast: {
     marginBottom: 8,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    borderRadius: 14,
+    // Warm shadow (near-black + amber tint via opacity) matches strak-orange.
+    shadowColor: '#1A1000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 10,
     maxWidth: width - 32,
-    minWidth: 200,
+    minWidth: 220,
   },
   toastContent: {
     flexDirection: 'row',

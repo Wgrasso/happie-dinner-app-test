@@ -4,6 +4,13 @@
     "tagline": "Cook, Share, Enjoy Together"
   },
   "auth": {
+    "welcomeBack": "Welcome back",
+    "welcomeSubtitle": "Sign in to continue planning meals",
+    "welcomeNew": "Create your account",
+    "welcomeNewSubtitle": "Start planning in 30 seconds",
+    "invalidEmail": "Enter a valid email address",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "passwordsDoNotMatch": "Passwords do not match",
     "signIn": "Sign In",
     "signUp": "Sign Up",
     "email": "Email",

@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView, Image, Keyboard, Pressable, ActivityIndicator, SafeAreaView } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
 import * as Crypto from 'expo-crypto';
+import { useTheme } from '../lib/ThemeContext';
 
 // Safe image component that handles missing drawings gracefully
 const SafeDrawing = ({ source, style, resizeMode = "contain" }) => {
@@ -24,10 +25,18 @@ const SafeDrawing = ({ source, style, resizeMode = "contain" }) => {
 
 export default function SignInScreen({ navigation }) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  // Inline validation — shown as user types (after first blur).
+  const [emailTouched, setEmailTouched] = useState(false);
+  const emailError =
+    emailTouched && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      ? t('auth.invalidEmail') || 'Voer een geldig e-mailadres in'
+      : null;
 
   const handleForgotPassword = async () => {
     if (!email) {
@@ -210,11 +219,18 @@ export default function SignInScreen({ navigation }) {
           >
           {/* Header Section with Logo */}
           <View style={styles.header}>
-            <Image 
+            <Image
               source={require('../assets/splash-logo.png')}
               style={styles.logo}
               resizeMode="contain"
             />
+            <Text style={styles.welcomeTitle}>
+              {t('auth.welcomeBack') || 'Welkom terug'}
+            </Text>
+            <Text style={styles.welcomeSubtitle}>
+              {t('auth.welcomeSubtitle') ||
+                'Log in om verder te gaan met plannen'}
+            </Text>
           </View>
 
           {/* Form Section */}
@@ -222,17 +238,21 @@ export default function SignInScreen({ navigation }) {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>{t('auth.email')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, emailError && styles.inputError]}
                 value={email}
                 onChangeText={setEmail}
+                onBlur={() => setEmailTouched(true)}
                 placeholder={t('auth.email')}
-                placeholderTextColor="#A0A0A0"
+                placeholderTextColor={theme.colors.textPlaceholder}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
                 textContentType="emailAddress"
                 editable={!loading}
               />
+              {emailError ? (
+                <Text style={styles.inputErrorText}>{emailError}</Text>
+              ) : null}
             </View>
 
             <View style={styles.inputContainer}>
@@ -310,93 +330,110 @@ export default function SignInScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FEFEFE', // Off-white background
+    backgroundColor: theme.colors.background,
   },
   keyboardContainer: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24, // 24px outer margins as per style guide
-    paddingTop: 12,
+    paddingHorizontal: 24,
+    paddingTop: 32,
     paddingBottom: 24,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 16,
-    paddingTop: 8,
+    marginBottom: 8,
+    paddingTop: 0,
   },
   logo: {
-    width: 360,
-    height: 360,
-    marginBottom: -80,
+    width: 280,
+    height: 220,
+    marginBottom: -20,
     marginTop: 0,
   },
-  subtitle: {
-    fontFamily: 'PlayfairDisplay_400Regular', // Changed to serif for elegance
-    fontSize: 18,
-    lineHeight: 26,
-    color: '#6B6B6B', // Soft brown/gray
+  welcomeTitle: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 26,
+    color: theme.colors.text,
     textAlign: 'center',
-    letterSpacing: 0.3,
+    marginBottom: 4,
+  },
+  welcomeSubtitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: theme.colors.textTertiary,
+    textAlign: 'center',
+    letterSpacing: 0.1,
     marginBottom: 24,
   },
   form: {
     width: '100%',
     maxWidth: 400,
     alignSelf: 'center',
-    marginBottom: 40,
+    marginBottom: 32,
   },
   inputContainer: {
-    marginBottom: 24, // Consistent spacing
+    marginBottom: 18,
   },
   label: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 20,
-    color: '#2D2D2D',
+    color: theme.colors.textSecondary,
     marginBottom: 8,
-    letterSpacing: 0.1,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   input: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-    color: '#2D2D2D',
-    backgroundColor: '#F8F6F3',
-    borderWidth: 1,
-    borderColor: '#E8E2DA',
+    fontSize: 15,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
     borderRadius: 14,
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingVertical: 16,
     letterSpacing: 0.1,
     minHeight: 56,
     textAlignVertical: 'center',
   },
+  inputError: {
+    borderColor: theme.colors.error,
+  },
+  inputErrorText: {
+    marginTop: 6,
+    marginLeft: 4,
+    fontSize: 12,
+    color: theme.colors.error,
+    fontFamily: 'Inter_400Regular',
+  },
   signInButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: theme.colors.primary,
     borderRadius: 14,
-    shadowColor: '#8B7355',
-    shadowOffset: { width: 0, height: 3 },
+    shadowColor: theme.colors.shadowColor,
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 14,
+    elevation: 6,
     paddingVertical: 18,
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 24,
+    marginTop: 20,
+    marginBottom: 28,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   signInButtonText: {
-    fontFamily: 'Inter_500Medium',
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
     lineHeight: 24,
-    color: '#FEFEFE',
+    color: theme.colors.textInverse,
     letterSpacing: 0.2,
   },
   forgotPassword: {
@@ -405,10 +442,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   forgotPasswordText: {
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#8B7355',
+    color: theme.colors.primary,
     letterSpacing: 0.1,
   },
   footer: {
@@ -416,20 +453,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 20,
-    flexWrap: 'wrap', // Allow text to wrap if needed
+    flexWrap: 'wrap',
   },
   footerText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: '#6B6B6B',
+    color: theme.colors.textTertiary,
     letterSpacing: 0.1,
   },
   signUpText: {
-    fontFamily: 'Inter_500Medium',
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
     lineHeight: 20,
-    color: '#8B7355',
+    color: theme.colors.primary,
     letterSpacing: 0.1,
   },
   divider: {
@@ -441,40 +478,24 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E8E2DA',
+    backgroundColor: theme.colors.border,
   },
   dividerText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#6B6B6B',
-    letterSpacing: 0.1,
-    marginHorizontal: 12,
-  },
-  continueButton: {
-    backgroundColor: '#F8F6F3',
-    borderWidth: 2,
-    borderColor: '#8B7355',
-    borderRadius: 14,
-    paddingVertical: 18,
-    alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  continueButtonText: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#8B7355',
-    letterSpacing: 0.2,
+    fontSize: 12,
+    lineHeight: 20,
+    color: theme.colors.textTertiary,
+    letterSpacing: 0.6,
+    marginHorizontal: 12,
+    textTransform: 'uppercase',
   },
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8F6F3',
+    backgroundColor: theme.colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#E8E2DA',
+    borderColor: theme.colors.border,
     borderRadius: 14,
     paddingVertical: 16,
     marginBottom: 10,
@@ -486,7 +507,7 @@ const styles = StyleSheet.create({
   socialButtonText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 15,
-    color: '#2D2D2D',
+    color: theme.colors.text,
   },
   backgroundDrawing: {
     position: 'absolute',
@@ -494,7 +515,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    opacity: 0.1,
+    opacity: 0.08,
     transform: [{ rotate: '5deg' }],
   },
-}); 
+});

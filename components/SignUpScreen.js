@@ -27,6 +27,23 @@ export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  // Inline validation — errors show only after the user blurs the field so
+  // we don't yell at them while they're still typing.
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmTouched, setConfirmTouched] = useState(false);
+  const emailError =
+    emailTouched && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      ? t('auth.invalidEmail') || 'Voer een geldig e-mailadres in'
+      : null;
+  const passwordError =
+    passwordTouched && password && password.length < 6
+      ? t('auth.passwordTooShort') || 'Wachtwoord moet minimaal 6 tekens zijn'
+      : null;
+  const confirmError =
+    confirmTouched && confirmPassword && password !== confirmPassword
+      ? t('auth.passwordsDoNotMatch') || 'Wachtwoorden komen niet overeen'
+      : null;
   const [selectedLanguage, setSelectedLanguage] = useState('nl'); // Default to Dutch
   const [loading, setLoading] = useState(false);
 
@@ -140,7 +157,10 @@ export default function SignUpScreen({ navigation }) {
               style={styles.smallLogo}
               resizeMode="contain"
             />
-            <Text style={styles.title}>{t('auth.createAccount')}</Text>
+            <Text style={styles.title}>{t('auth.welcomeNew') || 'Maak je account aan'}</Text>
+            <Text style={styles.subtitle}>
+              {t('auth.welcomeNewSubtitle') || 'Begin met plannen in 30 seconden'}
+            </Text>
           </View>
 
           {/* Form Section */}
@@ -163,9 +183,10 @@ export default function SignUpScreen({ navigation }) {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>{t('auth.email')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, emailError && styles.inputError]}
                 value={email}
                 onChangeText={setEmail}
+                onBlur={() => setEmailTouched(true)}
                 placeholder={t('auth.email')}
                 placeholderTextColor="#A0A0A0"
                 keyboardType="email-address"
@@ -174,14 +195,16 @@ export default function SignUpScreen({ navigation }) {
                 textContentType="emailAddress"
                 editable={!loading}
               />
+              {emailError ? <Text style={styles.inputErrorText}>{emailError}</Text> : null}
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>{t('auth.password')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, passwordError && styles.inputError]}
                 value={password}
                 onChangeText={setPassword}
+                onBlur={() => setPasswordTouched(true)}
                 placeholder={t('auth.password')}
                 placeholderTextColor="#A0A0A0"
                 secureTextEntry
@@ -189,14 +212,16 @@ export default function SignUpScreen({ navigation }) {
                 textContentType="newPassword"
                 editable={!loading}
               />
+              {passwordError ? <Text style={styles.inputErrorText}>{passwordError}</Text> : null}
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>{t('auth.confirmPassword')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, confirmError && styles.inputError]}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
+                onBlur={() => setConfirmTouched(true)}
                 placeholder={t('auth.confirmPassword')}
                 placeholderTextColor="#A0A0A0"
                 secureTextEntry
@@ -204,6 +229,7 @@ export default function SignUpScreen({ navigation }) {
                 textContentType="newPassword"
                 editable={!loading}
               />
+              {confirmError ? <Text style={styles.inputErrorText}>{confirmError}</Text> : null}
             </View>
 
             {/* Language Selection */}
@@ -342,7 +368,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 28,
-    color: '#8B7355',
+    color: '#FF6B00',
     lineHeight: 32,
   },
   header: {
@@ -360,18 +386,19 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 28,
     lineHeight: 36,
-    color: '#2D2D2D',
+    color: '#1A1000',
     letterSpacing: 0.5,
     textAlign: 'center',
     marginBottom: 4,
   },
   subtitle: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#6B6B6B',
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#9A8770',
     textAlign: 'center',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
+    marginBottom: 20,
   },
   form: {
     width: '100%',
@@ -386,17 +413,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 8,
     letterSpacing: 0.1,
   },
   input: {
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
-    color: '#2D2D2D',
+    color: '#1A1000',
     backgroundColor: '#F8F6F3',
-    borderWidth: 1,
-    borderColor: '#E8E2DA',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -405,11 +432,21 @@ const styles = StyleSheet.create({
     minHeight: 56,
     textAlignVertical: 'center',
   },
+  inputError: {
+    borderColor: '#CC2200',
+  },
+  inputErrorText: {
+    marginTop: 6,
+    marginLeft: 4,
+    fontSize: 12,
+    color: '#CC2200',
+    fontFamily: 'Inter_400Regular',
+  },
   signUpButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 14,
     paddingVertical: 18,
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -456,7 +493,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#8B7355',
+    color: '#FF6B00',
     letterSpacing: 0.1,
   },
 
@@ -481,7 +518,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 300,
     maxWidth: '90%',
-    shadowColor: '#2D2D2D',
+    shadowColor: '#1A1000',
     shadowOffset: {
       width: 0,
       height: 12,
@@ -498,7 +535,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 26,
     lineHeight: 34,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 16,
     letterSpacing: 0.3,
     textAlign: 'center',
@@ -513,12 +550,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   alertButton: {
-    backgroundColor: '#8B7355',
+    backgroundColor: '#FF6B00',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 32,
     alignItems: 'center',
-    shadowColor: '#8B7355',
+    shadowColor: '#FF6B00',
     shadowOffset: {
       width: 0,
       height: 3,
@@ -544,7 +581,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 20,
-    color: '#2D2D2D',
+    color: '#1A1000',
     marginBottom: 10,
   },
   languageButtons: {
@@ -565,8 +602,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   languageButtonActive: {
-    backgroundColor: '#8B7355',
-    borderColor: '#8B7355',
+    backgroundColor: '#FF6B00',
+    borderColor: '#FF6B00',
   },
   languageButtonText: {
     fontFamily: 'Inter_500Medium',

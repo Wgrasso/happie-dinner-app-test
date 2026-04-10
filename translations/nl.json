@@ -4,6 +4,13 @@
     "tagline": "Koken, Delen, Samen Genieten"
   },
   "auth": {
+    "welcomeBack": "Welkom terug",
+    "welcomeSubtitle": "Log in om verder te gaan met plannen",
+    "welcomeNew": "Maak je account aan",
+    "welcomeNewSubtitle": "Begin met plannen in 30 seconden",
+    "invalidEmail": "Voer een geldig e-mailadres in",
+    "passwordTooShort": "Wachtwoord moet minimaal 6 tekens zijn",
+    "passwordsDoNotMatch": "Wachtwoorden komen niet overeen",
     "signIn": "Inloggen",
     "signUp": "Registreren",
     "email": "E-mail",

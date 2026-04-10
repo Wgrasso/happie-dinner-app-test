@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -116,6 +116,26 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
     lightHaptic();
     setExpandedSection((prev) => (prev === key ? null : key));
   };
+  // "Just imported" preview — shows source host + counts for a few seconds
+  // after a successful URL import so the user sees the payoff.
+  const [importPreview, setImportPreview] = useState(null);
+  const importPreviewOpacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!importPreview) return;
+    Animated.timing(importPreviewOpacity, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+    const timer = setTimeout(() => {
+      Animated.timing(importPreviewOpacity, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }).start(() => setImportPreview(null));
+    }, 2600);
+    return () => clearTimeout(timer);
+  }, [importPreview, importPreviewOpacity]);
 
   // Edit profile state
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -272,6 +292,19 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
       if (r.steps?.length) setSimpleSteps(r.steps.join('\n'));
       setShowFullForm(true);
       successHaptic();
+
+      // Show the "just imported" preview badge with source host + counts.
+      try {
+        const host = new URL(clean).hostname.replace(/^www\./, '');
+        setImportPreview({
+          host,
+          ingredientCount: r.ingredients?.length || 0,
+          stepCount: r.steps?.length || 0,
+        });
+      } catch {
+        // URL parse can fail on odd inputs — silently skip the preview.
+      }
+
       if (result.partial) {
         toast.success(
           t('userRecipes.importedPartial') ||
@@ -853,6 +886,30 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
 
               {/* ── Full form (hidden until import succeeds or user opts in) ── */}
               {showFullForm && (<>
+              {/* ─── "Just imported" preview badge (fades out after ~2.5s) ─── */}
+              {importPreview ? (
+                <Animated.View
+                  style={[styles.importedBadge, { opacity: importPreviewOpacity }]}
+                  pointerEvents="none"
+                >
+                  <View style={styles.importedBadgeIcon}>
+                    <Feather name="check" size={14} color={theme.colors.textInverse} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.importedBadgeTitle}>
+                      {t('userRecipes.imported') || 'Geïmporteerd!'}
+                    </Text>
+                    <Text style={styles.importedBadgeHint}>
+                      {importPreview.host} · {importPreview.ingredientCount}{' '}
+                      {t('userRecipes.ingredients') || 'ingrediënten'}
+                      {importPreview.stepCount
+                        ? ` · ${importPreview.stepCount} ${t('userRecipes.steps') || 'stappen'}`
+                        : ''}
+                    </Text>
+                  </View>
+                </Animated.View>
+              ) : null}
+
               {/* ─── Hero photo picker (first thing after import) ─── */}
               <View style={{ marginTop: 4, marginBottom: 12 }}>
                 <PhotoPickerCard
@@ -2013,6 +2070,38 @@ const createStyles = (theme) => StyleSheet.create({
   formRow: { flexDirection: 'row' },
 
   // Image picker
+  // "Just imported" preview badge (fades in/out for 2.5s after success)
+  importedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: `${theme.colors.success}1F`,
+    borderWidth: 1,
+    borderColor: theme.colors.success,
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  importedBadgeIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: theme.colors.success,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  importedBadgeTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  importedBadgeHint: {
+    fontSize: 11,
+    color: theme.colors.textTertiary,
+    marginTop: 1,
+  },
   // Collapsible form section
   sectionHeader: {
     flexDirection: 'row',

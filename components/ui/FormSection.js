@@ -118,7 +118,10 @@ const createStyles = (theme) =>
       flex: 1,
     },
     title: {
-      fontSize: 15,
+      // Use the theme's heading face so section headers match EmptyState
+      // titles, SignIn/SignUp titles, and NewRecipeScreen's Playfair title.
+      fontFamily: theme.typography?.fontFamily?.heading || 'PlayfairDisplay_700Bold',
+      fontSize: theme.typography?.fontSize?.xl || 17,
       fontWeight: '700',
       color: theme.colors.text,
       marginBottom: 2,
