@@ -2584,6 +2584,10 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   const [inlineUrlInput, setInlineUrlInput] = useState('');
   const [inlineImporting, setInlineImporting] = useState(false);
   const [inlineShowDraft, setInlineShowDraft] = useState(false);
+  // Controls whether the "Recept van een website?" card is expanded.
+  // Always open when the carousel is empty; collapsed behind a + button
+  // when the carousel has at least one recipe.
+  const [inlineImportExpanded, setInlineImportExpanded] = useState(false);
   const [inlineDraft, setInlineDraft] = useState({
     name: '',
     description: '',
@@ -2597,6 +2601,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
 
   const resetInlineDraft = useCallback(() => {
     setInlineShowDraft(false);
+    setInlineImportExpanded(false);
     setInlineDraft({
       name: '',
       description: '',
@@ -2623,15 +2628,17 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     lightHaptic();
     try {
       const result = await importRecipeFromUrl(clean);
-      if (!result?.success || !result?.recipe) {
-        toast.error(result?.error || 'Kon recept niet importeren');
+      // Treat partial (OG-only fallback) as a failure — too little data to
+      // be useful, and it just confuses users on sites like Picnic where
+      // the parser can't really read the page.
+      if (!result?.success || result?.partial || !result?.recipe) {
+        toast.error(
+          result?.error ||
+            'Kon recept niet importeren. Probeer een andere link of voer het handmatig in.'
+        );
         return;
       }
       const r = result.recipe;
-      // Populate the editable draft instead of saving silently — the user
-      // should always have the chance to correct what the parser got wrong
-      // (especially important for sites like Picnic that don't expose
-      // schema.org JSON-LD).
       setInlineDraft({
         name: r.name || '',
         description: r.description || '',
@@ -2642,11 +2649,6 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         steps: Array.isArray(r.steps) ? r.steps.join('\n') : '',
       });
       setInlineShowDraft(true);
-      if (result.partial) {
-        toast.success(
-          t('userRecipes.importedPartial') || 'Deels geïmporteerd — vul de rest zelf aan'
-        );
-      }
     } catch (e) {
       toast.error(e?.message || 'Kon recept niet importeren');
     } finally {
@@ -5378,7 +5380,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 <View style={{ paddingVertical: 20, alignItems: 'center' }}>
                   <ActivityIndicator size="small" color="#FF6B00" />
                 </View>
-              ) : groupSavedRecipes.length === 0 ? (
+              ) : (groupSavedRecipes.length === 0 || inlineShowDraft || inlineImportExpanded) ? (
                 inlineShowDraft ? (
                   /* ── Editable draft form — used after URL import AND for manual entry ── */
                   <View style={gpStyles.inlineImportCard}>
@@ -5624,9 +5626,23 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         {'of voer handmatig in'}
                       </Text>
                     </TouchableOpacity>
+
+                    {/* Collapse back to the carousel, if we have one to return to */}
+                    {groupSavedRecipes.length > 0 && (
+                      <TouchableOpacity
+                        style={gpStyles.inlineImportToggle}
+                        onPress={() => { lightHaptic(); resetInlineDraft(); }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[gpStyles.inlineImportToggleText, { color: '#6B5A48' }]}>
+                          {t('common.cancel') || 'Annuleren'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )
               ) : (
+                <>
                 <ScrollView
                   style={{ maxHeight: 260 }}
                   nestedScrollEnabled
@@ -5690,6 +5706,23 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     })}
                   </View>
                 </ScrollView>
+                {/* Collapsed "+ recept toevoegen" button below the carousel.
+                    Tap to expand the same URL import + manual form you get
+                    in the empty state. */}
+                <TouchableOpacity
+                  style={gpStyles.inlineAddMoreBtn}
+                  onPress={() => {
+                    lightHaptic();
+                    setInlineImportExpanded(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Feather name="plus" size={16} color="#FF6B00" />
+                  <Text style={gpStyles.inlineAddMoreBtnText}>
+                    {'Recept toevoegen'}
+                  </Text>
+                </TouchableOpacity>
+                </>
               )}
             </View>
 
@@ -6352,7 +6385,14 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                           if (selectedGroupId) loadGroupSavedRecipes(selectedGroupId);
                         }}
                         onRemoved={() => {
-                          if (selectedGroupId) loadGroupSavedRecipes(selectedGroupId);
+                          // Drop the cache entry first so the reload fetches
+                          // fresh data instead of painting the stale list.
+                          if (selectedGroupId) {
+                            if (groupRecipesCacheRef.current) {
+                              delete groupRecipesCacheRef.current[selectedGroupId];
+                            }
+                            loadGroupSavedRecipes(selectedGroupId);
+                          }
                           // Close the modal — the recipe is gone from the group now.
                           setShowRecipeModal(false);
                           setSelectedRecipe(null);
@@ -6952,6 +6992,25 @@ const gpStyles = StyleSheet.create({
   inlineDraftTextareaTall: {
     minHeight: 110,
     textAlignVertical: 'top',
+  },
+  inlineAddMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFF5EC',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#FFD0B0',
+    borderStyle: 'dashed',
+    gap: 8,
+  },
+  inlineAddMoreBtnText: {
+    color: '#FF6B00',
+    fontSize: 14,
+    fontWeight: '600',
   },
   // --- Cards / Sections ---
   card: {

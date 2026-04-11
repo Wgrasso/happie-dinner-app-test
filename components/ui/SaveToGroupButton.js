@@ -115,12 +115,12 @@ export default function SaveToGroupButton({
     if (!currentGroupId || removing) return;
     if (!recipe?.id && !shareId) return;
     Alert.alert(
-      t('groups.removeRecipeTitle') || 'Recept verwijderen',
-      t('groups.removeRecipeConfirm') || 'Wil je dit recept uit deze groep halen?',
+      t('groups.removeRecipeTitle', { defaultValue: 'Recept verwijderen' }),
+      t('groups.removeRecipeConfirm', { defaultValue: 'Wil je dit recept uit deze groep halen?' }),
       [
-        { text: t('common.cancel') || 'Annuleren', style: 'cancel' },
+        { text: t('common.cancel', { defaultValue: 'Annuleren' }), style: 'cancel' },
         {
-          text: t('common.delete') || 'Verwijderen',
+          text: t('common.delete', { defaultValue: 'Verwijderen' }),
           style: 'destructive',
           onPress: async () => {
             setRemoving(true);
@@ -132,7 +132,7 @@ export default function SaveToGroupButton({
               const result = await removeRecipeFromGroup(recipe?.id, currentGroupId, shareId);
               if (!result?.success) throw new Error(result?.error || 'Kon niet verwijderen');
               successHaptic();
-              toast.success(t('groups.recipeRemoved') || 'Recept verwijderd');
+              toast.success(t('groups.recipeRemoved', { defaultValue: 'Recept verwijderd' }));
               setAlreadySharedIds((prev) => prev.filter((id) => id !== currentGroupId));
               if (typeof onRemoved === 'function') onRemoved(currentGroupId);
             } catch (e) {
@@ -152,10 +152,13 @@ export default function SaveToGroupButton({
   // that group — otherwise the red "verwijder uit deze groep" button would
   // delete nothing and just confuse the user.
   const inGroupContext = Boolean(currentGroupId) && alreadySharedIds.includes(currentGroupId);
+  // NOTE: i18next returns the key itself when missing, so `t(key) || fallback`
+  // never falls through. Use the `defaultValue` option instead which is
+  // the idiomatic way to set a fallback string.
   const buttonLabel = label
     || (inGroupContext
-      ? (t('chef.addToOtherGroup') || 'Toevoegen aan andere groep')
-      : (t('chef.addToGroup') || 'Opslaan naar groep'));
+      ? t('chef.addToOtherGroup', { defaultValue: 'Delen met groep' })
+      : t('chef.addToGroup', { defaultValue: 'Opslaan naar groep' }));
 
   return (
     <View style={styles.container}>
@@ -189,7 +192,7 @@ export default function SaveToGroupButton({
           onPress={handleRemoveFromCurrent}
           disabled={removing}
           activeOpacity={0.8}
-          accessibilityLabel={t('groups.removeFromGroup') || 'Verwijder uit groep'}
+          accessibilityLabel={t('groups.removeFromGroup', { defaultValue: 'Verwijder uit groep' })}
         >
           {removing ? (
             <ActivityIndicator size="small" color="#FFF" />
@@ -197,7 +200,7 @@ export default function SaveToGroupButton({
             <>
               <Feather name="trash-2" size={16} color="#FFF" />
               <Text style={styles.removeBtnText} numberOfLines={1}>
-                {t('groups.removeFromGroup') || 'Verwijder uit groep'}
+                {t('groups.removeFromGroup', { defaultValue: 'Verwijder uit groep' })}
               </Text>
             </>
           )}
