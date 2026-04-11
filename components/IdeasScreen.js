@@ -859,7 +859,77 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                 <Text style={styles.backArrow}>←</Text>
                 <Text style={styles.backText}>{t('common.back')}</Text>
               </TouchableOpacity>
+              {/* Opslaan naar groep — standard orange, same as the rest of
+                  the app. Tap to toggle the group picker which renders
+                  inline under the header below. */}
+              {selectedRecipe?.id && (
+                <TouchableOpacity
+                  style={styles.headerAddToGroupBtn}
+                  onPress={() => {
+                    lightHaptic();
+                    setShowGroupPicker(!showGroupPicker);
+                    setSelectedGroupIds([]);
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Feather
+                    name={showGroupPicker ? 'chevron-up' : 'plus-circle'}
+                    size={14}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.headerAddToGroupBtnText}>
+                    {t('chef.addToGroup', { defaultValue: 'Opslaan naar groep' })}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
+
+            {/* Group picker dropdown — rendered just under the header when
+                the user taps the "Opslaan naar groep" button. */}
+            {showGroupPicker && selectedRecipe?.id && (
+              <View style={styles.headerGroupPickerList}>
+                {(groups || []).length === 0 ? (
+                  <Text style={styles.groupPickerEmpty}>
+                    {t('groups.noGroups') || 'Geen groepen'}
+                  </Text>
+                ) : (
+                  <>
+                    {(groups || []).map((g) => {
+                      const isSelected = selectedGroupIds.includes(g.id);
+                      return (
+                        <TouchableOpacity
+                          key={g.id}
+                          style={[styles.groupPickerItem, isSelected && styles.groupPickerItemActive]}
+                          onPress={() => toggleGroupSelect(g.id)}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.groupPickerName}>{g.name}</Text>
+                          <View style={[styles.groupCheckbox, isSelected && styles.groupCheckboxChecked]}>
+                            {isSelected && <Feather name="check" size={14} color="#FFF" />}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                    {selectedGroupIds.length > 0 && (
+                      <TouchableOpacity
+                        style={styles.groupPickerSaveBtn}
+                        onPress={handleSaveToGroups}
+                        disabled={savingGroups}
+                        activeOpacity={0.8}
+                      >
+                        {savingGroups ? (
+                          <ActivityIndicator size="small" color="#FFF" />
+                        ) : (
+                          <Text style={styles.groupPickerSaveBtnText}>
+                            {t('chef.addToGroupConfirm') || 'Toevoegen'} ({selectedGroupIds.length})
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+              </View>
+            )}
 
             {/* Modal Content */}
             <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
@@ -889,66 +959,8 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                       ) : null; })()}
                     </View>
 
-                    {/* Add to group — prominent, right under the metrics so it's instantly visible */}
-                    {selectedRecipe?.id && (
-                      <View style={styles.addToGroupSection}>
-                        <TouchableOpacity
-                          style={styles.addToGroupBtn}
-                          onPress={() => { lightHaptic(); setShowGroupPicker(!showGroupPicker); setSelectedGroupIds([]); }}
-                          activeOpacity={0.8}
-                        >
-                          <Feather name={showGroupPicker ? 'chevron-up' : 'plus-circle'} size={18} color="#FFF" />
-                          <Text style={styles.addToGroupBtnText}>
-                            {t('chef.addToGroup') || 'Toevoegen aan groep'}
-                          </Text>
-                        </TouchableOpacity>
-
-                        {showGroupPicker && (
-                          <View style={styles.groupPickerList}>
-                            {(groups || []).length === 0 ? (
-                              <Text style={styles.groupPickerEmpty}>
-                                {t('groups.noGroups') || 'Geen groepen'}
-                              </Text>
-                            ) : (
-                              <>
-                                {(groups || []).map((g) => {
-                                  const isSelected = selectedGroupIds.includes(g.id);
-                                  return (
-                                    <TouchableOpacity
-                                      key={g.id}
-                                      style={[styles.groupPickerItem, isSelected && styles.groupPickerItemActive]}
-                                      onPress={() => toggleGroupSelect(g.id)}
-                                      activeOpacity={0.7}
-                                    >
-                                      <Text style={styles.groupPickerName}>{g.name}</Text>
-                                      <View style={[styles.groupCheckbox, isSelected && styles.groupCheckboxChecked]}>
-                                        {isSelected && <Feather name="check" size={14} color="#FFF" />}
-                                      </View>
-                                    </TouchableOpacity>
-                                  );
-                                })}
-                                {selectedGroupIds.length > 0 && (
-                                  <TouchableOpacity
-                                    style={styles.groupPickerSaveBtn}
-                                    onPress={handleSaveToGroups}
-                                    disabled={savingGroups}
-                                    activeOpacity={0.8}
-                                  >
-                                    {savingGroups ? (
-                                      <ActivityIndicator size="small" color="#FFF" />
-                                    ) : (
-                                      <Text style={styles.groupPickerSaveBtnText}>
-                                        {t('chef.addToGroupConfirm') || 'Toevoegen'} ({selectedGroupIds.length})
-                                      </Text>
-                                    )}
-                                  </TouchableOpacity>
-                                )}
-                              </>
-                            )}
-                          </View>
-                        )}
-                      </View>
-                    )}
+                    {/* Add-to-group button and picker moved to the modal
+                        header above — see styles.headerAddToGroupBtn. */}
 
                     {selectedRecipe.description && (
                       <View style={styles.modalDescription}>
@@ -1471,11 +1483,40 @@ const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingVertical: 18,
     borderBottomWidth: 1,
     borderBottomColor: '#F5F3F0',
     backgroundColor: '#FEFEFE',
+  },
+  headerAddToGroupBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FF6B00',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    shadowColor: '#FF6B00',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  headerAddToGroupBtnText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: '#FFFFFF',
+    letterSpacing: 0.1,
+  },
+  headerGroupPickerList: {
+    backgroundColor: '#FBF7F4',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDE8DD',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    gap: 6,
   },
   backButton: {
     flexDirection: 'row',
