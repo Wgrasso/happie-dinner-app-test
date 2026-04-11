@@ -92,6 +92,9 @@ export default function ChefDashboard({
   // imported a recipe from a URL and wants to let the user review/edit
   // it before saving. The fields land in the form on first mount.
   prefilledRecipe = null,
+  // Skip the URL-import card and jump straight to the full manual form.
+  // Used by GroupsScreen when the user clicks "voer handmatig in" inline.
+  startInFullForm = false,
   onRecipeCreated,
 }) {
   const { t } = useTranslation();
@@ -105,6 +108,16 @@ export default function ChefDashboard({
 
   // Add recipe form — always open in addOnlyMode so the modal renders the form immediately.
   const [showAddForm, setShowAddForm] = useState(addOnlyMode);
+  // When the parent asks for manual entry, jump straight past the URL
+  // import card so the user doesn't have to click "voer handmatig in"
+  // twice (once inline, once inside the modal).
+  useEffect(() => {
+    if (startInFullForm) {
+      setShowAddForm(true);
+      setShowFullForm(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startInFullForm]);
   // When the parent passed a prefilled recipe, drop it into the form state
   // on first mount. We also jump straight to the full form (skipping the
   // URL import card) since the import has already happened upstream.

@@ -2598,10 +2598,12 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   const [chefAddModalProfile, setChefAddModalProfile] = useState(null);
   const [chefAddModalLoading, setChefAddModalLoading] = useState(false);
   const [chefAddPrefilledRecipe, setChefAddPrefilledRecipe] = useState(null);
+  const [chefAddStartManual, setChefAddStartManual] = useState(false);
 
-  const openChefAddModalWith = useCallback(async (prefilled) => {
+  const openChefAddModalWith = useCallback(async (prefilled, { manual = false } = {}) => {
     lightHaptic();
     setChefAddPrefilledRecipe(prefilled || null);
+    setChefAddStartManual(manual);
     setChefAddModalLoading(true);
     setShowChefAddModal(true);
     try {
@@ -2621,13 +2623,14 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   }, [toast]);
 
   const openChefAddModalEmpty = useCallback(() => {
-    openChefAddModalWith(null);
+    openChefAddModalWith(null, { manual: true });
   }, [openChefAddModalWith]);
 
   const closeChefAddModal = useCallback(() => {
     setShowChefAddModal(false);
     setChefAddModalProfile(null);
     setChefAddPrefilledRecipe(null);
+    setChefAddStartManual(false);
   }, []);
 
   const handleChefAddModalSaved = useCallback(() => {
@@ -5429,7 +5432,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 <View style={{ paddingVertical: 20, alignItems: 'center' }}>
                   <ActivityIndicator size="small" color="#FF6B00" />
                 </View>
-              ) : (groupSavedRecipes.length === 0 || inlineImportExpanded) ? (
+              ) : false ? (
+                // Dead branches below — kept for git history, unreachable.
                 inlineShowDraft ? (
                   /* ── Editable draft form — used after URL import AND for manual entry ── */
                   <View style={gpStyles.inlineImportCard}>
@@ -5691,11 +5695,10 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   </View>
                 )
               ) : (
-                <ScrollView
-                  style={{ maxHeight: 320 }}
-                  nestedScrollEnabled
-                  showsVerticalScrollIndicator={groupSavedRecipes.length > 3}
-                >
+                // No maxHeight cap — let the section grow so the outer
+                // page ScrollView handles scrolling through recipes + the
+                // inline URL card at the bottom.
+                <View>
                   <View style={gpStyles.foodCards}>
                     {groupSavedRecipes.map((recipe) => {
                       const name = recipe.name || t('meals.recipe');
@@ -5752,26 +5755,112 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         </TouchableOpacity>
                       );
                     })}
-                    {/* "+ Recept toevoegen" as the last card inside the
-                        scrollable list — the user scrolls past their
-                        recipes and lands on the add button. Tapping
-                        expands the same inline URL input card that the
-                        empty state shows. */}
-                    <TouchableOpacity
-                      style={gpStyles.inlineAddMoreBtn}
-                      onPress={() => {
-                        lightHaptic();
-                        setInlineImportExpanded(true);
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <Feather name="plus" size={16} color="#FF6B00" />
-                      <Text style={gpStyles.inlineAddMoreBtnText}>
-                        {'Recept toevoegen'}
+                    {/* URL import card always lives inside the scroll as
+                        the last item. Users scroll past their recipes and
+                        land on the URL input. 'Importeer' and 'of voer
+                        handmatig in' open the chef add-form popup. */}
+                    <View style={gpStyles.inlineImportCard}>
+                      <Text style={gpStyles.inlineImportTitle}>
+                        {t('userRecipes.importTitle') || 'Recept van een website?'}
                       </Text>
-                    </TouchableOpacity>
+                      <Text style={gpStyles.inlineImportSubtitle}>
+                        {t('userRecipes.importSubtitle') ||
+                          'Plak een link en we slaan \u2019m meteen op in deze groep'}
+                      </Text>
+                      <View style={gpStyles.inlineImportInputRow}>
+                        <Feather
+                          name="link"
+                          size={16}
+                          color="#B5A89A"
+                          style={gpStyles.inlineImportInputIcon}
+                        />
+                        <TextInput
+                          style={gpStyles.inlineImportInput}
+                          placeholder={
+                            t('userRecipes.urlPlaceholder') || 'https://ah.nl/allerhande/recept/...'
+                          }
+                          placeholderTextColor="#B5A89A"
+                          value={inlineUrlInput}
+                          onChangeText={setInlineUrlInput}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          keyboardType="url"
+                          returnKeyType="go"
+                          onSubmitEditing={handleInlineImport}
+                          editable={!inlineImporting}
+                        />
+                        {inlineUrlInput.length > 0 && !inlineImporting ? (
+                          <TouchableOpacity
+                            onPress={() => { lightHaptic(); setInlineUrlInput(''); }}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            style={gpStyles.inlineImportClearBtn}
+                          >
+                            <Feather name="x" size={16} color="#B5A89A" />
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
+
+                      <TouchableOpacity
+                        style={gpStyles.inlineImportToggle}
+                        onPress={async () => {
+                          try {
+                            lightHaptic();
+                            const text = await Clipboard.getStringAsync();
+                            if (text && /^https?:\/\//i.test(text.trim())) {
+                              setInlineUrlInput(text.trim());
+                            } else {
+                              toast.error(t('userRecipes.noUrlInClipboard') || 'Geen link op je klembord');
+                            }
+                          } catch (_) {}
+                        }}
+                        disabled={inlineImporting}
+                        activeOpacity={0.75}
+                      >
+                        <Feather name="clipboard" size={14} color="#FF6B00" />
+                        <Text style={gpStyles.inlineImportToggleText}>
+                          {t('userRecipes.pasteFromClipboard') || 'Plak vanaf klembord'}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[
+                          gpStyles.inlineImportBtn,
+                          (!inlineUrlInput.trim() || inlineImporting) && gpStyles.inlineImportBtnDisabled,
+                        ]}
+                        onPress={handleInlineImport}
+                        disabled={!inlineUrlInput.trim() || inlineImporting}
+                        activeOpacity={0.85}
+                      >
+                        {inlineImporting ? (
+                          <>
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                            <Text style={gpStyles.inlineImportBtnText}>
+                              {t('userRecipes.importing') || 'Recept ophalen...'}
+                            </Text>
+                          </>
+                        ) : (
+                          <>
+                            <Feather name="download" size={17} color="#FFFFFF" />
+                            <Text style={gpStyles.inlineImportBtnText}>
+                              {t('userRecipes.import') || 'Importeer recept'}
+                            </Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={gpStyles.inlineImportToggle}
+                        onPress={handleInlineOpenManual}
+                        activeOpacity={0.7}
+                      >
+                        <Feather name="edit-3" size={14} color="#FF6B00" />
+                        <Text style={gpStyles.inlineImportToggleText}>
+                          {'of voer handmatig in'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </ScrollView>
+                </View>
               )}
             </View>
 
@@ -6502,6 +6591,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   preselectedGroupIds={selectedGroupId ? [selectedGroupId] : []}
                   initialVisibility="groups"
                   prefilledRecipe={chefAddPrefilledRecipe}
+                  startInFullForm={chefAddStartManual || Boolean(chefAddPrefilledRecipe)}
                   onRecipeCreated={handleChefAddModalSaved}
                 />
               ) : (
