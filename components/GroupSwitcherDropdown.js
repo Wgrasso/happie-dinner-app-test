@@ -147,17 +147,21 @@ export default function GroupSwitcherDropdown({
       onPanResponderGrant: () => {},
       onPanResponderMove: (_, gs) => {
         if (!isDraggingRef.current) return;
-        dragY.setValue(gs.dy);
 
-        // Calculate target index from drag distance
+        // originIdx is the index the drag STARTED at — it must stay
+        // immutable throughout the gesture so gs.dy (which is always
+        // measured from the finger-down point) lines up with it.
+        const initialIdx = originIdx.current;
         const currentIdx = draggingIdxRef.current;
-        const targetIdx = Math.max(0, Math.min(
-          localGroupsRef.current.length - 1,
-          originIdx.current + Math.round(gs.dy / ROW_HEIGHT)
-        ));
+
+        // Target based on absolute finger delta from start.
+        const maxIdx = localGroupsRef.current.length - 1;
+        const targetIdx = Math.max(
+          0,
+          Math.min(maxIdx, initialIdx + Math.round(gs.dy / ROW_HEIGHT)),
+        );
 
         if (targetIdx !== currentIdx) {
-          // Swap in the array
           const arr = [...localGroupsRef.current];
           const [item] = arr.splice(currentIdx, 1);
           arr.splice(targetIdx, 0, item);
@@ -167,12 +171,18 @@ export default function GroupSwitcherDropdown({
           setLocalGroups(arr);
           setDraggingIdx(targetIdx);
 
-          // Adjust origin so offset stays smooth
-          originIdx.current = originIdx.current + (targetIdx - currentIdx);
-          dragY.setValue(gs.dy);
-
           lightHaptic();
         }
+
+        // Keep the dragged row locked under the finger. Because we
+        // re-render the array, the row's natural top moves by
+        // (newIdx - initialIdx) * ROW_HEIGHT. We subtract that shift
+        // from gs.dy so the combined (natural + translateY) stays on
+        // the exact pixel the finger is at. Previously the code only
+        // set dragY = gs.dy which double-counted the shift — that's
+        // the "schiet weg van mijn vinger" behaviour.
+        const shift = (draggingIdxRef.current - initialIdx) * ROW_HEIGHT;
+        dragY.setValue(gs.dy - shift);
       },
       onPanResponderRelease: () => {
         finishDrag();
