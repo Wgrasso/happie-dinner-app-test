@@ -354,17 +354,17 @@ const createStyles = (theme) => StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingTop: 12,
     paddingBottom: 32,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 14,
     paddingTop: 0,
   },
   logo: {
-    width: 150,
-    height: 115,
+    width: 240,
+    height: 185,
     marginTop: 0,
     marginBottom: 0,
   },
