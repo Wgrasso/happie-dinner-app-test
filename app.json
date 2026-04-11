@@ -19,6 +19,7 @@
       "icon": "./assets/icon-happie.png",
       "bundleIdentifier": "com.willemgrasso.happie",
       "buildNumber": "1.2.0",
+      "usesAppleSignIn": true,
       "associatedDomains": [
         "webcredentials:studentenhappie.nl",
         "applinks:studentenhappie.nl"
@@ -53,6 +54,7 @@
     "plugins": [
       "expo-font",
       "expo-asset",
+      "expo-apple-authentication",
       [
         "expo-image-picker",
         {

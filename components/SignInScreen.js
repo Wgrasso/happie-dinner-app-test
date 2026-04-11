@@ -4,8 +4,13 @@ import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import * as Crypto from 'expo-crypto';
 import { useTheme } from '../lib/ThemeContext';
+
+// Required so the auth session resolves cleanly on web / iOS when the
+// browser redirects back to the app scheme.
+WebBrowser.maybeCompleteAuthSession();
 
 // Safe image component that handles missing drawings gracefully
 const SafeDrawing = ({ source, style, resizeMode = "contain" }) => {
@@ -126,6 +131,8 @@ export default function SignInScreen({ navigation }) {
   const handleGoogleSignIn = async () => {
     setSocialLoading(true);
     try {
+      // Expo SDK 48+ removed AuthSession.startAsync, so we drive the
+      // browser ourselves and let Supabase do PKCE properly.
       const redirectUrl = AuthSession.makeRedirectUri({ path: 'auth/callback' });
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -134,21 +141,33 @@ export default function SignInScreen({ navigation }) {
           skipBrowserRedirect: true,
         },
       });
-
       if (error) { Alert.alert('Error', error.message); return; }
       if (!data?.url) { Alert.alert('Error', 'Kon Google login niet starten'); return; }
 
-      const result = await AuthSession.startAsync({ authUrl: data.url, returnUrl: redirectUrl });
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+      if (result.type !== 'success' || !result.url) return; // user cancelled
 
-      if (result.type === 'success') {
-        const params = new URLSearchParams(result.url.split('#')[1] || result.url.split('?')[1] || '');
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
+      // Modern Supabase OAuth uses PKCE: the provider redirects back
+      // with ?code=... which we exchange for a session. The old flow
+      // (?access_token= in the hash) still works as a fallback.
+      const url = new URL(result.url);
+      const hashParams = new URLSearchParams((result.url.split('#')[1] || '').replace(/^\?/, ''));
+      const code = url.searchParams.get('code') || hashParams.get('code');
+      if (code) {
+        const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+        if (exErr) { Alert.alert('Error', exErr.message); return; }
+        navigation.navigate('MainTabs', { screen: 'groups' });
+        return;
+      }
 
-        if (accessToken) {
-          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-          navigation.navigate('MainTabs', { screen: 'groups' });
-        }
+      const accessToken = url.searchParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken = url.searchParams.get('refresh_token') || hashParams.get('refresh_token');
+      if (accessToken) {
+        await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || '',
+        });
+        navigation.navigate('MainTabs', { screen: 'groups' });
       }
     } catch (e) {
       Alert.alert('Error', e.message || 'Google Sign In mislukt');
