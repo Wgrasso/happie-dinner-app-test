@@ -1060,7 +1060,8 @@ export default function VotingScreen({ route, navigation }) {
                     </Text>
                     
                     <View style={styles.modalMetaRow}>
-                      <View style={styles.modalTimeBadge}>
+                      <View style={[styles.modalTimeBadge, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+                        <Feather name="clock" size={13} color="#6B5A48" />
                         <Text style={styles.modalTimeText}>
                           {formatTime(selectedRecipe.meal_data.cooking_time || selectedRecipe.meal_data.total_time_minutes || selectedRecipe.meal_data.cooking_time_minutes)}
                         </Text>

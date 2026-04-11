@@ -812,7 +812,10 @@ const ExpandableGroupCard = React.memo(({
                             <Text style={[cardStyles.top3RecipeName, isTopVoted && cardStyles.top3RecipeNameTop]} numberOfLines={1}>{name}</Text>
                             <View style={cardStyles.top3RecipeMeta}>
                               {cookingTime ? (
-                                <Text style={cardStyles.top3RecipeTime}>{cookingTime} min</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                  <Feather name="clock" size={12} color="#999" />
+                                  <Text style={cardStyles.top3RecipeTime}>{cookingTime} min</Text>
+                                </View>
                               ) : null}
                               {tags && tags.length > 0 && tags.slice(0, 1).map((tag, ti) => (
                                 <View key={ti} style={cardStyles.top3RecipeTag}>

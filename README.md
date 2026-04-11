@@ -1,6 +1,10 @@
 # Happie
 
-A beautiful mobile app for meal planning with a modern and intuitive interface.
+Happie maakt samen eten plannen simpel en leuk. Groepen maken, samen
+stemmen op recepten, en direct zien wie er mee eet — geen eindeloze
+groepschats meer over wat jullie gaan eten.
+
+Volledige App Store copy: [docs/app-store-copy.md](./docs/app-store-copy.md).
 
 ## Setup Instructions
 
