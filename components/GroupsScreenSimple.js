@@ -5691,9 +5691,8 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   </View>
                 )
               ) : (
-                <>
                 <ScrollView
-                  style={{ maxHeight: 260 }}
+                  style={{ maxHeight: 320 }}
                   nestedScrollEnabled
                   showsVerticalScrollIndicator={groupSavedRecipes.length > 3}
                 >
@@ -5753,25 +5752,26 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         </TouchableOpacity>
                       );
                     })}
+                    {/* "+ Recept toevoegen" as the last card inside the
+                        scrollable list — the user scrolls past their
+                        recipes and lands on the add button. Tapping
+                        expands the same inline URL input card that the
+                        empty state shows. */}
+                    <TouchableOpacity
+                      style={gpStyles.inlineAddMoreBtn}
+                      onPress={() => {
+                        lightHaptic();
+                        setInlineImportExpanded(true);
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Feather name="plus" size={16} color="#FF6B00" />
+                      <Text style={gpStyles.inlineAddMoreBtnText}>
+                        {'Recept toevoegen'}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </ScrollView>
-                {/* "+ Recept toevoegen" expands the same inline URL input
-                    card that the empty state shows. Importing or choosing
-                    manual entry then opens the chef add-form modal. */}
-                <TouchableOpacity
-                  style={gpStyles.inlineAddMoreBtn}
-                  onPress={() => {
-                    lightHaptic();
-                    setInlineImportExpanded(true);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Feather name="plus" size={16} color="#FF6B00" />
-                  <Text style={gpStyles.inlineAddMoreBtnText}>
-                    {'Recept toevoegen'}
-                  </Text>
-                </TouchableOpacity>
-                </>
               )}
             </View>
 
@@ -6492,22 +6492,24 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 <Text style={gpStyles.chefModalCloseText}>✕</Text>
               </TouchableOpacity>
             </View>
-            {chefAddModalProfile ? (
-              <ChefDashboard
-                chef={chefAddModalProfile}
-                onChefUpdated={setChefAddModalProfile}
-                navigation={navigation}
-                addOnlyMode
-                preselectedGroupIds={selectedGroupId ? [selectedGroupId] : []}
-                initialVisibility="groups"
-                prefilledRecipe={chefAddPrefilledRecipe}
-                onRecipeCreated={handleChefAddModalSaved}
-              />
-            ) : (
-              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 }}>
-                <ActivityIndicator size="large" color="#FF6B00" />
-              </View>
-            )}
+            <View style={gpStyles.chefModalBody}>
+              {chefAddModalProfile ? (
+                <ChefDashboard
+                  chef={chefAddModalProfile}
+                  onChefUpdated={setChefAddModalProfile}
+                  navigation={navigation}
+                  addOnlyMode
+                  preselectedGroupIds={selectedGroupId ? [selectedGroupId] : []}
+                  initialVisibility="groups"
+                  prefilledRecipe={chefAddPrefilledRecipe}
+                  onRecipeCreated={handleChefAddModalSaved}
+                />
+              ) : (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+                  <ActivityIndicator size="large" color="#FF6B00" />
+                </View>
+              )}
+            </View>
           </View>
         </View>
       </Modal>
@@ -7112,7 +7114,10 @@ const gpStyles = StyleSheet.create({
   chefModalContent: {
     width: '94%',
     maxWidth: 440,
-    maxHeight: '90%',
+    // Fixed height (not maxHeight) so the nested ChefDashboard's flex:1
+    // layout has something concrete to fill — otherwise the whole form
+    // collapses to zero-height and only the header is visible.
+    height: '88%',
     backgroundColor: '#FAF8F5',
     borderRadius: 24,
     overflow: 'hidden',
@@ -7121,6 +7126,9 @@ const gpStyles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 10,
+  },
+  chefModalBody: {
+    flex: 1,
   },
   chefModalHeader: {
     flexDirection: 'row',
