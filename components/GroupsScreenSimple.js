@@ -5702,8 +5702,12 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 <>
                   {groupSavedRecipes.length > 0 && (
                     <ScrollView
-                      // 3 cards (76) + 2 gaps (10) = 248; small buffer.
-                      style={{ maxHeight: 250 }}
+                      // Tight fit for 3 cards: 3*80 (card incl. borders)
+                      // + 2*10 gap + ~6 padding slack = 266. This is
+                      // large enough that the 3rd card sits fully inside
+                      // the visible area but small enough that the 4th
+                      // never peeks.
+                      style={{ maxHeight: 268 }}
                       nestedScrollEnabled
                       showsVerticalScrollIndicator={groupSavedRecipes.length > 3}
                     >
