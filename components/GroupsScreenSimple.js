@@ -5696,12 +5696,14 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 )
               ) : (
                 // Scrollable recipe carousel (max 3 items visible) with
-                // a collapsed "+ Voeg recept toe" button below that
-                // expands into the URL input card on the same page.
+                // a "+ Voeg recept toe" button as the last item inside
+                // the same scroll. Expanding shows the URL card outside
+                // the carousel so the user can still see their recipes.
                 <>
                   {groupSavedRecipes.length > 0 && (
                     <ScrollView
-                      style={{ maxHeight: 280 }}
+                      // 3 cards (76) + 2 gaps (10) = 248; small buffer.
+                      style={{ maxHeight: 250 }}
                       nestedScrollEnabled
                       showsVerticalScrollIndicator={groupSavedRecipes.length > 3}
                     >
@@ -5761,13 +5763,31 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         </TouchableOpacity>
                       );
                         })}
+                        {/* "+ Voeg recept toe" lives as the last card
+                            inside the scroll, so the user scrolls past
+                            their recipes to reach it. Hidden when the
+                            URL card is already expanded below. */}
+                        {!inlineImportExpanded && (
+                          <TouchableOpacity
+                            style={gpStyles.inlineAddMoreBtn}
+                            onPress={() => {
+                              lightHaptic();
+                              setInlineImportExpanded(true);
+                            }}
+                            activeOpacity={0.8}
+                          >
+                            <Feather name="plus" size={16} color="#FF6B00" />
+                            <Text style={gpStyles.inlineAddMoreBtnText}>
+                              {'Voeg recept toe'}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
                     </ScrollView>
                   )}
-                  {/* Add-recipe area: collapsed "+ Voeg recept toe" button
-                      when the carousel has items, expanded URL input card
-                      when the group is empty OR the user tapped the
-                      button. Importeer/handmatig open the chef popup. */}
+                  {/* URL input card — shown when empty OR after the user
+                      tapped the '+ Voeg recept toe' button. Importeer /
+                      handmatig open the chef add-form popup. */}
                   {(groupSavedRecipes.length === 0 || inlineImportExpanded) ? (
                     <View style={gpStyles.inlineImportCard}>
                       <Text style={gpStyles.inlineImportTitle}>
@@ -5887,21 +5907,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         </TouchableOpacity>
                       )}
                     </View>
-                  ) : (
-                    <TouchableOpacity
-                      style={gpStyles.inlineAddMoreBtn}
-                      onPress={() => {
-                        lightHaptic();
-                        setInlineImportExpanded(true);
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <Feather name="plus" size={16} color="#FF6B00" />
-                      <Text style={gpStyles.inlineAddMoreBtnText}>
-                        {'Voeg recept toe'}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  ) : null}
                 </>
               )}
             </View>
