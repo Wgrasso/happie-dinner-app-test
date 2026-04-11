@@ -2576,17 +2576,38 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     }
   }, [selectedGroupId, loadGroupSavedRecipes]);
   // Inline URL import state for the empty-state carousel — lets users paste a
-  // recipe URL right there without jumping to the chef dashboard.
+  // recipe URL right there without jumping to the chef dashboard. After
+  // import (or pressing "voer handmatig in") we show an editable draft form
+  // so the user can clean up anything the parser got wrong — same escape
+  // hatch as the chef page offers.
   const [inlineUrlInput, setInlineUrlInput] = useState('');
   const [inlineImporting, setInlineImporting] = useState(false);
-  const [inlineExtraGroupIds, setInlineExtraGroupIds] = useState([]); // groups beyond the current one
-  const [inlineShowExtraPicker, setInlineShowExtraPicker] = useState(false);
-  const toggleInlineExtraGroup = useCallback((gid) => {
-    lightHaptic();
-    setInlineExtraGroupIds((prev) =>
-      prev.includes(gid) ? prev.filter((id) => id !== gid) : [...prev, gid]
-    );
+  const [inlineShowDraft, setInlineShowDraft] = useState(false);
+  const [inlineDraft, setInlineDraft] = useState({
+    name: '',
+    description: '',
+    image: '',
+    cooking_time_minutes: '',
+    cuisine_type: '',
+    ingredients: '',
+    steps: '',
+  });
+  const [inlineSavingDraft, setInlineSavingDraft] = useState(false);
+
+  const resetInlineDraft = useCallback(() => {
+    setInlineShowDraft(false);
+    setInlineDraft({
+      name: '',
+      description: '',
+      image: '',
+      cooking_time_minutes: '',
+      cuisine_type: '',
+      ingredients: '',
+      steps: '',
+    });
+    setInlineUrlInput('');
   }, []);
+
   const handleInlineImport = useCallback(async () => {
     const clean = (inlineUrlInput || '').trim();
     if (!clean) {
@@ -2606,63 +2627,100 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         return;
       }
       const r = result.recipe;
-      // Synthesize a stable snapshot id — we're NOT writing to the recipes
-      // table here, so the id just needs to be unique per user+group. A uuid
-      // generated client-side is fine; we use a simple random one based on
-      // timestamp+random for zero-dep simplicity.
-      const syntheticId =
-        'inline-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
-      const snapshot = {
-        id: syntheticId,
-        name: r.name || 'Recept',
-        title: r.name || 'Recept',
+      // Populate the editable draft instead of saving silently — the user
+      // should always have the chance to correct what the parser got wrong
+      // (especially important for sites like Picnic that don't expose
+      // schema.org JSON-LD).
+      setInlineDraft({
+        name: r.name || '',
         description: r.description || '',
-        image: r.image || null,
-        thumbnail_url: r.image || null,
-        cooking_time_minutes: r.cooking_time_minutes ?? null,
-        cuisine_type: r.cuisine_type || null,
-        ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
-        steps: Array.isArray(r.steps) ? r.steps : [],
-        instructions: Array.isArray(r.steps) ? r.steps.join('\n') : '',
-        source_url: clean,
-      };
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Niet ingelogd');
-
-      const targetGroupIds = Array.from(new Set([selectedGroupId, ...inlineExtraGroupIds])).filter(
-        Boolean
-      );
-      const rows = targetGroupIds.map((gid) => ({
-        recipe_id: null, // pure snapshot — no source row in recipes table
-        group_id: gid,
-        shared_by: user.id,
-        recipe_data: snapshot,
-      }));
-      const { error } = await supabase.from('recipe_group_shares').insert(rows);
-      if (error) throw error;
-
-      successHaptic();
-      toast.success(
-        result.partial
-          ? (t('userRecipes.importedPartial') || 'Deels geïmporteerd — sla evt. opnieuw op')
-          : (t('userRecipes.imported') || 'Recept geïmporteerd!')
-      );
-      setInlineUrlInput('');
-      setInlineExtraGroupIds([]);
-      setInlineShowExtraPicker(false);
-      // Refresh the carousel for the current group (and warm cache for extras).
-      targetGroupIds.forEach((gid) => {
-        // Invalidate cache entry so the reload fetches fresh data.
-        if (groupRecipesCacheRef.current) delete groupRecipesCacheRef.current[gid];
+        image: r.image || '',
+        cooking_time_minutes: r.cooking_time_minutes ? String(r.cooking_time_minutes) : '',
+        cuisine_type: r.cuisine_type || '',
+        ingredients: Array.isArray(r.ingredients) ? r.ingredients.join('\n') : '',
+        steps: Array.isArray(r.steps) ? r.steps.join('\n') : '',
       });
-      loadGroupSavedRecipes(selectedGroupId);
+      setInlineShowDraft(true);
+      if (result.partial) {
+        toast.success(
+          t('userRecipes.importedPartial') || 'Deels geïmporteerd — vul de rest zelf aan'
+        );
+      }
     } catch (e) {
       toast.error(e?.message || 'Kon recept niet importeren');
     } finally {
       setInlineImporting(false);
     }
-  }, [inlineUrlInput, selectedGroupId, inlineExtraGroupIds, toast, t, loadGroupSavedRecipes]);
+  }, [inlineUrlInput, selectedGroupId, toast, t]);
+
+  const handleInlineOpenManual = useCallback(() => {
+    lightHaptic();
+    setInlineShowDraft(true);
+  }, []);
+
+  const handleInlineSaveDraft = useCallback(async () => {
+    const name = (inlineDraft.name || '').trim();
+    if (!name) {
+      toast.error(t('userRecipes.nameRequired') || 'Naam is verplicht');
+      return;
+    }
+    if (!selectedGroupId) {
+      toast.error('Geen groep geselecteerd');
+      return;
+    }
+    setInlineSavingDraft(true);
+    lightHaptic();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Niet ingelogd');
+
+      const ingredients = (inlineDraft.ingredients || '')
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const steps = (inlineDraft.steps || '')
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const cookMin = parseInt(inlineDraft.cooking_time_minutes, 10);
+
+      const syntheticId =
+        'inline-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+      const snapshot = {
+        id: syntheticId,
+        name,
+        title: name,
+        description: (inlineDraft.description || '').trim(),
+        image: (inlineDraft.image || '').trim() || null,
+        thumbnail_url: (inlineDraft.image || '').trim() || null,
+        cooking_time_minutes: Number.isFinite(cookMin) && cookMin > 0 ? cookMin : null,
+        cuisine_type: (inlineDraft.cuisine_type || '').trim() || null,
+        ingredients,
+        steps,
+        instructions: steps.join('\n'),
+        source_url: (inlineUrlInput || '').trim() || null,
+      };
+
+      const { error } = await supabase.from('recipe_group_shares').insert([{
+        recipe_id: null, // pure snapshot — no source row in recipes table
+        group_id: selectedGroupId,
+        shared_by: user.id,
+        recipe_data: snapshot,
+      }]);
+      if (error) throw error;
+
+      successHaptic();
+      toast.success(t('chef.recipePublished') || 'Recept toegevoegd!');
+      // Refresh just the current group.
+      if (groupRecipesCacheRef.current) delete groupRecipesCacheRef.current[selectedGroupId];
+      loadGroupSavedRecipes(selectedGroupId);
+      resetInlineDraft();
+    } catch (e) {
+      toast.error(e?.message || 'Kon recept niet opslaan');
+    } finally {
+      setInlineSavingDraft(false);
+    }
+  }, [inlineDraft, selectedGroupId, inlineUrlInput, toast, t, loadGroupSavedRecipes, resetInlineDraft]);
 
   // Warm the cache for every group the user belongs to, in parallel, once on load.
   // That way opening any group for the first time is instant.
@@ -5312,156 +5370,253 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   <ActivityIndicator size="small" color="#FF6B00" />
                 </View>
               ) : groupSavedRecipes.length === 0 ? (
-                <View style={gpStyles.inlineImportCard}>
-                  <Text style={gpStyles.inlineImportTitle}>
-                    {t('userRecipes.importTitle') || 'Recept van een website?'}
-                  </Text>
-                  <Text style={gpStyles.inlineImportSubtitle}>
-                    {t('userRecipes.importSubtitle') ||
-                      'Plak een link en we slaan \u2019m meteen op in deze groep'}
-                  </Text>
-                  <View style={gpStyles.inlineImportInputRow}>
-                    <Feather
-                      name="link"
-                      size={16}
-                      color="#B5A89A"
-                      style={gpStyles.inlineImportInputIcon}
-                    />
-                    <TextInput
-                      style={gpStyles.inlineImportInput}
-                      placeholder={
-                        t('userRecipes.urlPlaceholder') || 'https://ah.nl/allerhande/recept/...'
-                      }
-                      placeholderTextColor="#B5A89A"
-                      value={inlineUrlInput}
-                      onChangeText={setInlineUrlInput}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      keyboardType="url"
-                      returnKeyType="go"
-                      onSubmitEditing={handleInlineImport}
-                      editable={!inlineImporting}
-                    />
-                    {inlineUrlInput.length > 0 && !inlineImporting ? (
-                      <TouchableOpacity
-                        onPress={() => { lightHaptic(); setInlineUrlInput(''); }}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        style={gpStyles.inlineImportClearBtn}
-                      >
-                        <Feather name="x" size={16} color="#B5A89A" />
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-
-                  {/* Paste from clipboard — same shortcut as chef page */}
-                  <TouchableOpacity
-                    style={gpStyles.inlineImportToggle}
-                    onPress={async () => {
-                      try {
-                        lightHaptic();
-                        const text = await Clipboard.getStringAsync();
-                        if (text && /^https?:\/\//i.test(text.trim())) {
-                          setInlineUrlInput(text.trim());
-                        } else {
-                          toast.error(t('userRecipes.noUrlInClipboard') || 'Geen link op je klembord');
-                        }
-                      } catch (_) {}
-                    }}
-                    disabled={inlineImporting}
-                    activeOpacity={0.75}
-                  >
-                    <Feather name="clipboard" size={14} color="#FF6B00" />
-                    <Text style={gpStyles.inlineImportToggleText}>
-                      {t('userRecipes.pasteFromClipboard') || 'Plak vanaf klembord'}
+                inlineShowDraft ? (
+                  /* ── Editable draft form — used after URL import AND for manual entry ── */
+                  <View style={gpStyles.inlineImportCard}>
+                    <Text style={gpStyles.inlineImportTitle}>
+                      {inlineUrlInput.trim() ? 'Controleer en pas aan' : 'Handmatig toevoegen'}
                     </Text>
-                  </TouchableOpacity>
+                    <Text style={gpStyles.inlineImportSubtitle}>
+                      {inlineUrlInput.trim()
+                        ? 'Pas aan wat de importer miste, dan opslaan.'
+                        : 'Vul het recept zelf in en sla het op in deze groep.'}
+                    </Text>
 
-                  <TouchableOpacity
-                    style={[
-                      gpStyles.inlineImportBtn,
-                      (!inlineUrlInput.trim() || inlineImporting) && gpStyles.inlineImportBtnDisabled,
-                    ]}
-                    onPress={handleInlineImport}
-                    disabled={!inlineUrlInput.trim() || inlineImporting}
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('userRecipes.import') || 'Importeer recept'}
-                  >
-                    {inlineImporting ? (
-                      <>
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                        <Text style={gpStyles.inlineImportBtnText}>
-                          {t('userRecipes.importing') || 'Recept ophalen...'}
-                        </Text>
-                      </>
-                    ) : (
-                      <>
-                        <Feather name="download" size={17} color="#FFFFFF" />
-                        <Text style={gpStyles.inlineImportBtnText}>
-                          {t('userRecipes.import') || 'Importeer recept'}
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
+                    {/* Image preview */}
+                    {inlineDraft.image ? (
+                      <Image
+                        source={{ uri: inlineDraft.image }}
+                        style={gpStyles.inlineDraftImage}
+                        resizeMode="cover"
+                      />
+                    ) : null}
 
-                  {/* Extra-groups picker: this group is auto-selected; users can add more */}
-                  {(groups && groups.length > 1) && (
-                    <>
-                      <TouchableOpacity
-                        style={gpStyles.inlineImportToggle}
-                        onPress={() => {
-                          lightHaptic();
-                          setInlineShowExtraPicker((v) => !v);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <Feather
-                          name={inlineShowExtraPicker ? 'chevron-up' : 'chevron-down'}
-                          size={14}
-                          color="#FF6B00"
+                    <Text style={gpStyles.inlineDraftLabel}>{t('userRecipes.name') || 'Naam'}</Text>
+                    <TextInput
+                      style={gpStyles.inlineDraftInput}
+                      placeholder="Bijv. Pasta pesto"
+                      placeholderTextColor="#B5A89A"
+                      value={inlineDraft.name}
+                      onChangeText={(v) => setInlineDraft((d) => ({ ...d, name: v }))}
+                      editable={!inlineSavingDraft}
+                    />
+
+                    <Text style={gpStyles.inlineDraftLabel}>
+                      {t('userRecipes.description') || 'Beschrijving'}
+                    </Text>
+                    <TextInput
+                      style={[gpStyles.inlineDraftInput, gpStyles.inlineDraftTextarea]}
+                      placeholder="Optioneel"
+                      placeholderTextColor="#B5A89A"
+                      value={inlineDraft.description}
+                      onChangeText={(v) => setInlineDraft((d) => ({ ...d, description: v }))}
+                      multiline
+                      editable={!inlineSavingDraft}
+                    />
+
+                    <View style={{ flexDirection: 'row', gap: 10, width: '100%' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={gpStyles.inlineDraftLabel}>
+                          {t('userRecipes.cookingTime') || 'Kooktijd (min)'}
+                        </Text>
+                        <TextInput
+                          style={gpStyles.inlineDraftInput}
+                          placeholder="30"
+                          placeholderTextColor="#B5A89A"
+                          value={inlineDraft.cooking_time_minutes}
+                          onChangeText={(v) =>
+                            setInlineDraft((d) => ({
+                              ...d,
+                              cooking_time_minutes: v.replace(/[^0-9]/g, ''),
+                            }))
+                          }
+                          keyboardType="number-pad"
+                          editable={!inlineSavingDraft}
                         />
-                        <Text style={gpStyles.inlineImportToggleText}>
-                          {inlineExtraGroupIds.length > 0
-                            ? `Ook delen met ${inlineExtraGroupIds.length} extra ${inlineExtraGroupIds.length === 1 ? 'groep' : 'groepen'}`
-                            : 'Ook delen met andere groepen'}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={gpStyles.inlineDraftLabel}>
+                          {t('userRecipes.cuisine') || 'Keuken'}
                         </Text>
-                      </TouchableOpacity>
-                      {inlineShowExtraPicker && (
-                        <View style={gpStyles.inlineImportGroupList}>
-                          {groups
-                            .filter((g) => (g.id || g.group_id) !== selectedGroupId)
-                            .map((g) => {
-                              const gid = g.id || g.group_id;
-                              const isSelected = inlineExtraGroupIds.includes(gid);
-                              return (
-                                <TouchableOpacity
-                                  key={gid}
-                                  style={[
-                                    gpStyles.inlineImportGroupItem,
-                                    isSelected && gpStyles.inlineImportGroupItemActive,
-                                  ]}
-                                  onPress={() => toggleInlineExtraGroup(gid)}
-                                  activeOpacity={0.7}
-                                >
-                                  <Text style={gpStyles.inlineImportGroupName} numberOfLines={1}>
-                                    {g.name}
-                                  </Text>
-                                  <View
-                                    style={[
-                                      gpStyles.inlineImportCheckbox,
-                                      isSelected && gpStyles.inlineImportCheckboxChecked,
-                                    ]}
-                                  >
-                                    {isSelected && <Feather name="check" size={12} color="#FFF" />}
-                                  </View>
-                                </TouchableOpacity>
-                              );
-                            })}
-                        </View>
+                        <TextInput
+                          style={gpStyles.inlineDraftInput}
+                          placeholder="Italiaans"
+                          placeholderTextColor="#B5A89A"
+                          value={inlineDraft.cuisine_type}
+                          onChangeText={(v) => setInlineDraft((d) => ({ ...d, cuisine_type: v }))}
+                          editable={!inlineSavingDraft}
+                        />
+                      </View>
+                    </View>
+
+                    <Text style={gpStyles.inlineDraftLabel}>
+                      {t('userRecipes.ingredients') || 'Ingrediënten'}
+                      <Text style={gpStyles.inlineDraftLabelHint}>{'  (één per regel)'}</Text>
+                    </Text>
+                    <TextInput
+                      style={[gpStyles.inlineDraftInput, gpStyles.inlineDraftTextareaTall]}
+                      placeholder={'200g pasta\n100g pesto\n…'}
+                      placeholderTextColor="#B5A89A"
+                      value={inlineDraft.ingredients}
+                      onChangeText={(v) => setInlineDraft((d) => ({ ...d, ingredients: v }))}
+                      multiline
+                      editable={!inlineSavingDraft}
+                    />
+
+                    <Text style={gpStyles.inlineDraftLabel}>
+                      {t('userRecipes.instructions') || 'Stappen'}
+                      <Text style={gpStyles.inlineDraftLabelHint}>{'  (één per regel)'}</Text>
+                    </Text>
+                    <TextInput
+                      style={[gpStyles.inlineDraftInput, gpStyles.inlineDraftTextareaTall]}
+                      placeholder={'Kook de pasta\nMeng met pesto\n…'}
+                      placeholderTextColor="#B5A89A"
+                      value={inlineDraft.steps}
+                      onChangeText={(v) => setInlineDraft((d) => ({ ...d, steps: v }))}
+                      multiline
+                      editable={!inlineSavingDraft}
+                    />
+
+                    <TouchableOpacity
+                      style={[
+                        gpStyles.inlineImportBtn,
+                        (!inlineDraft.name.trim() || inlineSavingDraft) && gpStyles.inlineImportBtnDisabled,
+                        { marginTop: 14 },
+                      ]}
+                      onPress={handleInlineSaveDraft}
+                      disabled={!inlineDraft.name.trim() || inlineSavingDraft}
+                      activeOpacity={0.85}
+                    >
+                      {inlineSavingDraft ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <>
+                          <Feather name="check" size={17} color="#FFFFFF" />
+                          <Text style={gpStyles.inlineImportBtnText}>
+                            {'Opslaan in deze groep'}
+                          </Text>
+                        </>
                       )}
-                    </>
-                  )}
-                </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={gpStyles.inlineImportToggle}
+                      onPress={() => { lightHaptic(); resetInlineDraft(); }}
+                      disabled={inlineSavingDraft}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={gpStyles.inlineImportToggleText}>
+                        {t('common.cancel') || 'Annuleren'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  /* ── URL input card (primary path) ── */
+                  <View style={gpStyles.inlineImportCard}>
+                    <Text style={gpStyles.inlineImportTitle}>
+                      {t('userRecipes.importTitle') || 'Recept van een website?'}
+                    </Text>
+                    <Text style={gpStyles.inlineImportSubtitle}>
+                      {t('userRecipes.importSubtitle') ||
+                        'Plak een link en we slaan \u2019m meteen op in deze groep'}
+                    </Text>
+                    <View style={gpStyles.inlineImportInputRow}>
+                      <Feather
+                        name="link"
+                        size={16}
+                        color="#B5A89A"
+                        style={gpStyles.inlineImportInputIcon}
+                      />
+                      <TextInput
+                        style={gpStyles.inlineImportInput}
+                        placeholder={
+                          t('userRecipes.urlPlaceholder') || 'https://ah.nl/allerhande/recept/...'
+                        }
+                        placeholderTextColor="#B5A89A"
+                        value={inlineUrlInput}
+                        onChangeText={setInlineUrlInput}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        keyboardType="url"
+                        returnKeyType="go"
+                        onSubmitEditing={handleInlineImport}
+                        editable={!inlineImporting}
+                      />
+                      {inlineUrlInput.length > 0 && !inlineImporting ? (
+                        <TouchableOpacity
+                          onPress={() => { lightHaptic(); setInlineUrlInput(''); }}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          style={gpStyles.inlineImportClearBtn}
+                        >
+                          <Feather name="x" size={16} color="#B5A89A" />
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+
+                    {/* Paste from clipboard — same shortcut as chef page */}
+                    <TouchableOpacity
+                      style={gpStyles.inlineImportToggle}
+                      onPress={async () => {
+                        try {
+                          lightHaptic();
+                          const text = await Clipboard.getStringAsync();
+                          if (text && /^https?:\/\//i.test(text.trim())) {
+                            setInlineUrlInput(text.trim());
+                          } else {
+                            toast.error(t('userRecipes.noUrlInClipboard') || 'Geen link op je klembord');
+                          }
+                        } catch (_) {}
+                      }}
+                      disabled={inlineImporting}
+                      activeOpacity={0.75}
+                    >
+                      <Feather name="clipboard" size={14} color="#FF6B00" />
+                      <Text style={gpStyles.inlineImportToggleText}>
+                        {t('userRecipes.pasteFromClipboard') || 'Plak vanaf klembord'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        gpStyles.inlineImportBtn,
+                        (!inlineUrlInput.trim() || inlineImporting) && gpStyles.inlineImportBtnDisabled,
+                      ]}
+                      onPress={handleInlineImport}
+                      disabled={!inlineUrlInput.trim() || inlineImporting}
+                      activeOpacity={0.85}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('userRecipes.import') || 'Importeer recept'}
+                    >
+                      {inlineImporting ? (
+                        <>
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                          <Text style={gpStyles.inlineImportBtnText}>
+                            {t('userRecipes.importing') || 'Recept ophalen...'}
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          <Feather name="download" size={17} color="#FFFFFF" />
+                          <Text style={gpStyles.inlineImportBtnText}>
+                            {t('userRecipes.import') || 'Importeer recept'}
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+
+                    {/* Manual-entry escape hatch */}
+                    <TouchableOpacity
+                      style={gpStyles.inlineImportToggle}
+                      onPress={handleInlineOpenManual}
+                      activeOpacity={0.7}
+                    >
+                      <Feather name="edit-3" size={14} color="#FF6B00" />
+                      <Text style={gpStyles.inlineImportToggleText}>
+                        {'of voer handmatig in'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )
               ) : (
                 <ScrollView
                   style={{ maxHeight: 260 }}
@@ -6737,6 +6892,46 @@ const gpStyles = StyleSheet.create({
   inlineImportCheckboxChecked: {
     backgroundColor: '#FF6B00',
     borderColor: '#FF6B00',
+  },
+  // --- Inline draft editor (shown after URL import OR manual entry) ---
+  inlineDraftImage: {
+    width: '100%',
+    height: 140,
+    borderRadius: 12,
+    marginBottom: 14,
+    backgroundColor: '#ECE6DD',
+  },
+  inlineDraftLabel: {
+    alignSelf: 'flex-start',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B5A48',
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  inlineDraftLabelHint: {
+    fontSize: 11,
+    fontWeight: '400',
+    color: '#B5A89A',
+  },
+  inlineDraftInput: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#EDE8DD',
+    paddingHorizontal: 12,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 9,
+    fontSize: 14,
+    color: '#1A1000',
+  },
+  inlineDraftTextarea: {
+    minHeight: 60,
+    textAlignVertical: 'top',
+  },
+  inlineDraftTextareaTall: {
+    minHeight: 110,
+    textAlignVertical: 'top',
   },
   // --- Cards / Sections ---
   card: {
