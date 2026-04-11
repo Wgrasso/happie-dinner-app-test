@@ -18,6 +18,7 @@ import { formatDateShortNL } from '../lib/dateFormatting';
 import { log, debugError } from '../lib/debugConfig';
 import { getTopVotedMeals } from '../lib/mealRequestService';
 import { getGroupRecipes as getGroupSharedRecipes } from '../lib/recipesService';
+import { importRecipeFromUrl } from '../lib/recipeUrlImporter';
 import { useAppState } from '../lib/AppStateContext';
 import { useToast } from './ui/Toast';
 import { GroupCardSkeleton, MemberListSkeleton, TopMealsSkeleton, InlineLoader } from './ui/SkeletonLoader';
@@ -2549,6 +2550,95 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       loadGroupSavedRecipes(selectedGroupId);
     }
   }, [selectedGroupId, loadGroupSavedRecipes]);
+  // Inline URL import state for the empty-state carousel — lets users paste a
+  // recipe URL right there without jumping to the chef dashboard.
+  const [inlineUrlInput, setInlineUrlInput] = useState('');
+  const [inlineImporting, setInlineImporting] = useState(false);
+  const [inlineExtraGroupIds, setInlineExtraGroupIds] = useState([]); // groups beyond the current one
+  const [inlineShowExtraPicker, setInlineShowExtraPicker] = useState(false);
+  const toggleInlineExtraGroup = useCallback((gid) => {
+    lightHaptic();
+    setInlineExtraGroupIds((prev) =>
+      prev.includes(gid) ? prev.filter((id) => id !== gid) : [...prev, gid]
+    );
+  }, []);
+  const handleInlineImport = useCallback(async () => {
+    const clean = (inlineUrlInput || '').trim();
+    if (!clean) {
+      toast.error(t('userRecipes.urlRequired') || 'Voer een link in');
+      return;
+    }
+    if (!selectedGroupId) {
+      toast.error('Geen groep geselecteerd');
+      return;
+    }
+    setInlineImporting(true);
+    lightHaptic();
+    try {
+      const result = await importRecipeFromUrl(clean);
+      if (!result?.success || !result?.recipe) {
+        toast.error(result?.error || 'Kon recept niet importeren');
+        return;
+      }
+      const r = result.recipe;
+      // Synthesize a stable snapshot id — we're NOT writing to the recipes
+      // table here, so the id just needs to be unique per user+group. A uuid
+      // generated client-side is fine; we use a simple random one based on
+      // timestamp+random for zero-dep simplicity.
+      const syntheticId =
+        'inline-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+      const snapshot = {
+        id: syntheticId,
+        name: r.name || 'Recept',
+        title: r.name || 'Recept',
+        description: r.description || '',
+        image: r.image || null,
+        thumbnail_url: r.image || null,
+        cooking_time_minutes: r.cooking_time_minutes ?? null,
+        cuisine_type: r.cuisine_type || null,
+        ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
+        steps: Array.isArray(r.steps) ? r.steps : [],
+        instructions: Array.isArray(r.steps) ? r.steps.join('\n') : '',
+        source_url: clean,
+      };
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Niet ingelogd');
+
+      const targetGroupIds = Array.from(new Set([selectedGroupId, ...inlineExtraGroupIds])).filter(
+        Boolean
+      );
+      const rows = targetGroupIds.map((gid) => ({
+        recipe_id: null, // pure snapshot — no source row in recipes table
+        group_id: gid,
+        shared_by: user.id,
+        recipe_data: snapshot,
+      }));
+      const { error } = await supabase.from('recipe_group_shares').insert(rows);
+      if (error) throw error;
+
+      successHaptic();
+      toast.success(
+        result.partial
+          ? (t('userRecipes.importedPartial') || 'Deels geïmporteerd — sla evt. opnieuw op')
+          : (t('userRecipes.imported') || 'Recept geïmporteerd!')
+      );
+      setInlineUrlInput('');
+      setInlineExtraGroupIds([]);
+      setInlineShowExtraPicker(false);
+      // Refresh the carousel for the current group (and warm cache for extras).
+      targetGroupIds.forEach((gid) => {
+        // Invalidate cache entry so the reload fetches fresh data.
+        if (groupRecipesCacheRef.current) delete groupRecipesCacheRef.current[gid];
+      });
+      loadGroupSavedRecipes(selectedGroupId);
+    } catch (e) {
+      toast.error(e?.message || 'Kon recept niet importeren');
+    } finally {
+      setInlineImporting(false);
+    }
+  }, [inlineUrlInput, selectedGroupId, inlineExtraGroupIds, toast, t, loadGroupSavedRecipes]);
+
   // Warm the cache for every group the user belongs to, in parallel, once on load.
   // That way opening any group for the first time is instant.
   const groupRecipesPreloadedRef = useRef(false);
@@ -5197,19 +5287,117 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   <ActivityIndicator size="small" color="#FF6B00" />
                 </View>
               ) : groupSavedRecipes.length === 0 ? (
-                <EmptyState
-                  compact
-                  title={t('chef.noRecipesYet') || 'Nog geen recepten geplaatst'}
-                  description={t('chef.publicToAppear') || 'Voeg een eerste groepsrecept toe om te beginnen'}
-                  actionLabel={t('chef.addFirstRecipe') || 'Voeg eerste recept toe'}
-                  actionIcon="plus"
-                  onAction={() => {
-                    lightHaptic();
-                    if (typeof onOpenChefAddRecipe === 'function') {
-                      onOpenChefAddRecipe();
-                    }
-                  }}
-                />
+                <View style={gpStyles.inlineImportCard}>
+                  <Text style={gpStyles.inlineImportTitle}>
+                    {'Voeg jullie eerste groepsrecept toe'}
+                  </Text>
+                  <Text style={gpStyles.inlineImportSubtitle}>
+                    {'Plak een receptlink — we importeren \u2019m en slaan \u2019m direct op in deze groep.'}
+                  </Text>
+                  <View style={gpStyles.inlineImportInputRow}>
+                    <Feather name="link" size={16} color="#999" style={{ marginLeft: 10 }} />
+                    <TextInput
+                      style={gpStyles.inlineImportInput}
+                      placeholder="https://..."
+                      placeholderTextColor="#BBB"
+                      value={inlineUrlInput}
+                      onChangeText={setInlineUrlInput}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="url"
+                      returnKeyType="go"
+                      onSubmitEditing={handleInlineImport}
+                      editable={!inlineImporting}
+                    />
+                    {inlineUrlInput.length > 0 && !inlineImporting && (
+                      <TouchableOpacity
+                        onPress={() => setInlineUrlInput('')}
+                        style={{ paddingHorizontal: 10 }}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <Feather name="x" size={16} color="#999" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      gpStyles.inlineImportBtn,
+                      (!inlineUrlInput.trim() || inlineImporting) && { opacity: 0.5 },
+                    ]}
+                    onPress={handleInlineImport}
+                    disabled={!inlineUrlInput.trim() || inlineImporting}
+                    activeOpacity={0.85}
+                  >
+                    {inlineImporting ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <>
+                        <Feather name="download" size={16} color="#FFF" />
+                        <Text style={gpStyles.inlineImportBtnText}>
+                          {'Importeren naar deze groep'}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+
+                  {/* Extra-groups picker: this group is auto-selected; users can add more */}
+                  {(groups && groups.length > 1) && (
+                    <>
+                      <TouchableOpacity
+                        style={gpStyles.inlineImportToggle}
+                        onPress={() => {
+                          lightHaptic();
+                          setInlineShowExtraPicker((v) => !v);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Feather
+                          name={inlineShowExtraPicker ? 'chevron-up' : 'chevron-down'}
+                          size={14}
+                          color="#FF6B00"
+                        />
+                        <Text style={gpStyles.inlineImportToggleText}>
+                          {inlineExtraGroupIds.length > 0
+                            ? `Ook delen met ${inlineExtraGroupIds.length} extra ${inlineExtraGroupIds.length === 1 ? 'groep' : 'groepen'}`
+                            : 'Ook delen met andere groepen'}
+                        </Text>
+                      </TouchableOpacity>
+                      {inlineShowExtraPicker && (
+                        <View style={gpStyles.inlineImportGroupList}>
+                          {groups
+                            .filter((g) => (g.id || g.group_id) !== selectedGroupId)
+                            .map((g) => {
+                              const gid = g.id || g.group_id;
+                              const isSelected = inlineExtraGroupIds.includes(gid);
+                              return (
+                                <TouchableOpacity
+                                  key={gid}
+                                  style={[
+                                    gpStyles.inlineImportGroupItem,
+                                    isSelected && gpStyles.inlineImportGroupItemActive,
+                                  ]}
+                                  onPress={() => toggleInlineExtraGroup(gid)}
+                                  activeOpacity={0.7}
+                                >
+                                  <Text style={gpStyles.inlineImportGroupName} numberOfLines={1}>
+                                    {g.name}
+                                  </Text>
+                                  <View
+                                    style={[
+                                      gpStyles.inlineImportCheckbox,
+                                      isSelected && gpStyles.inlineImportCheckboxChecked,
+                                    ]}
+                                  >
+                                    {isSelected && <Feather name="check" size={12} color="#FFF" />}
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                        </View>
+                      )}
+                    </>
+                  )}
+                </View>
               ) : (
                 <ScrollView
                   style={{ maxHeight: 260 }}
@@ -5911,9 +6099,24 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                         recipe={{
                           id: selectedRecipe.recipe_id,
                           name: selectedRecipe.meal_data?.name,
+                          description: selectedRecipe.meal_data?.description,
+                          image: selectedRecipe.meal_data?.thumbnail_url,
+                          thumbnail_url: selectedRecipe.meal_data?.thumbnail_url,
+                          cooking_time_minutes: selectedRecipe.meal_data?.total_time_minutes,
+                          cuisine_type: selectedRecipe.meal_data?.cuisine_type,
+                          ingredients: selectedRecipe.meal_data?.ingredients,
+                          steps: selectedRecipe.meal_data?.steps,
+                          instructions: selectedRecipe.meal_data?.instructions,
                         }}
+                        currentGroupId={selectedGroupId}
                         onSaved={() => {
                           if (selectedGroupId) loadGroupSavedRecipes(selectedGroupId);
+                        }}
+                        onRemoved={() => {
+                          if (selectedGroupId) loadGroupSavedRecipes(selectedGroupId);
+                          // Close the modal — the recipe is gone from the group now.
+                          setShowRecipeModal(false);
+                          setSelectedRecipe(null);
                         }}
                       />
                     </View>
@@ -6337,6 +6540,108 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
 
 // Redesigned full-page group styles
 const gpStyles = StyleSheet.create({
+  // --- Inline URL import (empty-state carousel) ---
+  inlineImportCard: {
+    backgroundColor: '#FFF8F1',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#FFD8B8',
+    padding: 16,
+    marginTop: 4,
+  },
+  inlineImportTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A1000',
+    marginBottom: 4,
+  },
+  inlineImportSubtitle: {
+    fontSize: 12,
+    color: '#6B5A48',
+    marginBottom: 12,
+    lineHeight: 17,
+  },
+  inlineImportInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#F0D8C0',
+    marginBottom: 10,
+  },
+  inlineImportInput: {
+    flex: 1,
+    paddingVertical: 11,
+    paddingHorizontal: 10,
+    fontSize: 14,
+    color: '#1A1000',
+  },
+  inlineImportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF6B00',
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 8,
+  },
+  inlineImportBtnText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  inlineImportToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  inlineImportToggleText: {
+    color: '#FF6B00',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  inlineImportGroupList: {
+    marginTop: 6,
+    gap: 6,
+  },
+  inlineImportGroupItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#EDE8DD',
+  },
+  inlineImportGroupItemActive: {
+    borderColor: '#FF6B00',
+    backgroundColor: '#FFF5EC',
+  },
+  inlineImportGroupName: {
+    flex: 1,
+    fontSize: 13,
+    color: '#1A1000',
+    marginRight: 10,
+  },
+  inlineImportCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#D0D0D0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inlineImportCheckboxChecked: {
+    backgroundColor: '#FF6B00',
+    borderColor: '#FF6B00',
+  },
   // --- Cards / Sections ---
   card: {
     backgroundColor: '#FFFFFF',

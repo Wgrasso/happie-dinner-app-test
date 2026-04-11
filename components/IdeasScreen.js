@@ -332,15 +332,10 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     setSavingGroups(true);
     lightHaptic();
     try {
-      // Add recipe to each selected group individually (append, not replace)
-      for (const gid of selectedGroupIds) {
-        await supabase
-          .from('recipe_group_shares')
-          .upsert(
-            { recipe_id: selectedRecipe.id, group_id: gid, shared_by: (await supabase.auth.getUser()).data.user.id },
-            { onConflict: 'recipe_id,group_id' }
-          );
-      }
+      // Append-only: diff mode so we never overwrite existing frozen snapshots.
+      // Pass the full recipe so new shares get a recipe_data snapshot.
+      const result = await shareRecipeWithGroups(selectedRecipe, selectedGroupIds);
+      if (!result?.success) throw new Error(result?.error || 'Kon niet opslaan');
       successHaptic();
       const count = selectedGroupIds.length;
       toast.success(`${t('chef.addedToGroup') || 'Toegevoegd aan'} ${count} ${count === 1 ? 'groep' : 'groepen'}`);

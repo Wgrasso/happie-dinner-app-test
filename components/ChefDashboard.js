@@ -419,9 +419,10 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
       });
 
       if (result.success) {
-        // If shared with groups (either 'groups' only or 'public_groups'), create the shares
+        // If shared with groups (either 'groups' only or 'public_groups'), create the shares.
+        // Pass the full recipe so a frozen snapshot lands in recipe_group_shares.recipe_data.
         if ((visibility === 'groups' || visibility === 'public_groups') && selectedGroups.length > 0) {
-          await shareRecipeWithGroups(result.recipe.id, selectedGroups);
+          await shareRecipeWithGroups(result.recipe, selectedGroups);
         }
         successHaptic();
         toast.success(t('chef.recipePublished') || 'Recept gepubliceerd!');
@@ -640,14 +641,33 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
       });
 
       if (result.success) {
-        // Sync recipe_group_shares to reflect the visibility choice.
-        // - 'groups' / 'public_groups' → write the selected groups (replaces existing)
-        // - any other visibility → clear all shares
+        // Sync recipe_group_shares to reflect the new visibility choice.
+        // mode: 'replace' removes un-ticked groups AND adds new ticks, but
+        // leaves existing overlap untouched so the frozen snapshot of groups
+        // that were already sharing this recipe stays exactly as it was.
         try {
+          // Build the recipe object with the latest edited fields so any new
+          // shares get a snapshot of the new values.
+          const updatedRecipe = {
+            ...editingRecipe,
+            name: trimmedName,
+            description: editRecipeDescription.trim() || null,
+            image: imageUrl,
+            cooking_time_minutes: parseInt(editRecipeCookingTime, 10) || 30,
+            cuisine_type: editRecipeCuisine.trim() || null,
+            visibility: editRecipeVisibility,
+            estimated_cost: editRecipeCost.trim() || null,
+            ingredients: editInputMode === 'simple'
+              ? editSimpleIngredients.split('\n').map((s) => s.trim()).filter(Boolean)
+              : ingredientsToStrings(editIngredients),
+            steps: editInputMode === 'simple'
+              ? editSimpleSteps.split('\n').map((s) => s.trim()).filter(Boolean)
+              : editSteps.filter((s) => s.trim()),
+          };
           if (editRecipeVisibility === 'groups' || editRecipeVisibility === 'public_groups') {
-            await shareRecipeWithGroups(editingRecipe.id, selectedGroups);
+            await shareRecipeWithGroups(updatedRecipe, selectedGroups, { mode: 'replace' });
           } else {
-            await shareRecipeWithGroups(editingRecipe.id, []);
+            await shareRecipeWithGroups(updatedRecipe, [], { mode: 'replace' });
           }
         } catch (_) {}
         successHaptic();
