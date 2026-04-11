@@ -645,12 +645,23 @@ export default function ChefDashboard({
     setEditSimpleSteps((recipe.steps || []).join('\n'));
     setEditIngredients(stringsToIngredients(recipe.ingredients));
     setEditSteps(recipe.steps && recipe.steps.length > 0 ? [...recipe.steps] : ['']);
-    setEditRecipeVisibility(recipe.visibility || 'public');
+    // Initial visibility from the row. public_groups is a UI-only
+    // concept that collapses to 'public' in the DB, so we up-cast it
+    // below once we know whether this recipe also has group shares.
+    const rawVisibility = recipe.visibility || 'public';
+    setEditRecipeVisibility(rawVisibility);
     // Pre-load the groups this recipe is already shared with, so the picker
     // shows them as selected and the user can add/remove without starting over.
     getRecipeShares(recipe.id).then((res) => {
       if (res?.success && Array.isArray(res.groupIds)) {
         setSelectedGroups(res.groupIds);
+        // A recipe saved as 'public_groups' lives in the DB as 'public'
+        // with rows in recipe_group_shares. Reverse-engineer that state
+        // here so the edit modal shows the right chip AND the group
+        // picker expands again.
+        if (rawVisibility === 'public' && res.groupIds.length > 0) {
+          setEditRecipeVisibility('public_groups');
+        }
       } else {
         setSelectedGroups([]);
       }
@@ -692,13 +703,19 @@ export default function ChefDashboard({
         if (upload.success) imageUrl = upload.url;
       }
 
+      // public_groups is a UI-only concept; the DB visibility column is
+      // constrained to 'public' / 'private' / 'groups'. Collapse it the
+      // same way handleAddRecipe does, otherwise the update silently
+      // fails the check constraint and the user's change disappears.
+      const dbVisibility = editRecipeVisibility === 'public_groups' ? 'public' : editRecipeVisibility;
+
       const result = await updateChefRecipe(editingRecipe.id, chef.id, {
         name: trimmedName,
         description: editRecipeDescription.trim() || null,
         cooking_time_minutes: parseInt(editRecipeCookingTime, 10) || 30,
         cuisine_type: editRecipeCuisine.trim() || null,
         image: imageUrl,
-        visibility: editRecipeVisibility,
+        visibility: dbVisibility,
         estimated_cost: editRecipeCost.trim() || null,
         ingredients: editInputMode === 'simple'
           ? editSimpleIngredients.split('\n').map(s => s.trim()).filter(Boolean)
@@ -1521,6 +1538,9 @@ export default function ChefDashboard({
                       : visibility === 'public'
                       ? t('chef.privacyHintPublic') ||
                         'Dit recept wordt gedeeld met alle gebruikers'
+                      : visibility === 'public_groups'
+                      ? t('chef.privacyHintPublicGroups') ||
+                        'Zichtbaar voor iedereen én extra gedeeld met de geselecteerde groepen'
                       : t('chef.privacyHintGroups') ||
                         'Alleen de geselecteerde groepen kunnen dit zien'}
                   </Text>

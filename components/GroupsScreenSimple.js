@@ -49,6 +49,7 @@ import { sortTopMeals } from '../lib/sortTopMeals';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import GroupSwitcherDropdown, { loadGroupOrder, saveGroupOrder, sortGroupsByOrder } from './GroupSwitcherDropdown';
 import { getActiveShopperToday, startShopping, stopShopping } from '../lib/shoppingService';
+import { openGroupShareSheet } from '../lib/shareInvite';
 
 // Configure Dutch locale for calendar
 LocaleConfig.locales['nl'] = {
@@ -523,15 +524,9 @@ const ExpandableGroupCard = React.memo(({
   };
 
   const handleShareGroup = async () => {
-    const code = group.join_code;
-    // Copy code to clipboard immediately so the user has it
-    Clipboard.setStringAsync(code);
-    toast.success(t('groups.codeCopied') || 'Code gekopieerd!');
-    try {
-      await Share.share({
-        message: `═══════════════════\n  HAPPIE GROEP JOINEN\n═══════════════════\n\nJe bent uitgenodigd! Open deze link:\nhttps://studentenhappie.nl/join/${code}\n\nOf download de app en vul de code in:\n\n🔑 Code: ${code}\n\n📲 https://apps.apple.com/app/happie/id6757129676\n\n═══════════════════`,
-      });
-    } catch (_) {}
+    await openGroupShareSheet(group.join_code, {
+      onCopied: () => toast.success(t('groups.codeCopied') || 'Code gekopieerd!'),
+    });
   };
 
   return (
@@ -5017,11 +5012,17 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     try {
       const result = await createGroupInSupabase(groupName.trim());
       if (result.success) {
-        // Upload photo if one was picked
+        // Upload photo if one was picked — surface errors so users know
+        // when the upload silently fails (previously we just ate them).
         if (groupPhotoUri && result.group?.id) {
           const uploadResult = await uploadGroupPhoto(groupPhotoUri);
           if (uploadResult.success && uploadResult.url) {
-            await updateGroupPhoto(result.group.id, uploadResult.url);
+            const patchResult = await updateGroupPhoto(result.group.id, uploadResult.url);
+            if (!patchResult?.success) {
+              toast.error(patchResult?.error || 'Kon foto niet opslaan bij groep');
+            }
+          } else {
+            toast.error(uploadResult?.error || 'Kon foto niet uploaden');
           }
         }
         successHaptic();
@@ -5034,14 +5035,17 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         // Load groups immediately so the new group appears instantly
         contextLoadGroups(true).then(() => loadSpecialOccasionsIndependent());
 
-        // Show share prompt popup after modal animation finishes
+        // Open the native share sheet right away with the same template
+        // the other invite entry points use, so first-time group creators
+        // don't end up with just a copied code and nothing else.
         const code = result.group?.join_code;
         if (code) {
           InteractionManager.runAfterInteractions(() => {
             setTimeout(() => {
-              setNewGroupCode(code);
-              setShowSharePrompt(true);
-            }, 400);
+              openGroupShareSheet(code, {
+                onCopied: () => toast.success(t('groups.codeCopied') || 'Code gekopieerd!'),
+              });
+            }, 450);
           });
         }
       } else {
@@ -5968,12 +5972,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             <View style={gpStyles.sectionSpaced}>
               <View style={gpStyles.secondaryRow}>
                 <TouchableOpacity style={gpStyles.secondaryBtn} onPress={() => {
-                  const code = selectedGroup.join_code;
-                  require('expo-clipboard').setStringAsync(code);
-                  toast.success(t('groups.codeCopied') || 'Code gekopieerd!');
-                  Share.share({
-                    message: `═══════════════════\n  HAPPIE GROEP JOINEN\n═══════════════════\n\nJe bent uitgenodigd! Open deze link:\nhttps://studentenhappie.nl/join/${code}\n\nOf download de app en vul de code in:\n\n🔑 Code: ${code}\n\n📲 https://apps.apple.com/app/happie/id6757129676\n\n═══════════════════`,
-                  }).catch(() => {});
+                  openGroupShareSheet(selectedGroup.join_code, {
+                    onCopied: () => toast.success(t('groups.codeCopied') || 'Code gekopieerd!'),
+                  });
                 }}>
                   <Feather name="user-plus" size={16} color="#FF6B00" />
                   <Text style={gpStyles.secondaryBtnText}>{'Groepsleden uitnodigen'}</Text>
@@ -6784,16 +6785,12 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               <TouchableOpacity
                 style={[styles.confirmButton, { flexDirection: 'row', justifyContent: 'center' }]}
                 onPress={() => {
-                  Clipboard.setStringAsync(newGroupCode);
                   setShowSharePrompt(false);
-                  // Delay share sheet so modal closes first
-                  setTimeout(async () => {
-                    try {
-                      await Share.share({
-                        message: `═══════════════════\n  HAPPIE GROEP JOINEN\n═══════════════════\n\nJe bent uitgenodigd! Open deze link:\nhttps://studentenhappie.nl/join/${newGroupCode}\n\nOf download de app en vul de code in:\n\n🔑 Code: ${newGroupCode}\n\n📲 https://apps.apple.com/app/happie/id6757129676\n\n═══════════════════`,
-                      });
-                    } catch (_) {}
-                  }, 400);
+                  setTimeout(() => {
+                    openGroupShareSheet(newGroupCode, {
+                      onCopied: () => toast.success(t('groups.codeCopied') || 'Code gekopieerd!'),
+                    });
+                  }, 250);
                 }}
               >
                 <Feather name="share" size={16} color="#FFF" style={{ marginRight: 6 }} />
