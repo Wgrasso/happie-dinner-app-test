@@ -123,7 +123,7 @@ export default function SignUpScreen({ navigation }) {
         navigation.navigate('SignIn');
       }
     } catch (error) {
-      console.error('❌ Unexpected sign up error:', error);
+      console.error('Unexpected sign up error:', error);
       showCustomAlert(t('errors.generic'), t('errors.generic'));
     } finally {
       setLoading(false);

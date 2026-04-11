@@ -189,7 +189,7 @@ export default function SignInScreen({ navigation }) {
         navigation.navigate('MainTabs', { screen: 'groups' });
       }
     } catch (error) {
-      console.error('❌ Unexpected sign in error:', error);
+      console.error('Unexpected sign in error:', error);
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setLoading(false);

@@ -160,7 +160,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
       
       setUserPreferences(preferences);
     } catch (error) {
-      console.error('❌ Error loading user preferences:', error);
+      console.error('Error loading user preferences:', error);
     }
   };
 
@@ -235,8 +235,8 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
       }
 
     } catch (error) {
-      console.error('❌ Error loading recipes from database:', error);
-      console.error('❌ Full error details:', error.message, error.stack);
+      console.error('Error loading recipes from database:', error);
+      console.error('Full error details:', error.message, error.stack);
       
       // Show alert to user about the database issue
       Alert.alert(
@@ -353,14 +353,14 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
     
     if (url) {
       Linking.openURL(url).catch(err => {
-        console.error('❌ Failed to open recipe URL:', err);
+        console.error('Failed to open recipe URL:', err);
         
         // If the constructed URL fails, try a generic Tasty search
         const searchQuery = encodeURIComponent(selectedRecipe?.title || '');
         const fallbackUrl = `https://tasty.co/search?q=${searchQuery}`;
         
         Linking.openURL(fallbackUrl).catch(fallbackErr => {
-          console.error('❌ Fallback URL also failed:', fallbackErr);
+          console.error('Fallback URL also failed:', fallbackErr);
           Alert.alert('Error', `Sorry, we couldn't open the recipe link. You can search for "${selectedRecipe?.title}" on tasty.co manually.`);
         });
       });
@@ -378,7 +378,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
             text: 'Search', 
             onPress: () => {
               Linking.openURL(searchUrl).catch(err => {
-                console.error('❌ Search URL failed:', err);
+                console.error('Search URL failed:', err);
                 Alert.alert('Error', `Please visit tasty.co and search for "${selectedRecipe?.title}" manually.`);
               });
             }
@@ -662,7 +662,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                         <View style={styles.chefRecipesHeader}>
                           <Text style={styles.chefRecipesTitle}>{chef.name}</Text>
                           <TouchableOpacity onPress={() => setFlippedChefId(null)}>
-                            <Text style={styles.chefRecipesClose}>✕</Text>
+                            <Text style={styles.chefRecipesClose}></Text>
                           </TouchableOpacity>
                         </View>
                         <ScrollView style={styles.chefRecipesList} nestedScrollEnabled>
@@ -762,7 +762,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                         <View style={styles.chefRecipesHeader}>
                           <Text style={styles.chefRecipesTitle}>{house.name}</Text>
                           <TouchableOpacity onPress={() => setFlippedChefId(null)}>
-                            <Text style={styles.chefRecipesClose}>✕</Text>
+                            <Text style={styles.chefRecipesClose}></Text>
                           </TouchableOpacity>
                         </View>
                         <ScrollView style={styles.chefRecipesList} nestedScrollEnabled>

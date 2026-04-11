@@ -119,13 +119,13 @@ export default function DinnerRequestNotification({ visible, onClose, userName }
 
   const handleRequestResponse = async (accepted) => {
     if (requests.length === 0 || currentRequestIndex >= requests.length) {
-      console.error('❌ No current request to respond to');
+      console.error('No current request to respond to');
       return;
     }
 
     const currentRequest = requests[currentRequestIndex];
     const response = accepted ? 'accepted' : 'declined';
-    console.log(`📝 User ${response} the dinner request:`, currentRequest.id);
+    console.log(`User ${response} the dinner request:`, currentRequest.id);
 
     // IMMEDIATE UI UPDATE: Store response locally and close notification
     addLocalResponse(currentRequest.id, response);
@@ -142,7 +142,7 @@ export default function DinnerRequestNotification({ visible, onClose, userName }
       const result = await recordUserResponse(currentRequest.id, response);
       
       if (result.success) {
-        console.log('✅ Request response saved successfully');
+        console.log('Request response saved successfully');
         
         let alertMessage = result.message;
         
@@ -157,11 +157,11 @@ export default function DinnerRequestNotification({ visible, onClose, userName }
         Alert.alert('Response Sent', alertMessage);
         
       } else {
-        console.error('❌ Failed to save response:', result.error);
+        console.error('Failed to save response:', result.error);
         Alert.alert('Error', result.error);
       }
     } catch (error) {
-      console.error('❌ Unexpected error:', error);
+      console.error('Unexpected error:', error);
       Alert.alert('Error', 'An unexpected error occurred while saving your response.');
     }
   };

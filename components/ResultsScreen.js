@@ -62,7 +62,7 @@ export default function ResultsScreen({ route, navigation }) {
         setError(result.error || 'Failed to load voting results');
       }
     } catch (error) {
-      console.error('❌ Error loading results:', error);
+      console.error('Error loading results:', error);
       setError('An unexpected error occurred while loading results');
     } finally {
       setLoading(false);

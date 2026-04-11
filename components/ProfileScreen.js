@@ -145,7 +145,7 @@ export default function ProfileScreen({ route, navigation }) {
         });
 
       if (uploadError) {
-        console.error('❌ Upload error:', uploadError);
+        console.error('Upload error:', uploadError);
         Alert.alert(t('common.error'), `${t('profile.uploadError')}: ${uploadError.message}`);
         return;
       }
@@ -166,7 +166,7 @@ export default function ProfileScreen({ route, navigation }) {
         .eq('id', user.id);
 
       if (updateError) {
-        console.error('❌ Profile update error:', updateError);
+        console.error('Profile update error:', updateError);
         Alert.alert(t('common.error'), t('profile.updateProfileError'));
         return;
               }
@@ -182,7 +182,7 @@ export default function ProfileScreen({ route, navigation }) {
       }
       
     } catch (error) {
-      console.error('❌ Avatar upload error:', error);
+      console.error('Avatar upload error:', error);
       Alert.alert(t('common.error'), `${t('errors.generic')}: ${error.message}`);
     } finally {
       setAvatarLoading(false);
@@ -314,7 +314,7 @@ export default function ProfileScreen({ route, navigation }) {
                 { text: 'OK', onPress: () => navigation.navigate('SignIn') }
               ]);
             } catch (error) {
-              console.error('❌ Delete account failed:', error?.message || error);
+              console.error('Delete account failed:', error?.message || error);
               Alert.alert(t('common.error'), t('profile.deleteAccountError'));
             } finally {
               setAccountActionLoading(false);

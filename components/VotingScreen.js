@@ -522,7 +522,7 @@ export default function VotingScreen({ route, navigation }) {
         // Validate preloaded data has required fields
         const validOptions = preloadedMealOptions.filter(opt => opt && opt.id && opt.meal_data);
         if (validOptions.length !== preloadedMealOptions.length) {
-          console.warn(`⚠️ [VOTING] Filtered out ${preloadedMealOptions.length - validOptions.length} invalid preloaded options`);
+          console.warn(`[VOTING] Filtered out ${preloadedMealOptions.length - validOptions.length} invalid preloaded options`);
         }
         
         if (validOptions.length > 0) {
@@ -971,7 +971,7 @@ export default function VotingScreen({ route, navigation }) {
           activeOpacity={0.7}
         >
           <Text style={styles.actionButtonLabel}>
-            {voting ? t('common.loading') : '✕ ' + t('meals.dislike')}
+            {voting ? t('common.loading') : '' + t('meals.dislike')}
           </Text>
         </TouchableOpacity>
         
@@ -982,7 +982,7 @@ export default function VotingScreen({ route, navigation }) {
           activeOpacity={0.7}
         >
           <Text style={styles.actionButtonLabel}>
-            {voting ? t('common.loading') : '♡ ' + t('meals.like')}
+            {voting ? t('common.loading') : '' + t('meals.like')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -1044,7 +1044,7 @@ export default function VotingScreen({ route, navigation }) {
                     style={styles.modalCloseButton}
                     onPress={closeRecipeModal}
                   >
-                    <Text style={styles.modalCloseText}>✕</Text>
+                    <Text style={styles.modalCloseText}></Text>
                   </TouchableOpacity>
                 </View>
                 
@@ -1062,7 +1062,7 @@ export default function VotingScreen({ route, navigation }) {
                     <View style={styles.modalMetaRow}>
                       <View style={styles.modalTimeBadge}>
                         <Text style={styles.modalTimeText}>
-                          ⏱ {formatTime(selectedRecipe.meal_data.cooking_time || selectedRecipe.meal_data.total_time_minutes || selectedRecipe.meal_data.cooking_time_minutes)}
+                          {formatTime(selectedRecipe.meal_data.cooking_time || selectedRecipe.meal_data.total_time_minutes || selectedRecipe.meal_data.cooking_time_minutes)}
                         </Text>
                       </View>
                       

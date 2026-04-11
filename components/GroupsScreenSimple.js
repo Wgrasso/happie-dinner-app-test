@@ -268,7 +268,7 @@ const Top3Modal = React.memo(({ visible, onClose, loadMeals, onRecipePress }) =>
           <View style={top3ModalStyles.header}>
             <Text style={top3ModalStyles.title}>{t('meals.topRecipes')}</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <Text style={top3ModalStyles.closeBtn}>✕</Text>
+              <Text style={top3ModalStyles.closeBtn}></Text>
             </TouchableOpacity>
           </View>
           {loading ? (
@@ -300,7 +300,7 @@ const Top3Modal = React.memo(({ visible, onClose, loadMeals, onRecipePress }) =>
                       />
                     ) : (
                       <View style={[top3ModalStyles.recipeThumb, top3ModalStyles.recipeThumbPlaceholder]}>
-                        <Text style={{ fontSize: 22 }}>🍽</Text>
+                        <Feather name="book-open" size={22} color="#B5A89A" />
                       </View>
                     )}
                     <View style={top3ModalStyles.recipeInfo}>
@@ -722,7 +722,7 @@ const ExpandableGroupCard = React.memo(({
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <>
-                      <Text style={cardStyles.votingCTAEmoji}>🗳</Text>
+                      <Feather name="check-square" size={22} color="#FFFFFF" />
                       <View style={cardStyles.votingCTATextWrap}>
                         <Text style={cardStyles.votingCTATitle}>{t('meals.voteOnMeals') || 'Kies wat we eten vanavond'}</Text>
                         <Text style={cardStyles.votingCTASubtitle}>{t('meals.tapToVote') || 'Stem op je favoriete gerecht'}</Text>
@@ -803,7 +803,7 @@ const ExpandableGroupCard = React.memo(({
                             />
                           ) : (
                             <View style={[cardStyles.top3RecipeImage, cardStyles.top3RecipeImagePlaceholder]}>
-                              <Text style={cardStyles.top3RecipeImageEmoji}>🍽</Text>
+                              <Feather name="book-open" size={20} color="#B5A89A" />
                             </View>
                           )}
 
@@ -812,7 +812,7 @@ const ExpandableGroupCard = React.memo(({
                             <Text style={[cardStyles.top3RecipeName, isTopVoted && cardStyles.top3RecipeNameTop]} numberOfLines={1}>{name}</Text>
                             <View style={cardStyles.top3RecipeMeta}>
                               {cookingTime ? (
-                                <Text style={cardStyles.top3RecipeTime}>⏱ {cookingTime} min</Text>
+                                <Text style={cardStyles.top3RecipeTime}>{cookingTime} min</Text>
                               ) : null}
                               {tags && tags.length > 0 && tags.slice(0, 1).map((tag, ti) => (
                                 <View key={ti} style={cardStyles.top3RecipeTag}>
@@ -984,7 +984,7 @@ const ExpandableGroupCard = React.memo(({
             <View style={cardStyles.membersHeader}>
               <Text style={cardStyles.membersTitle}>{t('common.members')}</Text>
               <TouchableOpacity onPress={() => setShowMembersModal(false)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                <Text style={cardStyles.membersClose}>✕</Text>
+                <Text style={cardStyles.membersClose}></Text>
               </TouchableOpacity>
             </View>
             <ScrollView style={cardStyles.membersList} showsVerticalScrollIndicator={false}>
@@ -5777,7 +5777,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                             <Image source={{ uri: thumbnailUrl }} style={gpStyles.foodCardImage} resizeMode="cover" />
                           ) : (
                             <View style={[gpStyles.foodCardImage, gpStyles.foodCardImagePlaceholder]}>
-                              <Text style={{ fontSize: 24 }}>🍽</Text>
+                              <Feather name="book-open" size={24} color="#B5A89A" />
                             </View>
                           )}
                           <View style={gpStyles.foodCardBody}>
@@ -6468,7 +6468,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               <View style={cardStyles.membersHeader}>
                 <Text style={cardStyles.membersTitle}>{t('common.members')}</Text>
                 <TouchableOpacity onPress={() => setShowMembersModal(false)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                  <Text style={cardStyles.membersClose}>✕</Text>
+                  <Text style={cardStyles.membersClose}></Text>
                 </TouchableOpacity>
               </View>
               <ScrollView style={cardStyles.membersList} showsVerticalScrollIndicator={false}>
@@ -6534,7 +6534,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                       setSelectedRecipe(null);
                     }}
                   >
-                    <Text style={styles.recipeModalCloseText}>✕</Text>
+                    <Text style={styles.recipeModalCloseText}></Text>
                   </TouchableOpacity>
                 </View>
                 <ScrollView style={styles.recipeModalBody} showsVerticalScrollIndicator={false}>
@@ -6665,7 +6665,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 onPress={closeChefAddModal}
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               >
-                <Text style={gpStyles.chefModalCloseText}>✕</Text>
+                <Text style={gpStyles.chefModalCloseText}></Text>
               </TouchableOpacity>
             </View>
             <View style={gpStyles.chefModalBody}>
@@ -6795,7 +6795,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
             activeOpacity={1}
           />
           <View style={styles.simpleModal}>
-            <Text style={{ fontSize: 40, textAlign: 'center', marginBottom: 12 }}>🍽️</Text>
+            <View style={{ alignItems: 'center', marginBottom: 12 }}>
+              <Feather name="users" size={36} color="#FF6B00" />
+            </View>
             <Text style={styles.simpleModalTitle}>Alleen eten is niks aan!</Text>
             <Text style={[styles.simpleModalSubtitle, { marginBottom: 8, color: '#6B6560', lineHeight: 20 }]}>
               Deel deze groep met je vrienden zodat jullie samen kunnen plannen wat je gaat eten.
@@ -7035,7 +7037,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                               occasionWizardStyles.groupCheckbox,
                               isSelected && { backgroundColor: occasionLabels[newOccasionType]?.color || '#FF6B00', borderColor: occasionLabels[newOccasionType]?.color || '#FF6B00' },
                             ]}>
-                              {isSelected && <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>✓</Text>}
+                              {isSelected && <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}></Text>}
                             </View>
                             <View style={{ flex: 1 }}>
                               <Text style={occasionWizardStyles.groupName} numberOfLines={1}>

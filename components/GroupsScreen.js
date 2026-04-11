@@ -303,27 +303,27 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   const isLoadingRef = useRef(false);
   
   const withCooldown = (callback) => {
-    console.log('🔘 withCooldown called, buttonCooldown:', buttonCooldown);
+    console.log('withCooldown called, buttonCooldown:', buttonCooldown);
     
     if (buttonCooldown) {
-      console.log('⛔ Button press blocked - cooldown active');
+      console.log('Button press blocked - cooldown active');
       return;
     }
     
-    console.log('✅ Button press allowed, starting cooldown');
+    console.log('Button press allowed, starting cooldown');
     setButtonCooldown(true);
     
     // Execute callback
     try {
     callback();
     } catch (error) {
-      console.error('❌ Error in cooldown callback:', error);
+      console.error('Error in cooldown callback:', error);
     }
     
     // Reset cooldown after 1 second
     setTimeout(() => {
       setButtonCooldown(false);
-      console.log('✅ Button cooldown reset');
+      console.log('Button cooldown reset');
     }, 1000);
   };
   
@@ -358,7 +358,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
     // Main effect - handles initial load and user changes
   useEffect(() => {
-    console.log('🔄 User status changed - isGuest:', isGuest);
+    console.log('User status changed - isGuest:', isGuest);
     
     // Clear previous user data first AND ensure alert is dismissed
     setGroups([]);
@@ -370,7 +370,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     isLoadingRef.current = false;
     
     if (!isGuest) {
-      console.log('🔄 Loading groups for authenticated user');
+      console.log('Loading groups for authenticated user');
       
       // Load current user ID
       const getCurrentUserId = async () => {
@@ -378,10 +378,10 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           const { data: { user }, error } = await supabase.auth.getUser();
           if (user && !error) {
             setCurrentUserId(user.id);
-            console.log('👤 Current user ID set:', user.id);
+            console.log('Current user ID set:', user.id);
           }
         } catch (error) {
-          console.error('❌ Error getting current user:', error);
+          console.error('Error getting current user:', error);
         }
       };
       
@@ -392,7 +392,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         loadUserGroups();
       }, 50);
     } else {
-      console.log('🔄 Clearing data for guest user');
+      console.log('Clearing data for guest user');
       setCurrentUserId(null);
       setGroupsLoading(false);
     }
@@ -401,7 +401,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   // Open create modal if requested from another screen
   useEffect(() => {
     if (openCreateModal && !isGuest) {
-      console.log('📝 Opening create modal from navigation params');
+      console.log('Opening create modal from navigation params');
       showCreateModalFunc();
       // Clear the parameter to prevent reopening
       if (navigation.setParams) {
@@ -414,25 +414,25 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   const lastFocusTimeRef = useRef(0);
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      console.log('🎯 Groups screen focused');
+      console.log('Groups screen focused');
       
       // Check if we're returning from voting and should reopen the group modal
       const reopenGroupId = route.params?.groupId || routeGroupId;
       const shouldReopen = route.params?.reopenGroupModal || reopenGroupModal;
       
       if (shouldReopen && reopenGroupId && handledReopenRef.current !== reopenGroupId) {
-        console.log('🔄 Reopening group modal after voting for group:', reopenGroupId);
+        console.log('Reopening group modal after voting for group:', reopenGroupId);
         handledReopenRef.current = reopenGroupId;
         
         // Find the group and reopen the modal
         const group = groups.find(g => g.group_id === reopenGroupId);
         if (group) {
-          console.log('✅ Found group, reopening modal:', group.group_name);
+          console.log('Found group, reopening modal:', group.group_name);
           setTimeout(() => {
             handleGroupPress(group);
           }, 150);
         } else {
-          console.log('⚠️ Group not found in current groups, may need to refresh');
+          console.log('Group not found in current groups, may need to refresh');
           // If groups haven't loaded yet, wait for them
           if (groups.length === 0 && !groupsLoading) {
             loadUserGroups().then(() => {
@@ -468,11 +468,11 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       
       // Only refresh if user is authenticated, not already loading, and enough time has passed
       if (!isGuest && !isLoadingRef.current && timeSinceLastFocus > 10000) {
-        console.log('🔄 Refreshing groups on screen focus (time since last:', timeSinceLastFocus, 'ms)');
+        console.log('Refreshing groups on screen focus (time since last:', timeSinceLastFocus, 'ms)');
         lastFocusTimeRef.current = now;
         loadUserGroups();
       } else if (!isGuest && !isLoadingRef.current) {
-        console.log('⏭️ Skipping refresh - too soon since last focus');
+        console.log('⏭Skipping refresh - too soon since last focus');
       }
     });
 
@@ -484,7 +484,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   useEffect(() => {
     // Only load terminated sessions if groups actually changed (not just re-rendered)
     if (groups.length > 0 && groups.length !== previousGroupsLength.current) {
-      console.log('📊 Groups count changed from', previousGroupsLength.current, 'to', groups.length, '- loading terminated sessions');
+      console.log('Groups count changed from', previousGroupsLength.current, 'to', groups.length, '- loading terminated sessions');
       previousGroupsLength.current = groups.length;
       setTimeout(() => {
         loadTerminatedSessions(groups);
@@ -495,7 +495,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   // Listen for refresh parameter changes from other screens
   useEffect(() => {
     if (route.params?.refreshGroups && !isGuest && !isLoadingRef.current) {
-      console.log('🔄 Refreshing groups due to parameter change:', route.params.refreshGroups);
+      console.log('Refreshing groups due to parameter change:', route.params.refreshGroups);
       loadUserGroups();
       // Clear the parameter to prevent repeated refreshes
       navigation.setParams({ refreshGroups: undefined });
@@ -504,7 +504,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     // Clear terminated results when new request is made for a group
     if (route.params?.clearTerminatedResults) {
       const groupId = route.params.clearTerminatedResults;
-      console.log('🧹 Clearing terminated results for group:', groupId);
+      console.log('Clearing terminated results for group:', groupId);
       setTerminatedSessionResults(prev => {
         const newMap = new Map(prev);
         newMap.delete(groupId);
@@ -513,7 +513,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       
       // Reset local acceptance state when new request is made for this group
       if (selectedGroup && selectedGroup.group_id === groupId) {
-        console.log('🔄 Resetting local acceptance state for new request');
+        console.log('Resetting local acceptance state for new request');
         setUserLocallyAcceptedRequest(false);
       }
       
@@ -527,7 +527,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     if (route.params?.immediateResponse) {
       const { requestId, response, userId, timestamp } = route.params.immediateResponse;
       
-      console.log('📱 [CROSS-SCREEN] Received immediate response:', {
+      console.log('[CROSS-SCREEN] Received immediate response:', {
         requestId,
         response,
         userId,
@@ -536,7 +536,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
       // Update selectedGroup's response data immediately if it matches
       if (selectedGroup && selectedGroup.activeDinnerRequest && selectedGroup.activeDinnerRequest.id === requestId) {
-        console.log('🔄 [CROSS-SCREEN] Updating selectedGroup response data');
+        console.log('[CROSS-SCREEN] Updating selectedGroup response data');
         
         // Update the dinner request responses in selectedGroup
         const updatedResponses = selectedGroup.dinnerRequestResponses ? [...selectedGroup.dinnerRequestResponses] : [];
@@ -558,7 +558,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
         // If response was "accepted", immediately show voting buttons
         if (response === 'accepted' && userId === currentUserId) {
-          console.log('✅ [CROSS-SCREEN] User accepted - showing voting buttons immediately');
+          console.log('[CROSS-SCREEN] User accepted - showing voting buttons immediately');
           setSelectedGroup(prev => {
             if (!prev) return prev;
             return {
@@ -575,7 +575,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
         // Check if we should show voting buttons (from MainProfileScreen)
         if (route.params.immediateResponse.showVotingButtons && userId === currentUserId) {
-          console.log('🗳️ [CROSS-SCREEN] Showing voting buttons per MainProfileScreen request');
+          console.log('[CROSS-SCREEN] Showing voting buttons per MainProfileScreen request');
           setSelectedGroup(prev => {
             if (!prev) return prev;
             return {
@@ -601,7 +601,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log('🧹 Component unmounting - cleaning up');
+      console.log('Component unmounting - cleaning up');
       isLoadingRef.current = false;
       setGroups([]);
       setSelectedGroup(null);
@@ -633,11 +633,11 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   // Load terminated sessions from database
   const loadTerminatedSessions = async (groupsToLoad = null) => {
     try {
-      console.log('🔄 Loading terminated sessions from database...');
+      console.log('Loading terminated sessions from database...');
       const groupsData = groupsToLoad || groups;
       
       if (!groupsData || groupsData.length === 0) {
-        console.log('⚠️ No groups available to load terminated sessions');
+        console.log('No groups available to load terminated sessions');
         return;
       }
       
@@ -649,7 +649,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         const sessionResult = await terminatedSessionsService.getTerminatedSession(group.group_id);
         
         if (sessionResult.success && sessionResult.data) {
-          console.log(`📊 Found terminated session for group ${group.group_name}:`, sessionResult.data);
+          console.log(`Found terminated session for group ${group.group_name}:`, sessionResult.data);
           newMap.set(group.group_id, {
             groupId: sessionResult.data.group_id,
             groupName: sessionResult.data.group_name,
@@ -658,19 +658,19 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             terminatedAt: sessionResult.data.terminated_at
           });
         } else {
-          console.log(`📊 No terminated session found for group ${group.group_name}`);
+          console.log(`No terminated session found for group ${group.group_name}`);
         }
       }
       
       setTerminatedSessionResults(newMap);
-      console.log('✅ Loaded terminated sessions from database. Total sessions:', newMap.size);
+      console.log('Loaded terminated sessions from database. Total sessions:', newMap.size);
       
       // Log what we loaded
       newMap.forEach((session, groupId) => {
-        console.log(`📊 Session for ${session.groupName}: ${session.results.length} results, ${session.memberResponses.length} responses`);
+        console.log(`Session for ${session.groupName}: ${session.results.length} results, ${session.memberResponses.length} responses`);
       });
     } catch (error) {
-      console.error('❌ Error loading terminated sessions:', error);
+      console.error('Error loading terminated sessions:', error);
     }
   };
 
@@ -684,25 +684,25 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
     // Prevent multiple simultaneous calls using ref (more reliable than state)
     if (isLoadingRef.current) {
-      console.log('⚠️ Groups already loading (ref check), skipping duplicate call');
+      console.log('Groups already loading (ref check), skipping duplicate call');
       return;
     }
 
-    console.log('🔄 Starting to load user groups with optimizations...');
+    console.log('Starting to load user groups with optimizations...');
     isLoadingRef.current = true;
     setGroupsLoading(true);
     
     // Ensure user has a profile before loading groups
     try {
-      console.log('👤 Ensuring user profile exists...');
+      console.log('Ensuring user profile exists...');
       await ensureUserProfile();
     } catch (profileError) {
-      console.log('⚠️ Could not ensure user profile:', profileError);
+      console.log('Could not ensure user profile:', profileError);
     }
     
     // Safety timeout to prevent infinite loading
     const loadingTimeout = setTimeout(() => {
-      console.log('🚨 GROUPS LOADING TIMEOUT: Force stopping loading after 10 seconds');
+      console.log('GROUPS LOADING TIMEOUT: Force stopping loading after 10 seconds');
       isLoadingRef.current = false;
       setGroupsLoading(false);
       setGroups([]);
@@ -720,30 +720,30 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       clearTimeout(loadingTimeout);
       
       if (result && result.success) {
-        console.log('✅ Groups loaded successfully:', result.groups?.length || 0);
+        console.log('Groups loaded successfully:', result.groups?.length || 0);
         const basicGroups = result.groups || [];
         
         // Check for active meal requests and dinner requests for each group
-        console.log('🔍 Checking for active meal requests and dinner requests...');
+        console.log('Checking for active meal requests and dinner requests...');
         const groupsWithMealRequests = await Promise.all(
           basicGroups.map(async (group) => {
             try {
               const mealRequestResult = await getActiveMealRequest(group.group_id);
               const dinnerRequestResult = await getGroupMemberResponses(group.group_id);
               
-              console.log(`🍽️ [DEBUG] Group: ${group.group_name}`);
-              console.log(`🍽️ [DEBUG] Meal request result:`, mealRequestResult);
-              console.log(`🍽️ [DEBUG] Dinner request result:`, dinnerRequestResult);
+              console.log(`[DEBUG] Group: ${group.group_name}`);
+              console.log(`[DEBUG] Meal request result:`, mealRequestResult);
+              console.log(`[DEBUG] Dinner request result:`, dinnerRequestResult);
               
               const hasActiveMeal = mealRequestResult.success && mealRequestResult.hasActiveRequest;
               const hasActiveDinner = dinnerRequestResult.success && dinnerRequestResult.hasActiveRequest;
               
-              console.log(`📋 [DEBUG] Group ${group.group_name}:`);
-              console.log(`📋 [DEBUG] - Has active meal request: ${hasActiveMeal}`);
-              console.log(`📋 [DEBUG] - Has active dinner request: ${hasActiveDinner}`);
+              console.log(`[DEBUG] Group ${group.group_name}:`);
+              console.log(`[DEBUG] - Has active meal request: ${hasActiveMeal}`);
+              console.log(`[DEBUG] - Has active dinner request: ${hasActiveDinner}`);
               
               if (hasActiveMeal) {
-                console.log(`📋 [DEBUG] - Meal request details:`, mealRequestResult.request);
+                console.log(`[DEBUG] - Meal request details:`, mealRequestResult.request);
               }
               
                           // Check if this group has a terminated session that should be preserved
@@ -753,7 +753,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
               (new Date() - new Date(existingGroup._terminatedAt)) < 300000; // Within 5 minutes
             
             if (terminatedRecently) {
-              console.log(`🛡️ Preserving terminated state for group: ${group.group_name}`);
+              console.log(`Preserving terminated state for group: ${group.group_name}`);
               return {
                 ...group,
                 hasActiveMealRequest: false,
@@ -777,8 +777,8 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
               dinnerRequestSummary: dinnerRequestResult.success ? dinnerRequestResult.summary : null
             };
             } catch (error) {
-              console.log(`⚠️ Failed to check requests for group ${group.group_id}:`, error);
-              console.error('❌ Detailed error:', error);
+              console.log(`Failed to check requests for group ${group.group_id}:`, error);
+              console.error('Detailed error:', error);
               return {
                 ...group,
                 hasActiveMealRequest: false,
@@ -792,11 +792,11 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           })
         );
         
-        console.log('✅ Enhanced groups with meal request and dinner request data');
+        console.log('Enhanced groups with meal request and dinner request data');
         
         // Debug: Log groups with dinner requests
         const groupsWithDinnerRequests = groupsWithMealRequests.filter(g => g.hasActiveDinnerRequest);
-        console.log('🍽️ Groups with active dinner requests:', groupsWithDinnerRequests.length);
+        console.log('Groups with active dinner requests:', groupsWithDinnerRequests.length);
         groupsWithDinnerRequests.forEach(group => {
           console.log(`- ${group.group_name}: ${JSON.stringify(group.dinnerRequestSummary)}`);
         });
@@ -809,12 +809,12 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         }, 200); // Increased delay to ensure state is updated
       } else {
         // Don't show error popup - just log and handle gracefully
-        console.log('ℹ️ Could not load groups:', result?.error || 'Unknown error');
+        console.log('ℹCould not load groups:', result?.error || 'Unknown error');
         setGroups([]);
       }
       
     } catch (error) {
-      console.error('❌ Error loading groups:', error);
+      console.error('Error loading groups:', error);
       clearTimeout(loadingTimeout);
       
       // Force reset to prevent freeze
@@ -823,7 +823,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       
       // Don't show error to user unless it's critical
       if (error.message !== 'Groups loading timeout') {
-        console.log('⚠️ Non-timeout error loading groups:', error);
+        console.log('Non-timeout error loading groups:', error);
       }
     } finally {
       // Always ensure loading state is cleared
@@ -835,7 +835,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   // Regular alert function for simple messages
   const showAlert = (title, message, buttonText = 'OK', onPressCallback = null) => {
     try {
-      console.log('🚨 Showing alert:', { title, message, buttonText });
+      console.log('Showing alert:', { title, message, buttonText });
       
       // Reset modals
       setLoading(false);
@@ -852,14 +852,14 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       
       // Set up single button action
       const alertCloseHandler = () => {
-        console.log('🔄 Alert close handler triggered');
+        console.log('Alert close handler triggered');
         try {
           hideAlert();
           if (onPressCallback) {
             onPressCallback();
           }
         } catch (error) {
-          console.log('⚠️ Alert close error (non-critical):', error);
+          console.log('Alert close error (non-critical):', error);
           setAlertVisible(false);
         }
       };
@@ -876,7 +876,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       }).start();
       
     } catch (error) {
-      console.error('❌ Error in showAlert:', error);
+      console.error('Error in showAlert:', error);
       resetToInitialState();
     }
   };
@@ -884,8 +884,8 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   // Confirmation dialog function for destructive actions
   const showConfirmDialog = (title, message, confirmButtonText, confirmCallback, preserveGroupModal = false) => {
     try {
-      console.log('⚠️ Showing confirmation dialog:', { title, message, confirmButtonText });
-      console.log('🔍 Current alert state before:', { alertVisible, isConfirmDialog, showGroupDetailModal });
+      console.log('Showing confirmation dialog:', { title, message, confirmButtonText });
+      console.log('Current alert state before:', { alertVisible, isConfirmDialog, showGroupDetailModal });
       
       // Reset modals completely (except group detail modal if preserveGroupModal is true)
       setLoading(false);
@@ -912,32 +912,32 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       setAlertOnPress(() => () => {});
       
       // Show dialog with logging
-      console.log('🔄 Setting alertVisible to true...');
+      console.log('Setting alertVisible to true...');
       setAlertVisible(true);
       
-      console.log('🔄 Starting alert animation...');
+      console.log('Starting alert animation...');
       Animated.spring(alertAnimation, {
         toValue: 1,
         useNativeDriver: true,
         tension: 100,
         friction: 8,
       }).start((finished) => {
-        console.log('✅ Alert animation finished:', finished);
+        console.log('Alert animation finished:', finished);
       });
       
       // Debug state after setting
       setTimeout(() => {
-        console.log('🔍 Alert state after setup:', { alertVisible, isConfirmDialog });
+        console.log('Alert state after setup:', { alertVisible, isConfirmDialog });
       }, 100);
       
     } catch (error) {
-      console.error('❌ Error in showConfirmDialog:', error);
+      console.error('Error in showConfirmDialog:', error);
       resetToInitialState();
     }
   };
 
   const hideAlert = () => {
-    console.log('🔄 Closing alert modal');
+    console.log('Closing alert modal');
     
     try {
       Animated.spring(alertAnimation, {
@@ -946,7 +946,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         tension: 100,
         friction: 8,
       }).start(() => {
-        console.log('🔄 Alert close animation completed');
+        console.log('Alert close animation completed');
         setAlertVisible(false);
         setIsConfirmDialog(false);
       });
@@ -954,38 +954,38 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       // Force close after animation timeout
       setTimeout(() => {
         if (alertVisible) {
-          console.log('🚨 Force closing alert after animation timeout');
+          console.log('Force closing alert after animation timeout');
           setAlertVisible(false);
           setIsConfirmDialog(false);
         }
       }, 1000);
       
     } catch (error) {
-      console.log('⚠️ Error closing alert (non-critical):', error);
+      console.log('Error closing alert (non-critical):', error);
       setAlertVisible(false);
       setIsConfirmDialog(false);
     }
   };
 
   const handleConfirm = () => {
-    console.log('✅ User confirmed action - handleConfirm called');
-    console.log('🔍 confirmAction exists:', !!confirmAction);
+    console.log('User confirmed action - handleConfirm called');
+    console.log('confirmAction exists:', !!confirmAction);
     try {
       hideAlert();
       if (confirmAction) {
-        console.log('🔄 Executing confirm action...');
+        console.log('Executing confirm action...');
         confirmAction();
       } else {
-        console.log('⚠️ No confirmAction found!');
+        console.log('No confirmAction found!');
       }
     } catch (error) {
-      console.log('⚠️ Confirm action error:', error);
+      console.log('Confirm action error:', error);
       hideAlert();
     }
   };
 
   const handleCancel = () => {
-    console.log('❌ User cancelled action - handleCancel called');
+    console.log('User cancelled action - handleCancel called');
     hideAlert();
   };
 
@@ -1008,7 +1008,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
   const hideCreateModal = () => {
     try {
-      console.log('🔄 Closing create modal...');
+      console.log('Closing create modal...');
       setLoading(false); // Always reset loading first
       
       Animated.spring(createAnimation, {
@@ -1022,7 +1022,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           setGroupName('');
           setLoading(false); // Double-check loading state
         } catch (modalError) {
-          console.log('⚠️ Error in modal close callback:', modalError);
+          console.log('Error in modal close callback:', modalError);
           // Force reset states
           setShowCreateModal(false);
           setGroupName('');
@@ -1038,7 +1038,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       }, 1000);
       
     } catch (error) {
-      console.log('⚠️ Error closing create modal:', error);
+      console.log('Error closing create modal:', error);
       // Force reset all states
       setShowCreateModal(false);
       setGroupName('');
@@ -1065,7 +1065,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
   const hideJoinModal = () => {
     try {
-      console.log('🔄 Closing join modal...');
+      console.log('Closing join modal...');
       setLoading(false); // Always reset loading first
       
       Animated.spring(joinAnimation, {
@@ -1079,7 +1079,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           setJoinCode('');
           setLoading(false); // Double-check loading state
         } catch (modalError) {
-          console.log('⚠️ Error in join modal close callback:', modalError);
+          console.log('Error in join modal close callback:', modalError);
           // Force reset states
           setShowJoinModal(false);
           setJoinCode('');
@@ -1095,7 +1095,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       }, 1000);
       
     } catch (error) {
-      console.log('⚠️ Error closing join modal:', error);
+      console.log('Error closing join modal:', error);
       // Force reset all states
       setShowJoinModal(false);
       setJoinCode('');
@@ -1109,7 +1109,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       return;
     }
 
-    console.log('🏗️ Starting group creation process...');
+    console.log('Starting group creation process...');
     setLoading(true);
     
     // Multiple safety timeouts to prevent freezing
@@ -1117,20 +1117,20 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     
     // Main safety timeout - force complete reset after 15 seconds
     const mainTimeout = setTimeout(() => {
-      console.log('🚨 MAIN SAFETY TIMEOUT: Force complete reset after 15 seconds');
+      console.log('MAIN SAFETY TIMEOUT: Force complete reset after 15 seconds');
       resetToInitialState();
-      console.error('❌ Timeout: Group creation is taking too long');
+      console.error('Timeout: Group creation is taking too long');
     }, 15000);
     safetyTimeouts.push(mainTimeout);
     
     // Secondary timeout - warn after 8 seconds
     const warningTimeout = setTimeout(() => {
-      console.log('⚠️ WARNING: Group creation taking longer than expected...');
+      console.log('WARNING: Group creation taking longer than expected...');
     }, 8000);
     safetyTimeouts.push(warningTimeout);
     
     try {
-      console.log('🏗️ Calling createGroupInSupabase...');
+      console.log('Calling createGroupInSupabase...');
       
       // Use Promise.race to ensure operation doesn't hang indefinitely
       const createPromise = createGroupInSupabase(groupName);
@@ -1140,13 +1140,13 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       
       const result = await Promise.race([createPromise, timeoutPromise]);
       
-      console.log('📋 Group creation result:', result);
+      console.log('Group creation result:', result);
       
       // Clear all safety timeouts since operation completed
       safetyTimeouts.forEach(timeout => clearTimeout(timeout));
       
       if (result && result.success) {
-        console.log('✅ Group created successfully, updating UI...');
+        console.log('Group created successfully, updating UI...');
         
         // COMPLETE STATE RESET TO INITIAL CONDITIONS
         resetToInitialState();
@@ -1171,10 +1171,10 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             // Check if group already exists (from realtime)
             const exists = prevGroups.some(g => g.group_id === result.group.id);
             if (exists) {
-              console.log('📌 Group already added via realtime');
+              console.log('Group already added via realtime');
               return prevGroups;
             }
-            console.log('➕ Adding new group to local state');
+            console.log('Adding new group to local state');
             return [...prevGroups, newGroup];
           });
         }
@@ -1189,28 +1189,28 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         // Show success message
         setTimeout(() => {
           try {
-            console.log('🎉 Showing success message...');
+            console.log('Showing success message...');
             showAlert(
               'Group Created', 
               `"${result.group?.name || groupName}" has been created successfully!\n\nJoin Code: ${result.group?.join_code}\n\nShare this code with others to invite them to your group.`,
               'OK'
             );
           } catch (alertError) {
-            console.log('⚠️ Alert display error (non-critical):', alertError);
+            console.log('Alert display error (non-critical):', alertError);
           }
         }, 200); // Small delay to ensure reset is complete
         
       } else {
-        console.log('❌ Group creation failed:', result?.error || 'Unknown error');
+        console.log('Group creation failed:', result?.error || 'Unknown error');
         
         // COMPLETE STATE RESET
         resetToInitialState();
         
-        console.error('❌ Failed to create group:', result?.error);
+        console.error('Failed to create group:', result?.error);
       }
       
     } catch (error) {
-      console.error('❌ Unexpected error during group creation:', error);
+      console.error('Unexpected error during group creation:', error);
       
       // Clear all safety timeouts
       safetyTimeouts.forEach(timeout => clearTimeout(timeout));
@@ -1247,18 +1247,18 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       alertAnimationValue: alertAnimation._value
     };
     
-    console.log('🔍 UI STATE DEBUG:', state);
+    console.log('UI STATE DEBUG:', state);
     
     // Check if any blocking states are active
     const isBlocked = loading || groupsLoading || showCreateModal || showJoinModal || alertVisible;
-    console.log('🚫 UI BLOCKED:', isBlocked);
+    console.log('UI BLOCKED:', isBlocked);
     
     return state;
   };
 
   // COMPLETE STATE RESET - Returns page to initial state
   const resetToInitialState = () => {
-    console.log('🔄 COMPLETE STATE RESET: Returning to initial state');
+    console.log('COMPLETE STATE RESET: Returning to initial state');
     
     try {
       // Reset all loading states
@@ -1301,7 +1301,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       // Reset button cooldown
       setButtonCooldown(false);
       
-      console.log('✅ Complete state reset finished');
+      console.log('Complete state reset finished');
       
       // Verify reset worked
       setTimeout(() => {
@@ -1309,7 +1309,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       }, 100);
       
     } catch (error) {
-      console.log('⚠️ Error during state reset (non-critical):', error);
+      console.log('Error during state reset (non-critical):', error);
       // Force set the most critical states even if others fail
       setLoading(false);
       setGroupsLoading(false);
@@ -1320,7 +1320,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
   // Emergency recovery function for when app gets completely stuck
   const emergencyRecovery = () => {
-    console.log('🚨 EMERGENCY RECOVERY: Complete app state reset');
+    console.log('EMERGENCY RECOVERY: Complete app state reset');
     
     // First try normal reset
     resetToInitialState();
@@ -1328,11 +1328,11 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     // Force reload groups after reset
     setTimeout(() => {
       if (!isGuest) {
-        console.log('🔄 Emergency: Forcing groups reload');
+        console.log('Emergency: Forcing groups reload');
         isLoadingRef.current = false; // Reset ref before starting new load
         setGroupsLoading(true);
         loadUserGroups().catch(error => {
-          console.log('❌ Emergency reload failed:', error);
+          console.log('Emergency reload failed:', error);
           isLoadingRef.current = false;
           setGroupsLoading(false);
           setGroups([]);
@@ -1347,7 +1347,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       return;
     }
 
-    console.log('🚪 Starting join group process with code:', joinCode);
+    console.log('Starting join group process with code:', joinCode);
     setLoading(true);
     
     // Multiple safety timeouts for join process
@@ -1355,7 +1355,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     
     // Main safety timeout - force complete reset after 10 seconds
     const mainTimeout = setTimeout(() => {
-      console.log('🚨 JOIN SAFETY TIMEOUT: Force complete reset after 10 seconds');
+      console.log('JOIN SAFETY TIMEOUT: Force complete reset after 10 seconds');
       resetToInitialState();
       showAlert('Timeout Error', 'Joining group is taking too long. Please try again.', 'OK');
     }, 10000);
@@ -1370,13 +1370,13 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       
       const result = await Promise.race([joinPromise, timeoutPromise]);
       
-      console.log('📋 Join group result:', result);
+      console.log('Join group result:', result);
       
       // Clear safety timeouts
       safetyTimeouts.forEach(timeout => clearTimeout(timeout));
       
       if (result && result.success) {
-        console.log('✅ Successfully joined group:', result.group?.name);
+        console.log('Successfully joined group:', result.group?.name);
         
         // COMPLETE STATE RESET TO INITIAL CONDITIONS
         resetToInitialState();
@@ -1412,12 +1412,12 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
               'OK'
             );
           } catch (alertError) {
-            console.log('⚠️ Success alert error (non-critical):', alertError);
+            console.log('Success alert error (non-critical):', alertError);
           }
         }, 200); // Small delay to ensure reset is complete
         
       } else {
-        console.log('❌ Join group failed:', result?.error);
+        console.log('Join group failed:', result?.error);
         
         // COMPLETE STATE RESET
         resetToInitialState();
@@ -1437,7 +1437,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       }
       
     } catch (error) {
-      console.error('❌ Unexpected error during join:', error);
+      console.error('Unexpected error during join:', error);
       
       // Clear safety timeouts
       safetyTimeouts.forEach(timeout => clearTimeout(timeout));
@@ -1462,7 +1462,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       t('groups.confirmLeave').replace('{{groupName}}', groupName),
       t('groups.leaveGroup'),
       async () => {
-        console.log('🚪 User confirmed leaving group');
+        console.log('User confirmed leaving group');
         setLoading(true);
         
         try {
@@ -1484,12 +1484,12 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
               }
             }, 200);
           } else {
-            console.log('❌ Failed to leave group:', result.error);
+            console.log('Failed to leave group:', result.error);
             showAlert('Error', result.error, 'OK');
           }
           
         } catch (error) {
-          console.error('❌ Unexpected error leaving group:', error);
+          console.error('Unexpected error leaving group:', error);
           resetToInitialState();
           showAlert('Error', 'An unexpected error occurred. Please try again.', 'OK');
         }
@@ -1498,14 +1498,14 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   };
 
   const handleDeleteGroup = async (groupId, groupName) => {
-    console.log('🗑️ Starting delete group process for:', groupName);
+    console.log('Starting delete group process for:', groupName);
     
     showConfirmDialog(
       t('groups.deleteGroup'),
       t('groups.confirmDelete').replace('{{groupName}}', groupName),
       t('groups.deleteForever'),
       async () => {
-        console.log('🗑️ User confirmed deletion, proceeding...');
+        console.log('User confirmed deletion, proceeding...');
         setLoading(true);
         
         // Multiple safety timeouts for delete process
@@ -1513,7 +1513,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         
         // Main safety timeout - force complete reset after 10 seconds
         const mainTimeout = setTimeout(() => {
-          console.log('🚨 DELETE SAFETY TIMEOUT: Force complete reset after 10 seconds');
+          console.log('DELETE SAFETY TIMEOUT: Force complete reset after 10 seconds');
           resetToInitialState();
           showAlert('Timeout Error', 'Deleting group is taking too long. Please try again.', 'OK');
         }, 10000);
@@ -1528,13 +1528,13 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           
           const result = await Promise.race([deletePromise, timeoutPromise]);
           
-          console.log('📋 Delete group result:', result);
+          console.log('Delete group result:', result);
           
           // Clear safety timeouts
           safetyTimeouts.forEach(timeout => clearTimeout(timeout));
           
           if (result && result.success) {
-            console.log('✅ Successfully deleted group:', result.group?.name);
+            console.log('Successfully deleted group:', result.group?.name);
             
             // COMPLETE STATE RESET TO INITIAL CONDITIONS
             resetToInitialState();
@@ -1545,7 +1545,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
             
           } else {
-            console.log('❌ Delete group failed:', result?.error);
+            console.log('Delete group failed:', result?.error);
             
             // COMPLETE STATE RESET
             resetToInitialState();
@@ -1565,7 +1565,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           }
           
         } catch (error) {
-          console.error('❌ Unexpected error during delete:', error);
+          console.error('Unexpected error during delete:', error);
           
           // Clear safety timeouts
           safetyTimeouts.forEach(timeout => clearTimeout(timeout));
@@ -1592,8 +1592,8 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
   // Group Detail Modal Functions
   const openGroupDetailModal = (group) => {
-    console.log('📋 [MODAL DEBUG] Opening group detail for:', group.group_name);
-    console.log('📋 [MODAL DEBUG] Group data:', {
+    console.log('[MODAL DEBUG] Opening group detail for:', group.group_name);
+    console.log('[MODAL DEBUG] Group data:', {
       hasActiveMealRequest: group.hasActiveMealRequest,
       hasActiveDinnerRequest: group.hasActiveDinnerRequest,
       activeMealRequest: group.activeMealRequest,
@@ -1606,19 +1606,19 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       const preloadedMeals = getPreloadedGroupMeals(group.group_id);
       
       if (!preloadedMeals || preloadedMeals.length === 0) {
-        console.log('⚠️ No preloaded meals for group, starting preload...');
+        console.log('No preloaded meals for group, starting preload...');
         // Start preloading in background
         preloadAllMeals([group]).catch(error => {
-          console.error('❌ Error preloading meals:', error);
+          console.error('Error preloading meals:', error);
         });
       }
     }
     
     // Load members data and dinner request status
-    console.log('🔄 Loading members data...');
+    console.log('Loading members data...');
     loadGroupMembers(group.group_id);
     
-    console.log('🔄 Loading dinner request status...');
+    console.log('Loading dinner request status...');
     loadDinnerRequestStatus(group.group_id);
     
     // Clear any termination flags and set the selected group
@@ -1645,7 +1645,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   };
   
   const hideGroupDetailModal = () => {
-    console.log('🔄 Closing group detail modal');
+    console.log('Closing group detail modal');
     
     // Reset the handled reopen ref so future reopens work
     handledReopenRef.current = null;
@@ -1693,7 +1693,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             onGroupModalClosed();
           }
         } catch (modalError) {
-          console.log('⚠️ Error in modal close callback:', modalError);
+          console.log('Error in modal close callback:', modalError);
           // Force reset states
           setShowGroupDetailModal(false);
           setSelectedGroup(null);
@@ -1718,7 +1718,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       }, 800);
       
     } catch (error) {
-      console.log('⚠️ Error closing group detail modal:', error);
+      console.log('Error closing group detail modal:', error);
       // Force complete reset
       setShowGroupDetailModal(false);
       setSelectedGroup(null);
@@ -1738,34 +1738,34 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     const targetGroupId = groupId || selectedGroup?.group_id;
     const targetGroupName = groupId ? 'preload target' : selectedGroup?.group_name;
     
-    console.log('🚨 LOAD MEMBERS UI FUNCTION CALLED!');
-    console.log('🚨 Target group:', targetGroupName, 'ID:', targetGroupId);
+    console.log('LOAD MEMBERS UI FUNCTION CALLED!');
+    console.log('Target group:', targetGroupName, 'ID:', targetGroupId);
     
     if (!targetGroupId) return;
     
     try {
-      console.log('🔄 Loading members for group:', targetGroupName, 'ID:', targetGroupId);
+      console.log('Loading members for group:', targetGroupName, 'ID:', targetGroupId);
       setMembersLoading(true);
       setMembersError(null);
       
       const result = await getGroupMembers(targetGroupId);
       
       if (result.success) {
-        console.log(`✅ Loaded ${result.members.length} members for group ${targetGroupName}`);
-        console.log('👥 Members data:', result.members);
+        console.log(`Loaded ${result.members.length} members for group ${targetGroupName}`);
+        console.log('Members data:', result.members);
         setMembers(result.members);
         
         // Display helpful message if there are RLS issues
         if (result.message) {
-          console.log('ℹ️ Service message:', result.message);
+          console.log('ℹService message:', result.message);
           setMembersError(result.message); // Use the error field to display the helpful message
         }
       } else {
-        console.log('❌ Failed to load members:', result.error);
+        console.log('Failed to load members:', result.error);
         setMembersError(result.error || 'Failed to load members');
       }
     } catch (error) {
-      console.error('❌ Error loading members:', error);
+      console.error('Error loading members:', error);
       setMembersError('Failed to load members');
     } finally {
       setMembersLoading(false);
@@ -1776,22 +1776,22 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     const targetGroupId = groupId || selectedGroup?.group_id;
     if (!targetGroupId) return;
 
-    console.log('🍽️ Loading dinner request status for group:', targetGroupId);
+    console.log('Loading dinner request status for group:', targetGroupId);
     
     try {
       const result = await getGroupMemberResponses(targetGroupId);
       
       if (result.success) {
-        console.log('✅ Loaded dinner request status:', result);
+        console.log('Loaded dinner request status:', result);
         setDinnerRequestStatus(result.hasActiveRequest ? result : null);
         setMemberResponses(result.memberResponses || []);
       } else {
-        console.error('❌ Failed to load dinner request status:', result.error);
+        console.error('Failed to load dinner request status:', result.error);
         setDinnerRequestStatus(null);
         setMemberResponses([]);
       }
     } catch (error) {
-      console.error('❌ Error loading dinner request status:', error);
+      console.error('Error loading dinner request status:', error);
       setDinnerRequestStatus(null);
       setMemberResponses([]);
     }
@@ -1819,9 +1819,9 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     const userResponse = selectedGroup?.dinnerRequestResponses?.find(r => r.userId === currentUserId);
     const accepted = userResponse?.response === 'accepted';
     
-    console.log('📋 [USER RESPONSE CHECK] Current user:', currentUserId);
-    console.log('📋 [USER RESPONSE CHECK] User response:', userResponse?.response);
-    console.log('📋 [USER RESPONSE CHECK] Accepted:', accepted);
+    console.log('[USER RESPONSE CHECK] Current user:', currentUserId);
+    console.log('[USER RESPONSE CHECK] User response:', userResponse?.response);
+    console.log('[USER RESPONSE CHECK] Accepted:', accepted);
     
     return accepted;
   };
@@ -1835,9 +1835,9 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     const userResponse = selectedGroup?.dinnerRequestResponses?.find(r => r.userId === currentUserId);
     const declined = userResponse?.response === 'declined';
     
-    console.log('📋 [USER DECLINE CHECK] Current user:', currentUserId);
-    console.log('📋 [USER DECLINE CHECK] User response:', userResponse?.response);
-    console.log('📋 [USER DECLINE CHECK] Declined:', declined);
+    console.log('[USER DECLINE CHECK] Current user:', currentUserId);
+    console.log('[USER DECLINE CHECK] User response:', userResponse?.response);
+    console.log('[USER DECLINE CHECK] Declined:', declined);
     
     return declined;
   };
@@ -1887,7 +1887,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         hideAlert();
       }, 1500);
     } catch (error) {
-      console.error('❌ Error copying to clipboard:', error);
+      console.error('Error copying to clipboard:', error);
       showAlert(
         'Copy Failed',
         'Could not copy join code to clipboard',
@@ -1898,19 +1898,19 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
   const handleDinnerRequestResponse = async (accepted) => {
     if (!dinnerRequestStatus?.hasActiveRequest) {
-      console.error('❌ No active dinner request to respond to');
+      console.error('No active dinner request to respond to');
       return;
     }
 
     const requestId = dinnerRequestStatus.activeRequest.id;
     const response = accepted ? 'accepted' : 'declined';
-    console.log(`📝 User ${response} the dinner request:`, requestId);
+    console.log(`User ${response} the dinner request:`, requestId);
 
     try {
       const result = await recordUserResponse(requestId, response);
       
       if (result.success) {
-        console.log('✅ Request response saved successfully');
+        console.log('Request response saved successfully');
         
         let alertMessage = result.message;
         
@@ -1926,7 +1926,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         }
         
         // Non-blocking feedback
-        console.log('✅ Response sent:', alertMessage);
+        console.log('Response sent:', alertMessage);
         
         // Refresh the dinner request status and group data
         await loadDinnerRequestStatus();
@@ -1959,7 +1959,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         // IMMEDIATE UI UPDATE: Update response status for both accepted and declined
         if (selectedGroup) {
           const responseType = accepted ? 'accepted' : 'declined';
-          console.log(`✅ [GROUP PAGE] User ${responseType} - updating UI immediately`);
+          console.log(`[GROUP PAGE] User ${responseType} - updating UI immediately`);
           
           // Update current user's response in the dinnerRequestResponses
           const updatedResponses = selectedGroup?.dinnerRequestResponses ? [...selectedGroup.dinnerRequestResponses] : [];
@@ -1993,13 +1993,13 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             setSelectedGroup(prev => {
               // Don't update if prev is null or session has been terminated
               if (!prev || prev._terminatedSession) {
-                console.log('🚫 Skipping selectedGroup update - null or session terminated');
+                console.log('Skipping selectedGroup update - null or session terminated');
                 return prev;
               }
               
               const updatedGroupData = groups.find(g => g.group_id === prev.group_id);
               if (updatedGroupData) {
-                console.log('🔄 Updating selectedGroup with fresh response data');
+                console.log('Updating selectedGroup with fresh response data');
                 return {
                   ...updatedGroupData,
                   // Preserve any existing meal request data and user response updates
@@ -2014,11 +2014,11 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         }
         
       } else {
-        console.error('❌ Failed to save response:', result.error);
+        console.error('Failed to save response:', result.error);
         showAlert('Error', result.error, 'OK');
       }
     } catch (error) {
-      console.error('❌ Unexpected error:', error);
+      console.error('Unexpected error:', error);
       showAlert('Error', 'An unexpected error occurred while saving your response.', 'OK');
     }
   };
@@ -2038,7 +2038,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       const userResponse = memberResponses.find(r => r.userId === user.id);
       return userResponse ? userResponse.response : 'pending';
     } catch (error) {
-      console.error('❌ Error getting current user response status:', error);
+      console.error('Error getting current user response status:', error);
       return null;
     }
   };
@@ -2047,7 +2047,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   const handleRequestMeal = async () => {
     if (!selectedGroup) return;
     
-    console.log('🍽️ Starting meal request for group:', selectedGroup.group_name);
+    console.log('Starting meal request for group:', selectedGroup.group_name);
     
     // Check if we have preloaded meals first
     const { getPreloadedGroupMeals } = require('../lib/mealPreloadService');
@@ -2070,8 +2070,8 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       const result = await Promise.race([createPromise, requestTimeoutPromise]);
       
       if (result.success) {
-        console.log('✅ Meal request created successfully');
-        console.log('📋 [MEAL CREATE] Result:', result);
+        console.log('Meal request created successfully');
+        console.log('[MEAL CREATE] Result:', result);
         
         // Update selected group state immediately to show voting buttons
         const updatedGroup = {
@@ -2086,7 +2086,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           }
         };
         
-        console.log('📋 [MEAL CREATE] Updating selectedGroup to:', updatedGroup);
+        console.log('[MEAL CREATE] Updating selectedGroup to:', updatedGroup);
         
         // Update state to show voting buttons instantly
         setSelectedGroup(updatedGroup);
@@ -2095,10 +2095,10 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         loadUserGroups();
         
         // Non-blocking: session created successfully, UI already updated
-        console.log('✅ Meal session created successfully');
+        console.log('Meal session created successfully');
         
       } else {
-        console.log('❌ Meal request failed:', result.error);
+        console.log('Meal request failed:', result.error);
         
         // Handle existing request found case with simple alert and immediate replacement
         if (result.error === 'EXISTING_REQUEST_FOUND' && result.existingRequest) {
@@ -2106,7 +2106,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           const mealCount = existingReq.mealOptions?.length || existingReq.totalOptions || 0;
           
           // Simple confirmation without complex modal states
-          console.log('🔄 Active request found, asking user for replacement');
+          console.log('Active request found, asking user for replacement');
           
       // Non-blocking confirmation
       showConfirmDialog(
@@ -2117,7 +2117,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                 text: t('common.cancel'),
                 style: 'cancel',
                 onPress: () => {
-                  console.log('❌ User cancelled meal request replacement');
+                  console.log('User cancelled meal request replacement');
                   setMealRequestLoading(false);
                 }
               },
@@ -2125,7 +2125,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                 text: 'Replace Request',
                 style: 'destructive',
                 onPress: () => {
-                  console.log('✅ User confirmed meal request replacement');
+                  console.log('User confirmed meal request replacement');
                   handleReplaceMealRequest(existingReq.id);
                 }
               }
@@ -2163,7 +2163,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       }
       
     } catch (error) {
-      console.error('❌ Unexpected error creating meal request:', error);
+      console.error('Unexpected error creating meal request:', error);
       
       let errorMessage = 'An unexpected error occurred. Please try again.';
       if (error.message === 'Meal request creation timeout after 20 seconds') {
@@ -2171,7 +2171,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       }
       
       // Non-blocking: just log the error
-      console.error('❌ Meal request error:', errorMessage);
+      console.error('Meal request error:', errorMessage);
     } finally {
       setMealRequestLoading(false);
     }
@@ -2181,7 +2181,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   const handleReplaceMealRequest = async (existingRequestId) => {
     if (!selectedGroup) return;
     
-    console.log('🔄 Replacing meal request for group:', selectedGroup.group_name);
+    console.log('Replacing meal request for group:', selectedGroup.group_name);
     setMealRequestLoading(true);
     
     // Add timeout protection to prevent freezing
@@ -2196,7 +2196,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       const result = await Promise.race([replacePromise, timeoutPromise]);
       
       if (result.success) {
-        console.log('✅ Meal request replaced successfully');
+        console.log('Meal request replaced successfully');
         
         // Update selected group state immediately to show voting buttons
         const updatedGroup = {
@@ -2217,16 +2217,16 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         loadUserGroups();
         
         // Non-blocking: request replaced successfully
-        console.log('✅ Request replaced:', result.message);
+        console.log('Request replaced:', result.message);
         
       } else {
-        console.log('❌ Meal request replacement failed:', result.error);
+        console.log('Meal request replacement failed:', result.error);
         // Non-blocking: log the error
-        console.error('❌ Replacement failed:', result.error);
+        console.error('Replacement failed:', result.error);
       }
       
     } catch (error) {
-      console.error('❌ Unexpected error replacing meal request:', error);
+      console.error('Unexpected error replacing meal request:', error);
       
       let errorMessage = 'An unexpected error occurred while replacing the request.';
       if (error.message === 'Request replacement timeout after 15 seconds') {
@@ -2234,7 +2234,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       }
       
       // Non-blocking: log the error
-      console.error('❌ Error:', errorMessage);
+      console.error('Error:', errorMessage);
     } finally {
       setMealRequestLoading(false);
     }
@@ -2244,7 +2244,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   const handleDebugActiveRequests = async () => {
     if (!selectedGroup) return;
     
-    console.log('🔍 Debugging active requests for group:', selectedGroup.group_name);
+    console.log('Debugging active requests for group:', selectedGroup.group_name);
     
     try {
       const result = await debugGetActiveRequests(selectedGroup.group_id);
@@ -2267,7 +2267,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         );
       }
     } catch (error) {
-      console.error('❌ Error debugging active requests:', error);
+      console.error('Error debugging active requests:', error);
       showAlert(
         'Debug Error',
         'Unable to check active requests. Please try again.',
@@ -2279,14 +2279,14 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
   const handleClearActiveRequests = async () => {
     if (!selectedGroup) return;
     
-    console.log('🛑 Clearing active requests for group:', selectedGroup.group_name);
+    console.log('Clearing active requests for group:', selectedGroup.group_name);
     setMealRequestLoading(true);
     
     try {
       const result = await debugCompleteAllActiveRequests(selectedGroup.group_id);
       
       if (result.success) {
-        console.log('✅ Cleared active requests successfully');
+        console.log('Cleared active requests successfully');
         
         // Refresh groups to update status
         loadUserGroups();
@@ -2310,7 +2310,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         );
       }
     } catch (error) {
-      console.error('❌ Error clearing active requests:', error);
+      console.error('Error clearing active requests:', error);
       showAlert(
         'Clear Error',
         'An unexpected error occurred while clearing requests.',
@@ -2323,8 +2323,8 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
   // Terminate Session Function
   const handleTerminateSession = async () => {
-    console.log('🛑 [TERMINATE] Starting terminate session...');
-    console.log('🔍 [TERMINATE] Selected group state:', {
+    console.log('[TERMINATE] Starting terminate session...');
+    console.log('[TERMINATE] Selected group state:', {
       groupId: selectedGroup?.group_id,
       groupName: selectedGroup?.group_name,
       hasActiveMealRequest: selectedGroup?.hasActiveMealRequest,
@@ -2339,16 +2339,16 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     const hasDinnerRequest = selectedGroup?.hasActiveDinnerRequest || selectedGroup?.activeDinnerRequest;
     
     if (!selectedGroup) {
-      console.log('❌ [TERMINATE] No selected group');
-      console.error('❌ Cannot Terminate: No group selected.');
+      console.log('[TERMINATE] No selected group');
+      console.error('Cannot Terminate: No group selected.');
       return;
     }
     
     if (!hasMealRequest && !hasDinnerRequest) {
-      console.log('❌ [TERMINATE] No active request found');
-      console.log('❌ [TERMINATE] hasMealRequest:', hasMealRequest);
-      console.log('❌ [TERMINATE] hasDinnerRequest:', hasDinnerRequest);
-      console.error('❌ Cannot Terminate: No active voting session found to terminate.');
+      console.log('[TERMINATE] No active request found');
+      console.log('[TERMINATE] hasMealRequest:', hasMealRequest);
+      console.log('[TERMINATE] hasDinnerRequest:', hasDinnerRequest);
+      console.error('Cannot Terminate: No active voting session found to terminate.');
       return;
     }
     
@@ -2357,20 +2357,20 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
     // If we have a meal request object with ID, use its ID
     if (selectedGroup?.activeMealRequest?.request_id || selectedGroup?.activeMealRequest?.id) {
       requestId = selectedGroup.activeMealRequest.request_id || selectedGroup.activeMealRequest.id;
-      console.log('🛑 [TERMINATE] Found meal request to terminate with ID:', requestId);
+      console.log('[TERMINATE] Found meal request to terminate with ID:', requestId);
     }
     // If we only have the boolean flag but no object, or only have a dinner request
     else if (hasDinnerRequest || (hasMealRequest && !requestId)) {
-      console.log('🍽️ [TERMINATE] Only dinner request found or need to create meal request first...');
+      console.log('[TERMINATE] Only dinner request found or need to create meal request first...');
       
       try {
         // Create meal request from dinner request
         const dinnerRequestId = selectedGroup.activeDinnerRequest?.id;
-        console.log('🔍 [TERMINATE] Dinner request ID:', dinnerRequestId);
+        console.log('[TERMINATE] Dinner request ID:', dinnerRequestId);
         
         if (!dinnerRequestId) {
-          console.error('❌ [TERMINATE] No dinner request ID found');
-          console.log('❌ [TERMINATE] activeDinnerRequest:', selectedGroup.activeDinnerRequest);
+          console.error('[TERMINATE] No dinner request ID found');
+          console.log('[TERMINATE] activeDinnerRequest:', selectedGroup.activeDinnerRequest);
           showAlert(
             t('errors.generic'),
             'Could not find dinner request details. Please try refreshing the page.',
@@ -2382,7 +2382,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         const mealResult = await createMealFromRequest(dinnerRequestId);
         if (mealResult.success && mealResult.mealRequest) {
           requestId = mealResult.mealRequest.id;
-          console.log('✅ Created meal request with ID:', requestId);
+          console.log('Created meal request with ID:', requestId);
           
           // Update the selected group with the new meal request
           setSelectedGroup(prev => {
@@ -2394,19 +2394,19 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             };
           });
         } else {
-          console.error('❌ Failed to create meal request:', mealResult.error);
-          console.error('❌ Cannot terminate: Unable to create meal request from dinner request.');
+          console.error('Failed to create meal request:', mealResult.error);
+          console.error('Cannot terminate: Unable to create meal request from dinner request.');
           return;
         }
       } catch (error) {
-        console.error('❌ Error creating meal request:', error);
+        console.error('Error creating meal request:', error);
         return;
       }
     }
     
     if (!requestId) {
-      console.error('❌ [TERMINATE] No request ID found after all attempts');
-      console.error('❌ Cannot Terminate: Unable to find or create request ID.');
+      console.error('[TERMINATE] No request ID found after all attempts');
+      console.error('Cannot Terminate: Unable to find or create request ID.');
       // Show user-visible error
       showAlert(
         t('errors.generic'),
@@ -2416,7 +2416,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       return;
     }
     
-    console.log('🔍 [TERMINATE] About to show confirmation dialog for request ID:', requestId);
+    console.log('[TERMINATE] About to show confirmation dialog for request ID:', requestId);
     
     // Show the confirmation dialog (preserve group modal so user sees it)
     showConfirmDialog(
@@ -2424,24 +2424,24 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       t('voting.terminate.body'),
       t('voting.terminate.confirm'),
       async () => {
-        console.log('🛑 User confirmed termination for request ID:', requestId);
+        console.log('User confirmed termination for request ID:', requestId);
         setMealRequestLoading(true);
         
         try {
           // STEP 1: Get top 3 voted meals before terminating the session
-          console.log('🏆 Getting top 3 results before termination...');
+          console.log('Getting top 3 results before termination...');
           const topResultsResponse = await getTopVotedMeals(requestId);
           
           let topResults = null;
           if (topResultsResponse.success && topResultsResponse.topMeals && topResultsResponse.topMeals.length > 0) {
             topResults = topResultsResponse.topMeals.slice(0, 3); // Ensure we only get top 3
-            console.log('✅ Successfully retrieved top 3 results:', topResults);
+            console.log('Successfully retrieved top 3 results:', topResults);
           } else {
-            console.warn('⚠️ Could not get top results:', topResultsResponse.error);
-            console.warn('⚠️ Response structure:', topResultsResponse);
+            console.warn('Could not get top results:', topResultsResponse.error);
+            console.warn('Response structure:', topResultsResponse);
             
             // Try alternative approach - get voting results directly
-            console.log('🔄 Attempting to get voting results as fallback...');
+            console.log('Attempting to get voting results as fallback...');
             const { getVotingResults } = require('../lib/mealRequestService');
             const votingResultsResponse = await getVotingResults(requestId);
             
@@ -2461,9 +2461,9 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                 .slice(0, 3);
               
               topResults = sortedResults;
-              console.log('✅ Retrieved top 3 results from voting results fallback:', topResults);
+              console.log('Retrieved top 3 results from voting results fallback:', topResults);
             } else {
-              console.warn('⚠️ Could not get voting results either:', votingResultsResponse.error);
+              console.warn('Could not get voting results either:', votingResultsResponse.error);
             }
           }
           
@@ -2471,7 +2471,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           const finalMemberResponses = selectedGroup.dinnerRequestResponses || [];
           
           // STEP 2: Save terminated session to permanent storage
-          console.log('💾 Saving terminated session to database...');
+          console.log('Saving terminated session to database...');
           const saveResult = await terminatedSessionsService.saveTerminatedSession(
             selectedGroup.group_id,
             selectedGroup.group_name,
@@ -2480,29 +2480,29 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           );
           
           if (!saveResult.success) {
-            console.error('❌ Failed to save terminated session:', saveResult.error);
-            console.error('❌ Save Error: Failed to save session results. Please try again.');
+            console.error('Failed to save terminated session:', saveResult.error);
+            console.error('Save Error: Failed to save session results. Please try again.');
             setMealRequestLoading(false);
             return;
           }
           
           // STEP 3: Clean up all active session data
-          console.log('🧹 Cleaning up all active session data...');
+          console.log('Cleaning up all active session data...');
           const cleanupResult = await terminatedSessionsService.cleanupActiveSession(selectedGroup.group_id);
           
           if (!cleanupResult.success && !cleanupResult.partialSuccess) {
-            console.warn('⚠️ Failed to cleanup active session:', cleanupResult.error);
+            console.warn('Failed to cleanup active session:', cleanupResult.error);
             // Continue anyway - the session is still saved and terminated
           } else if (cleanupResult.partialSuccess) {
-            console.warn('⚠️ Partial cleanup success:', cleanupResult.error);
+            console.warn('Partial cleanup success:', cleanupResult.error);
             // Continue anyway - most cleanup was successful
           }
           
-          console.log('✅ Session terminated and saved successfully');
+          console.log('Session terminated and saved successfully');
           
           // STEP 4: COMPLETELY CLEAR all request information from local state
           if (selectedGroup) {
-            console.log('🧹 Completely clearing all request information from selectedGroup');
+            console.log('Completely clearing all request information from selectedGroup');
             setSelectedGroup(prev => {
               if (!prev) return prev;
               return {
@@ -2524,11 +2524,11 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
           }
           
           // STEP 5: COMPLETELY CLEAR all request information from groups list
-          console.log('🧹 Completely clearing all request information from groups list...');
+          console.log('Completely clearing all request information from groups list...');
           setGroups(prevGroups => {
             const updatedGroups = prevGroups.map(group => {
               if (group.group_id === selectedGroup.group_id) {
-                console.log('🧹 Completely clearing request info from group:', group.group_name);
+                console.log('Completely clearing request info from group:', group.group_name);
                 return {
                   ...group,
                   hasActiveDinnerRequest: false,
@@ -2544,12 +2544,12 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
               }
               return group;
             });
-            console.log('✅ Completely cleared all request information from groups');
+            console.log('Completely cleared all request information from groups');
             return updatedGroups;
           });
           
           // STEP 6: Update local terminated sessions state for immediate display
-          console.log('📊 Updating local terminated sessions state for immediate display');
+          console.log('Updating local terminated sessions state for immediate display');
           setTerminatedSessionResults(prev => {
             const newMap = new Map(prev);
             newMap.set(selectedGroup.group_id, {
@@ -2559,15 +2559,15 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
               memberResponses: finalMemberResponses,
               terminatedAt: new Date().toISOString()
             });
-            console.log('📊 Local terminated sessions updated:', newMap);
+            console.log('Local terminated sessions updated:', newMap);
             return newMap;
           });
           
           // STEP 7: Wait longer before server refresh to ensure database updates complete
           // The terminated sessions should persist because they're now in the database
           setTimeout(() => {
-            console.log('🔄 Performing delayed server refresh after termination...');
-            console.log('📊 Current terminated sessions before refresh:', terminatedSessionResults.size);
+            console.log('Performing delayed server refresh after termination...');
+            console.log('Current terminated sessions before refresh:', terminatedSessionResults.size);
             loadUserGroups();
           }, 3000); // Increased delay to allow database updates to complete
           
@@ -2578,12 +2578,12 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             : 'Voting session terminated. No votes were recorded.';
             
           // Use console.log instead of showAlert to avoid closing the modal
-          console.log('✅ Session Terminated:', successMessage);
+          console.log('Session Terminated:', successMessage);
           
         } catch (error) {
-          console.error('❌ Error terminating session:', error);
+          console.error('Error terminating session:', error);
           // Don't show alert to avoid closing modal
-          console.error('❌ Termination Error: An unexpected error occurred while terminating the session.');
+          console.error('Termination Error: An unexpected error occurred while terminating the session.');
         } finally {
           setMealRequestLoading(false);
         }
@@ -2608,7 +2608,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
     const handleVisibilityChange = () => {
       isDocumentVisible.current = !document.hidden;
-      console.log('👁️ Document visibility changed:', isDocumentVisible.current ? 'visible' : 'hidden');
+      console.log('Document visibility changed:', isDocumentVisible.current ? 'visible' : 'hidden');
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -2625,7 +2625,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
       return;
     }
 
-    console.log('🚀 Setting up Supabase Realtime subscriptions...');
+    console.log('Setting up Supabase Realtime subscriptions...');
 
     // Clean up any existing channels first
     realtimeChannelsRef.current.forEach(channel => {
@@ -2651,25 +2651,25 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             filter: `user_id=eq.${userId}`
           },
           async (payload) => {
-            console.log('🔔 Group members change detected:', payload);
+            console.log('Group members change detected:', payload);
             
             if (payload.eventType === 'INSERT') {
-              console.log('🎉 New group member record detected!', payload);
-              console.log('📋 New group ID:', payload.new?.group_id);
-              console.log('📋 User ID:', payload.new?.user_id);
+              console.log('New group member record detected!', payload);
+              console.log('New group ID:', payload.new?.group_id);
+              console.log('User ID:', payload.new?.user_id);
               
               // Check if this group already exists in local state
               const groupExists = groups.some(g => g.group_id === payload.new?.group_id);
               
               if (!groupExists) {
-                console.log('🆕 New group detected, loading full group data...');
+                console.log('New group detected, loading full group data...');
                 // Load the new group data
                 await loadUserGroups();
               } else {
-                console.log('📌 Group already exists in local state');
+                console.log('Group already exists in local state');
               }
             } else if (payload.eventType === 'DELETE') {
-              console.log('👋 You were removed from a group');
+              console.log('You were removed from a group');
               // Remove the group from local state
               setGroups(prevGroups => 
                 prevGroups.filter(g => g.group_id !== payload.old.group_id)
@@ -2679,7 +2679,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                 hideGroupDetailModal();
               }
             } else if (payload.eventType === 'UPDATE') {
-              console.log('🔄 Group member status updated');
+              console.log('Group member status updated');
               // Reload the specific group
               await loadUserGroups();
             }
@@ -2703,7 +2703,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             const isUserGroup = groups.some(g => g.group_id === affectedGroupId);
             
             if (isUserGroup && payload.new?.user_id !== userId) {
-              console.log('👥 Member change in your group:', affectedGroupId);
+              console.log('Member change in your group:', affectedGroupId);
               
               // Update member count locally
               setGroups(prevGroups => 
@@ -2740,13 +2740,13 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             table: 'dinner_requests'
           },
           async (payload) => {
-            console.log('🍽️ New dinner request detected:', payload);
+            console.log('New dinner request detected:', payload);
             
             // Check if this is for a group the user is in
             const isUserGroup = groups.some(g => g.group_id === payload.new.group_id);
             
             if (isUserGroup) {
-              console.log('🍽️ New dinner request in your group!');
+              console.log('New dinner request in your group!');
               
               // Reload groups to get the dinner request
               await loadUserGroups();
@@ -2775,7 +2775,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             table: 'dinner_request_responses'
           },
           async (payload) => {
-            console.log('📝 Dinner response change:', payload);
+            console.log('Dinner response change:', payload);
             
             // Get the group ID from the dinner request
             const dinnerRequestId = payload.new?.request_id || payload.old?.request_id;
@@ -2802,7 +2802,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             table: 'meal_requests'
           },
           async (payload) => {
-            console.log('🍔 Meal request change:', payload);
+            console.log('Meal request change:', payload);
             
             // Check if this is for a group the user is in
             const isUserGroup = groups.some(g => g.group_id === payload.new?.group_id || g.group_id === payload.old?.group_id);
@@ -2826,7 +2826,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
             table: 'groups'
           },
           async (payload) => {
-            console.log('🏢 New group created:', payload);
+            console.log('New group created:', payload);
             
             // Check if user is a member of this new group
             const { data: memberCheck } = await supabase
@@ -2838,7 +2838,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
               .single();
             
             if (memberCheck) {
-              console.log('✅ User is member of new group, adding to list');
+              console.log('User is member of new group, adding to list');
               
               // Check if group already exists locally (to avoid duplicates)
               const groupExists = groups.some(g => g.group_id === payload.new.id);
@@ -2862,12 +2862,12 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
         groupsChannel
       ];
 
-      console.log('✅ Realtime subscriptions active');
+      console.log('Realtime subscriptions active');
     });
 
     // Cleanup on unmount
     return () => {
-      console.log('🧹 Cleaning up Realtime subscriptions');
+      console.log('Cleaning up Realtime subscriptions');
       realtimeChannelsRef.current.forEach(channel => {
         supabase.removeChannel(channel);
       });
@@ -3051,7 +3051,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                       }}
                     >
                       <Text style={[styles.starIcon, group.group_id === favoriteGroupId && styles.starIconActive]}>
-                        ★
+                        
                       </Text>
                     </TouchableOpacity>
                     <View style={[
@@ -3340,8 +3340,8 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                   <TouchableOpacity 
                     style={styles.headerRequestMealButton}
                     onPress={() => {
-                      console.log('📍 Request Meal button pressed for group:', selectedGroup?.group_name);
-                      console.log('📍 Navigating to MainProfileScreen with pre-selected group');
+                      console.log('Request Meal button pressed for group:', selectedGroup?.group_name);
+                      console.log('Navigating to MainProfileScreen with pre-selected group');
                       
                       // Close the modal
                       hideGroupDetailModal();
@@ -3356,7 +3356,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                           }
                         });
                       } else {
-                        console.log('💡 Navigation not available, please navigate to Profile tab manually');
+                        console.log('Navigation not available, please navigate to Profile tab manually');
                       }
                     }}
                   >
@@ -3389,7 +3389,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                         dinnerRequestData={selectedGroup.activeDinnerRequest}
                         groupName={selectedGroup.group_name}
                         onLocalAccept={() => {
-                          console.log('🚀 [INSTANT] User clicked YES - showing voting buttons immediately');
+                          console.log('[INSTANT] User clicked YES - showing voting buttons immediately');
                           setUserLocallyAcceptedRequest(true);
                         }}
                       />
@@ -3399,7 +3399,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
 
                   {/* Action Buttons - Show based on dinner request response */}
                   {selectedGroup && (() => {
-                    console.log('📋 [RENDER DEBUG] Checking voting buttons for:', selectedGroup?.group_name);
+                    console.log('[RENDER DEBUG] Checking voting buttons for:', selectedGroup?.group_name);
                     
                     // Check user's response status
                     const userLocallyAccepted = userLocallyAcceptedRequest;
@@ -3415,11 +3415,11 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                     const shouldShowTerminateOnly = userDeclinedRequest && hasActiveDinnerRequest;
                     const shouldShowAnyButtons = shouldShowVotingButtons || shouldShowTerminateOnly;
                     
-                    console.log('📋 [RENDER DEBUG] userAcceptedRequest:', userAcceptedRequest);
-                    console.log('📋 [RENDER DEBUG] userDeclinedRequest:', userDeclinedRequest);
-                    console.log('📋 [RENDER DEBUG] hasActiveDinnerRequest:', hasActiveDinnerRequest);
-                    console.log('📋 [RENDER DEBUG] shouldShowVotingButtons:', shouldShowVotingButtons);
-                    console.log('📋 [RENDER DEBUG] shouldShowTerminateOnly:', shouldShowTerminateOnly);
+                    console.log('[RENDER DEBUG] userAcceptedRequest:', userAcceptedRequest);
+                    console.log('[RENDER DEBUG] userDeclinedRequest:', userDeclinedRequest);
+                    console.log('[RENDER DEBUG] hasActiveDinnerRequest:', hasActiveDinnerRequest);
+                    console.log('[RENDER DEBUG] shouldShowVotingButtons:', shouldShowVotingButtons);
+                    console.log('[RENDER DEBUG] shouldShowTerminateOnly:', shouldShowTerminateOnly);
                     
                     return { shouldShowAnyButtons, shouldShowVotingButtons, shouldShowTerminateOnly };
                   })().shouldShowAnyButtons && (
@@ -3439,18 +3439,18 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                           style={styles.voteButtonNew}
                           onPress={() => {
                           const requestId = selectedGroup?.activeMealRequest?.request_id || selectedGroup?.activeMealRequest?.id;
-                          console.log('🗳️ Navigating to voting screen for request:', requestId);
-                          console.log('🔍 Full activeMealRequest:', selectedGroup?.activeMealRequest);
+                          console.log('Navigating to voting screen for request:', requestId);
+                          console.log('Full activeMealRequest:', selectedGroup?.activeMealRequest);
                           
                           if (!requestId) {
-                            console.error('❌ No request ID found in activeMealRequest');
+                            console.error('No request ID found in activeMealRequest');
                             showAlert('Error', 'Cannot start voting: No active meal request found.', 'OK');
                             return;
                           }
                           
                           // If we have preloaded meals, transition instantly
                           if (selectedGroup?.activeMealRequest?.preloadedForVoting) {
-                            console.log('✨ Using preloaded meals for instant voting transition');
+                            console.log('Using preloaded meals for instant voting transition');
                             hideGroupDetailModal();
                             navigation.navigate('VotingScreen', {
                               requestId: requestId,
@@ -3461,7 +3461,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                             });
                           } else {
                             // Show loading state and fetch meals if not preloaded
-                            console.log('⚠️ No preloaded meals, fetching before transition...');
+                            console.log('No preloaded meals, fetching before transition...');
                             setMealRequestLoading(true);
                             
                             // Get meals and then transition
@@ -3504,7 +3504,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                           const requestId = selectedGroup?.activeMealRequest?.request_id || selectedGroup?.activeMealRequest?.id;
                           
                           if (!requestId) {
-                            console.error('❌ No request ID found for results');
+                            console.error('No request ID found for results');
                             showAlert('Error', 'Cannot show results: No active meal request found.', 'OK');
                             return;
                           }
@@ -3540,8 +3540,8 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                       <TouchableOpacity 
                         style={styles.terminateButtonNew}
                         onPress={() => {
-                          console.log('🔘 Terminate button pressed');
-                          console.log('🔍 Current state:', { alertVisible, isConfirmDialog, showGroupDetailModal });
+                          console.log('Terminate button pressed');
+                          console.log('Current state:', { alertVisible, isConfirmDialog, showGroupDetailModal });
                           withCooldown(() => handleTerminateSession());
                         }}
                       >
@@ -3618,9 +3618,9 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                     {/* Terminated Session Results - Show Top 3 Meals + Member Responses */}
                     {selectedGroup && (() => {
                       const groupResults = terminatedSessionResults.get(selectedGroup?.group_id);
-                      console.log('🔍 [RESULTS DEBUG] Group ID:', selectedGroup?.group_id);
-                      console.log('🔍 [RESULTS DEBUG] Terminated results map:', terminatedSessionResults);
-                      console.log('🔍 [RESULTS DEBUG] Group results:', groupResults);
+                      console.log('[RESULTS DEBUG] Group ID:', selectedGroup?.group_id);
+                      console.log('[RESULTS DEBUG] Terminated results map:', terminatedSessionResults);
+                      console.log('[RESULTS DEBUG] Group results:', groupResults);
                       
                       return groupResults && (
                         <View style={styles.terminatedResultsSection}>
@@ -3666,7 +3666,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                               <Text style={styles.topMealsTitle}>{t('meals.topVotedMeals').replace('{{count}}', groupResults.results.length)}</Text>
                               
                               {groupResults.results.map((meal, index) => {
-                                console.log(`🔍 [RESULTS DEBUG] Meal ${index + 1}:`, meal);
+                                console.log(`[RESULTS DEBUG] Meal ${index + 1}:`, meal);
                                 return (
                                   <View key={index} style={styles.resultMealItem}>
                                     <View style={styles.resultMealRank}>
@@ -3695,8 +3695,8 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                           <TouchableOpacity 
                             style={styles.clearResultsButton}
                             onPress={async () => {
-                              console.log('🧹 Clearing all results for group:', selectedGroup?.group_name);
-                              console.log('🧹 Current terminated sessions before clear:', terminatedSessionResults.size);
+                              console.log('Clearing all results for group:', selectedGroup?.group_name);
+                              console.log('Current terminated sessions before clear:', terminatedSessionResults.size);
                               
                               // Clear from database
                               const clearResult = await terminatedSessionsService.clearTerminatedSession(selectedGroup?.group_id);
@@ -3706,7 +3706,7 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                                 setTerminatedSessionResults(prev => {
                                   const newMap = new Map(prev);
                                   newMap.delete(selectedGroup?.group_id);
-                                  console.log('🧹 Terminated sessions after clear:', newMap.size);
+                                  console.log('Terminated sessions after clear:', newMap.size);
                                   return newMap;
                                 });
                                 
@@ -3722,9 +3722,9 @@ export default function GroupsScreen({ route, navigation, onGroupModalClosed }) 
                                   });
                                 }
                                 
-                                console.log('✅ Successfully cleared results for group:', selectedGroup?.group_name);
+                                console.log('Successfully cleared results for group:', selectedGroup?.group_name);
                               } else {
-                                console.error('❌ Failed to clear results:', clearResult.error);
+                                console.error('Failed to clear results:', clearResult.error);
                                 showAlert(
                                   'Clear Error',
                                   'Failed to clear results. Please try again.',

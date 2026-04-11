@@ -147,7 +147,7 @@ export default function MainTabNavigator({ navigation, route, pendingJoinCode, o
 
       setImagesPreloaded(true);
     } catch (error) {
-      console.error('❌ Error preloading images:', error);
+      console.error('Error preloading images:', error);
       setImagesPreloaded(true);
     }
   };

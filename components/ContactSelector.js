@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  StyleSheet, Text, View, Modal, TouchableOpacity, ScrollView, 
+  StyleSheet, Text, View, Modal, TouchableOpacity, ScrollView,
   TextInput, ActivityIndicator, Animated
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { getAllContacts } from '../lib/specialOccasionService';
 import { log, debugError } from '../lib/debugConfig';
@@ -207,7 +208,7 @@ const ContactSelector = ({
                           </Text>
                         </View>
                         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                          {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                          {isSelected && <Feather name="check" size={14} color="#FFFFFF" />}
                         </View>
                       </TouchableOpacity>
                     );

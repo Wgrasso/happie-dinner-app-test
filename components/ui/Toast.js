@@ -12,22 +12,22 @@ const ToastContext = createContext(null);
 const TOAST_CONFIG = {
   success: {
     backgroundColor: '#D97706',
-    icon: '✓',
+    icon: '',
     defaultDuration: 3000,
   },
   error: {
     backgroundColor: '#CC2200',
-    icon: '✕',
+    icon: '',
     defaultDuration: 4000,
   },
   warning: {
     backgroundColor: '#CC5500',
-    icon: '⚠',
+    icon: '',
     defaultDuration: 3500,
   },
   info: {
     backgroundColor: '#FF9F45',
-    icon: 'ℹ',
+    icon: '',
     defaultDuration: 3000,
   },
   neutral: {
