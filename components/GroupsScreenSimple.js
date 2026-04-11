@@ -5289,17 +5289,25 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               ) : groupSavedRecipes.length === 0 ? (
                 <View style={gpStyles.inlineImportCard}>
                   <Text style={gpStyles.inlineImportTitle}>
-                    {'Voeg jullie eerste groepsrecept toe'}
+                    {t('userRecipes.importTitle') || 'Recept van een website?'}
                   </Text>
                   <Text style={gpStyles.inlineImportSubtitle}>
-                    {'Plak een receptlink — we importeren \u2019m en slaan \u2019m direct op in deze groep.'}
+                    {t('userRecipes.importSubtitle') ||
+                      'Plak een link en we slaan \u2019m meteen op in deze groep'}
                   </Text>
                   <View style={gpStyles.inlineImportInputRow}>
-                    <Feather name="link" size={16} color="#999" style={{ marginLeft: 10 }} />
+                    <Feather
+                      name="link"
+                      size={16}
+                      color="#B5A89A"
+                      style={gpStyles.inlineImportInputIcon}
+                    />
                     <TextInput
                       style={gpStyles.inlineImportInput}
-                      placeholder="https://..."
-                      placeholderTextColor="#BBB"
+                      placeholder={
+                        t('userRecipes.urlPlaceholder') || 'https://ah.nl/allerhande/recept/...'
+                      }
+                      placeholderTextColor="#B5A89A"
                       value={inlineUrlInput}
                       onChangeText={setInlineUrlInput}
                       autoCapitalize="none"
@@ -5309,32 +5317,63 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                       onSubmitEditing={handleInlineImport}
                       editable={!inlineImporting}
                     />
-                    {inlineUrlInput.length > 0 && !inlineImporting && (
+                    {inlineUrlInput.length > 0 && !inlineImporting ? (
                       <TouchableOpacity
-                        onPress={() => setInlineUrlInput('')}
-                        style={{ paddingHorizontal: 10 }}
+                        onPress={() => { lightHaptic(); setInlineUrlInput(''); }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        style={gpStyles.inlineImportClearBtn}
                       >
-                        <Feather name="x" size={16} color="#999" />
+                        <Feather name="x" size={16} color="#B5A89A" />
                       </TouchableOpacity>
-                    )}
+                    ) : null}
                   </View>
+
+                  {/* Paste from clipboard — same shortcut as chef page */}
+                  <TouchableOpacity
+                    style={gpStyles.inlineImportToggle}
+                    onPress={async () => {
+                      try {
+                        lightHaptic();
+                        const text = await Clipboard.getStringAsync();
+                        if (text && /^https?:\/\//i.test(text.trim())) {
+                          setInlineUrlInput(text.trim());
+                        } else {
+                          toast.error(t('userRecipes.noUrlInClipboard') || 'Geen link op je klembord');
+                        }
+                      } catch (_) {}
+                    }}
+                    disabled={inlineImporting}
+                    activeOpacity={0.75}
+                  >
+                    <Feather name="clipboard" size={14} color="#FF6B00" />
+                    <Text style={gpStyles.inlineImportToggleText}>
+                      {t('userRecipes.pasteFromClipboard') || 'Plak vanaf klembord'}
+                    </Text>
+                  </TouchableOpacity>
+
                   <TouchableOpacity
                     style={[
                       gpStyles.inlineImportBtn,
-                      (!inlineUrlInput.trim() || inlineImporting) && { opacity: 0.5 },
+                      (!inlineUrlInput.trim() || inlineImporting) && gpStyles.inlineImportBtnDisabled,
                     ]}
                     onPress={handleInlineImport}
                     disabled={!inlineUrlInput.trim() || inlineImporting}
                     activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('userRecipes.import') || 'Importeer recept'}
                   >
                     {inlineImporting ? (
-                      <ActivityIndicator size="small" color="#FFF" />
+                      <>
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                        <Text style={gpStyles.inlineImportBtnText}>
+                          {t('userRecipes.importing') || 'Recept ophalen...'}
+                        </Text>
+                      </>
                     ) : (
                       <>
-                        <Feather name="download" size={16} color="#FFF" />
+                        <Feather name="download" size={17} color="#FFFFFF" />
                         <Text style={gpStyles.inlineImportBtnText}>
-                          {'Importeren naar deze groep'}
+                          {t('userRecipes.import') || 'Importeer recept'}
                         </Text>
                       </>
                     )}
@@ -6540,83 +6579,115 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
 
 // Redesigned full-page group styles
 const gpStyles = StyleSheet.create({
-  // --- Inline URL import (empty-state carousel) ---
+  // --- Inline URL import (empty-state carousel) — styled to match the
+  //     ChefDashboard importCard so the first-save flow feels identical.
   inlineImportCard: {
-    backgroundColor: '#FFF8F1',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#FFD8B8',
-    padding: 16,
+    backgroundColor: '#FAF8F5',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#EDE8DD',
+    paddingTop: 22,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
     marginTop: 4,
+    marginBottom: 10,
+    alignItems: 'center',
   },
   inlineImportTitle: {
-    fontSize: 15,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 22,
     fontWeight: '700',
     color: '#1A1000',
-    marginBottom: 4,
+    textAlign: 'center',
+    marginTop: 2,
+    marginBottom: 6,
   },
   inlineImportSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#6B5A48',
-    marginBottom: 12,
-    lineHeight: 17,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 18,
+    paddingHorizontal: 8,
   },
   inlineImportInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#F0D8C0',
-    marginBottom: 10,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#EDE8DD',
+    paddingHorizontal: 12,
+    minHeight: 50,
+    marginBottom: 12,
+  },
+  inlineImportInputIcon: {
+    marginRight: 8,
   },
   inlineImportInput: {
     flex: 1,
-    paddingVertical: 11,
-    paddingHorizontal: 10,
     fontSize: 14,
     color: '#1A1000',
+    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
+  },
+  inlineImportClearBtn: {
+    padding: 4,
+    marginLeft: 4,
   },
   inlineImportBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 10,
+    width: '100%',
+    height: 52,
+    borderRadius: 14,
     backgroundColor: '#FF6B00',
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 8,
+    shadowColor: '#FF6B00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  inlineImportBtnDisabled: {
+    opacity: 0.4,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   inlineImportBtnText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
   inlineImportToggle: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
-    paddingVertical: 6,
-    gap: 4,
+    marginTop: 14,
+    paddingVertical: 8,
+    gap: 5,
   },
   inlineImportToggleText: {
     color: '#FF6B00',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
   },
   inlineImportGroupList: {
-    marginTop: 6,
+    width: '100%',
+    marginTop: 8,
     gap: 6,
   },
   inlineImportGroupItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 9,
-    paddingHorizontal: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 1.5,
     borderColor: '#EDE8DD',
   },
   inlineImportGroupItemActive: {
@@ -6625,14 +6696,14 @@ const gpStyles = StyleSheet.create({
   },
   inlineImportGroupName: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: '#1A1000',
     marginRight: 10,
   },
   inlineImportCheckbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 5,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     borderWidth: 2,
     borderColor: '#D0D0D0',
     alignItems: 'center',
