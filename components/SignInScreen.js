@@ -196,26 +196,37 @@ export default function SignInScreen({ navigation }) {
     }
   };
 
+  // On web the outer Pressable swallowed scroll-start events, so the
+  // user could only start scrolling by grabbing a scrollable child.
+  // Skip the wrapper on web and rely on keyboardDismissMode on native
+  // instead.
+  const Outer = Platform.OS === 'web' ? View : Pressable;
+  const outerProps = Platform.OS === 'web'
+    ? { style: { flex: 1 } }
+    : { style: { flex: 1 }, onPress: Keyboard.dismiss, accessible: false };
+
   return (
     <SafeAreaView style={styles.container}>
-      <Pressable style={{ flex: 1 }} onPress={Platform.OS !== 'web' ? Keyboard.dismiss : undefined} accessible={false}>
+      <Outer {...outerProps}>
         {/* Custom Drawing Background */}
         <View style={styles.backgroundDrawing} pointerEvents="none">
-          <SafeDrawing 
+          <SafeDrawing
             source={require('../assets/drawing1.png')}
             style={{ width: '100%', height: '100%' }}
           />
         </View>
-        
-        <KeyboardAvoidingView 
+
+        <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardContainer}
         >
-          <ScrollView 
+          <ScrollView
+            style={{ flex: 1 }}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
+            scrollEventThrottle={16}
           >
           {/* Header Section with Logo */}
           <View style={styles.header}>
@@ -270,8 +281,8 @@ export default function SignInScreen({ navigation }) {
               />
             </View>
 
-            <TouchableOpacity 
-              style={[styles.signInButton, loading && styles.buttonDisabled]} 
+            <TouchableOpacity
+              style={[styles.signInButton, loading && styles.buttonDisabled]}
               onPress={handleSignIn}
               disabled={loading}
             >
@@ -279,6 +290,15 @@ export default function SignInScreen({ navigation }) {
                 {loading ? t('common.loading') : t('auth.signIn')}
               </Text>
             </TouchableOpacity>
+
+            {/* Register link sits above forgot-password so the primary
+                next-step for new users is the first thing they see. */}
+            <View style={styles.registerRow}>
+              <Text style={styles.footerText}>{t('auth.noAccount')} </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+                <Text style={styles.signUpText}>{t('auth.signUp')}</Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={styles.forgotPassword}
@@ -307,25 +327,18 @@ export default function SignInScreen({ navigation }) {
                     <Text style={[styles.socialButtonText, { color: '#FFFFFF' }]}>Doorgaan met Apple</Text>
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity style={styles.socialButton} onPress={handleGoogleSignIn}>
+                <TouchableOpacity style={[styles.socialButton, styles.googleButton]} onPress={handleGoogleSignIn}>
                   <Image source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }} style={{ width: 20, height: 20 }} />
-                  <Text style={styles.socialButtonText}>Doorgaan met Google</Text>
+                  <Text style={[styles.socialButtonText, styles.googleButtonText]}>Doorgaan met Google</Text>
                 </TouchableOpacity>
               </>
             )}
 
             </View>
 
-          {/* Footer Section */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>{t('auth.noAccount')} </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-              <Text style={styles.signUpText}>{t('auth.signUp')}</Text>
-            </TouchableOpacity>
-          </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </Pressable>
+      </Outer>
     </SafeAreaView>
   );
 }
@@ -341,19 +354,19 @@ const createStyles = (theme) => StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 20,
     paddingTop: 0,
   },
   logo: {
-    width: 280,
-    height: 220,
-    marginBottom: -20,
+    width: 150,
+    height: 115,
     marginTop: 0,
+    marginBottom: 0,
   },
   welcomeTitle: {
     fontFamily: 'PlayfairDisplay_700Bold',
@@ -455,6 +468,14 @@ const createStyles = (theme) => StyleSheet.create({
     paddingTop: 20,
     flexWrap: 'wrap',
   },
+  registerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 18,
+    marginBottom: 4,
+    flexWrap: 'wrap',
+  },
   footerText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
@@ -489,10 +510,24 @@ const createStyles = (theme) => StyleSheet.create({
     marginHorizontal: 12,
     textTransform: 'uppercase',
   },
+  googleButton: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E0DAD0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  googleButtonText: {
+    color: '#1F1F1F',
+    fontFamily: 'Inter_500Medium',
+  },
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
     backgroundColor: theme.colors.surfaceAlt,
     borderWidth: 1,
     borderColor: theme.colors.border,
