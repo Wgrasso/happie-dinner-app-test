@@ -5695,12 +5695,18 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   </View>
                 )
               ) : (
-                // No maxHeight cap — let the section grow so the outer
-                // page ScrollView handles scrolling through recipes + the
-                // inline URL card at the bottom.
-                <View>
-                  <View style={gpStyles.foodCards}>
-                    {groupSavedRecipes.map((recipe) => {
+                // Scrollable recipe carousel (max 3 items visible) with
+                // a collapsed "+ Voeg recept toe" button below that
+                // expands into the URL input card on the same page.
+                <>
+                  {groupSavedRecipes.length > 0 && (
+                    <ScrollView
+                      style={{ maxHeight: 280 }}
+                      nestedScrollEnabled
+                      showsVerticalScrollIndicator={groupSavedRecipes.length > 3}
+                    >
+                      <View style={gpStyles.foodCards}>
+                        {groupSavedRecipes.map((recipe) => {
                       const name = recipe.name || t('meals.recipe');
                       const thumbnailUrl = recipe.thumbnail_url || recipe.image;
                       const cookingTime = recipe.cooking_time_minutes;
@@ -5754,11 +5760,15 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                           <Feather name="chevron-right" size={18} color="#CCC" />
                         </TouchableOpacity>
                       );
-                    })}
-                    {/* URL import card always lives inside the scroll as
-                        the last item. Users scroll past their recipes and
-                        land on the URL input. 'Importeer' and 'of voer
-                        handmatig in' open the chef add-form popup. */}
+                        })}
+                      </View>
+                    </ScrollView>
+                  )}
+                  {/* Add-recipe area: collapsed "+ Voeg recept toe" button
+                      when the carousel has items, expanded URL input card
+                      when the group is empty OR the user tapped the
+                      button. Importeer/handmatig open the chef popup. */}
+                  {(groupSavedRecipes.length === 0 || inlineImportExpanded) ? (
                     <View style={gpStyles.inlineImportCard}>
                       <Text style={gpStyles.inlineImportTitle}>
                         {t('userRecipes.importTitle') || 'Recept van een website?'}
@@ -5858,9 +5868,41 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                           {'of voer handmatig in'}
                         </Text>
                       </TouchableOpacity>
+
+                      {/* Annuleren — only useful when we have recipes to
+                          go back to */}
+                      {groupSavedRecipes.length > 0 && (
+                        <TouchableOpacity
+                          style={gpStyles.inlineImportToggle}
+                          onPress={() => {
+                            lightHaptic();
+                            setInlineImportExpanded(false);
+                            setInlineUrlInput('');
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[gpStyles.inlineImportToggleText, { color: '#6B5A48' }]}>
+                            {t('common.cancel') || 'Annuleren'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
-                  </View>
-                </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={gpStyles.inlineAddMoreBtn}
+                      onPress={() => {
+                        lightHaptic();
+                        setInlineImportExpanded(true);
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Feather name="plus" size={16} color="#FF6B00" />
+                      <Text style={gpStyles.inlineAddMoreBtnText}>
+                        {'Voeg recept toe'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </>
               )}
             </View>
 
