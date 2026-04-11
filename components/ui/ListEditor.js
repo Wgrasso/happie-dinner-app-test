@@ -6,10 +6,17 @@ import {
   TextInput,
   TouchableOpacity,
   Platform,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../lib/ThemeContext';
 import { lightHaptic } from '../../lib/haptics';
+
+// Android needs this turned on once for LayoutAnimation to do anything.
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 /**
  * ListEditor — row-based editor for a string[] list.
@@ -27,6 +34,8 @@ import { lightHaptic } from '../../lib/haptics';
  *   numbered?: boolean         — true → "1. 2. 3." steps; false → "•" bullets
  *   multiline?: boolean        — true for steps (larger rows)
  *   minRows?: number           — keep at least this many blank rows (default 1)
+ *   reorderable?: boolean      — adds up/down buttons so a row can be
+ *                                moved to any position without retyping
  */
 export default function ListEditor({
   label,
@@ -37,6 +46,7 @@ export default function ListEditor({
   numbered = false,
   multiline = false,
   minRows = 1,
+  reorderable = false,
 }) {
   const { theme } = useTheme();
   const s = useMemo(() => createStyles(theme), [theme]);
@@ -57,6 +67,23 @@ export default function ListEditor({
     lightHaptic();
     const next = rows.filter((_, i) => i !== idx);
     onChange(next.length >= minRows ? next : [...next, ...Array(minRows - next.length).fill('')]);
+  };
+
+  const moveRow = (from, to) => {
+    if (from === to || to < 0 || to >= rows.length) return;
+    lightHaptic();
+    // Smoothly animate the rows as they shift into their new positions.
+    LayoutAnimation.configureNext({
+      duration: 180,
+      update: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.scaleXY,
+      },
+    });
+    const next = [...rows];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    onChange(next);
   };
 
   return (
@@ -87,23 +114,57 @@ export default function ListEditor({
             returnKeyType={multiline ? 'default' : 'next'}
             blurOnSubmit={!multiline}
           />
-          {rows.length > 1 || item ? (
-            <TouchableOpacity
-              style={s.removeBtn}
-              onPress={() => removeAt(idx)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityRole="button"
-              accessibilityLabel={
-                numbered
-                  ? `Verwijder stap ${idx + 1}`
-                  : `Verwijder rij ${idx + 1}`
-              }
-            >
-              <Feather name="x" size={15} color={theme.colors.textTertiary} />
-            </TouchableOpacity>
-          ) : (
-            <View style={s.removeBtn} />
-          )}
+          <View style={s.actions}>
+            {reorderable && rows.length > 1 ? (
+              <View style={s.reorderCol}>
+                <TouchableOpacity
+                  style={[s.reorderBtn, idx === 0 && s.reorderBtnDisabled]}
+                  onPress={() => moveRow(idx, idx - 1)}
+                  disabled={idx === 0}
+                  hitSlop={{ top: 6, bottom: 4, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Verplaats ${numbered ? 'stap' : 'rij'} ${idx + 1} omhoog`}
+                >
+                  <Feather
+                    name="chevron-up"
+                    size={16}
+                    color={idx === 0 ? theme.colors.border : theme.colors.textSecondary}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.reorderBtn, idx === rows.length - 1 && s.reorderBtnDisabled]}
+                  onPress={() => moveRow(idx, idx + 1)}
+                  disabled={idx === rows.length - 1}
+                  hitSlop={{ top: 4, bottom: 6, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Verplaats ${numbered ? 'stap' : 'rij'} ${idx + 1} omlaag`}
+                >
+                  <Feather
+                    name="chevron-down"
+                    size={16}
+                    color={idx === rows.length - 1 ? theme.colors.border : theme.colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+            {rows.length > 1 || item ? (
+              <TouchableOpacity
+                style={s.removeBtn}
+                onPress={() => removeAt(idx)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  numbered
+                    ? `Verwijder stap ${idx + 1}`
+                    : `Verwijder rij ${idx + 1}`
+                }
+              >
+                <Feather name="x" size={15} color={theme.colors.textTertiary} />
+              </TouchableOpacity>
+            ) : (
+              <View style={s.removeBtn} />
+            )}
+          </View>
         </View>
       ))}
       <TouchableOpacity
@@ -170,6 +231,25 @@ const createStyles = (theme) =>
       paddingTop: Platform.OS === 'ios' ? 11 : 8,
       textAlignVertical: 'top',
       minHeight: 56,
+    },
+    actions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    reorderCol: {
+      width: 26,
+      height: 42,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    reorderBtn: {
+      flex: 1,
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    reorderBtnDisabled: {
+      opacity: 0.3,
     },
     removeBtn: {
       width: 34,

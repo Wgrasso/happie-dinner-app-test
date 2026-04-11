@@ -1210,6 +1210,7 @@ export default function ChefDashboard({
                     addLabel={t('userRecipes.addStep') || 'Stap toevoegen'}
                     numbered
                     multiline
+                    reorderable
                   />
                 </>
               ) : (
@@ -1987,23 +1988,33 @@ export default function ChefDashboard({
 
               {editInputMode === 'simple' ? (
                 <>
-                  <Text style={styles.formLabel}>{t('recipes.ingredients') || 'Ingrediënten'}</Text>
-                  <TextInput
-                    style={[styles.formInput, styles.formTextArea, { minHeight: 100 }]}
-                    value={editSimpleIngredients}
-                    onChangeText={setEditSimpleIngredients}
-                    placeholder={'1 ingredient per regel'}
-                    placeholderTextColor={theme.colors.textPlaceholder}
-                    multiline
+                  {/* Row-based editors — same layout as the create form
+                      so edit shows each ingredient and step on its own
+                      line with delete + reorder controls instead of a
+                      wall of text in a multiline TextInput. */}
+                  <ListEditor
+                    label={t('recipes.ingredients') || 'Ingrediënten'}
+                    items={(() => {
+                      const arr = editSimpleIngredients.split('\n');
+                      return arr.length ? arr : [''];
+                    })()}
+                    onChange={(arr) => setEditSimpleIngredients(arr.join('\n'))}
+                    placeholder={t('userRecipes.ingredientPlaceholder') || 'Bijv. 200g pasta'}
+                    addLabel={t('userRecipes.addIngredient') || 'Ingrediënt toevoegen'}
+                    reorderable
                   />
-                  <Text style={styles.formLabel}>{t('recipes.instructions') || 'Stappen'}</Text>
-                  <TextInput
-                    style={[styles.formInput, styles.formTextArea, { minHeight: 100 }]}
-                    value={editSimpleSteps}
-                    onChangeText={setEditSimpleSteps}
-                    placeholder={'1 stap per regel'}
-                    placeholderTextColor={theme.colors.textPlaceholder}
+                  <ListEditor
+                    label={t('recipes.instructions') || 'Stappen'}
+                    items={(() => {
+                      const arr = editSimpleSteps.split('\n');
+                      return arr.length ? arr : [''];
+                    })()}
+                    onChange={(arr) => setEditSimpleSteps(arr.join('\n'))}
+                    placeholder={t('userRecipes.stepPlaceholder') || 'Beschrijf stap'}
+                    addLabel={t('userRecipes.addStep') || 'Stap toevoegen'}
+                    numbered
                     multiline
+                    reorderable
                   />
                 </>
               ) : (
