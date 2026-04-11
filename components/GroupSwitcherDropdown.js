@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Animated,
-  PanResponder, Modal,
+  PanResponder, Modal, LayoutAnimation,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
@@ -154,17 +154,34 @@ export default function GroupSwitcherDropdown({
         const initialIdx = originIdx.current;
         const currentIdx = draggingIdxRef.current;
 
-        // Target based on absolute finger delta from start.
+        // Target based on absolute finger delta from start. Hysteresis:
+        // the boundary is at .5 row-heights past the current index
+        // rather than past the starting index, which prevents flicker
+        // when the finger hovers around the midpoint of a slot.
         const maxIdx = localGroupsRef.current.length - 1;
-        const targetIdx = Math.max(
-          0,
-          Math.min(maxIdx, initialIdx + Math.round(gs.dy / ROW_HEIGHT)),
-        );
+        const delta = gs.dy - (currentIdx - initialIdx) * ROW_HEIGHT;
+        let targetIdx = currentIdx;
+        if (delta > ROW_HEIGHT * 0.55 && currentIdx < maxIdx) {
+          targetIdx = currentIdx + 1;
+        } else if (delta < -ROW_HEIGHT * 0.55 && currentIdx > 0) {
+          targetIdx = currentIdx - 1;
+        }
 
         if (targetIdx !== currentIdx) {
           const arr = [...localGroupsRef.current];
           const [item] = arr.splice(currentIdx, 1);
           arr.splice(targetIdx, 0, item);
+
+          // Smoothly animate the non-dragging rows as they shift into
+          // their new positions — without this they snap instantly
+          // which looks like "de groepen veranderen opeens van elkaar".
+          LayoutAnimation.configureNext({
+            duration: 180,
+            update: {
+              type: LayoutAnimation.Types.easeInEaseOut,
+              property: LayoutAnimation.Properties.scaleXY,
+            },
+          });
 
           localGroupsRef.current = arr;
           draggingIdxRef.current = targetIdx;
@@ -178,9 +195,7 @@ export default function GroupSwitcherDropdown({
         // re-render the array, the row's natural top moves by
         // (newIdx - initialIdx) * ROW_HEIGHT. We subtract that shift
         // from gs.dy so the combined (natural + translateY) stays on
-        // the exact pixel the finger is at. Previously the code only
-        // set dragY = gs.dy which double-counted the shift — that's
-        // the "schiet weg van mijn vinger" behaviour.
+        // the exact pixel the finger is at.
         const shift = (draggingIdxRef.current - initialIdx) * ROW_HEIGHT;
         dragY.setValue(gs.dy - shift);
       },
