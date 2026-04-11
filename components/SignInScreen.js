@@ -291,14 +291,18 @@ export default function SignInScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
 
-            {/* Register link sits above forgot-password so the primary
-                next-step for new users is the first thing they see. */}
-            <View style={styles.registerRow}>
-              <Text style={styles.footerText}>{t('auth.noAccount')} </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-                <Text style={styles.signUpText}>{t('auth.signUp')}</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Register button — lighter variant under the sign-in
+                button so the primary next-step for new users is right
+                there instead of hidden in a tiny link. */}
+            <TouchableOpacity
+              style={styles.registerButton}
+              onPress={() => navigation.navigate('SignUp')}
+              disabled={loading}
+            >
+              <Text style={styles.registerButtonText}>
+                {t('auth.signUp') || 'Registreren'}
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.forgotPassword}
@@ -468,13 +472,21 @@ const createStyles = (theme) => StyleSheet.create({
     paddingTop: 20,
     flexWrap: 'wrap',
   },
-  registerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  registerButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: theme.colors.primary,
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 18,
-    marginBottom: 4,
-    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  registerButtonText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+    color: theme.colors.primary,
+    letterSpacing: 0.2,
   },
   footerText: {
     fontFamily: 'Inter_400Regular',
