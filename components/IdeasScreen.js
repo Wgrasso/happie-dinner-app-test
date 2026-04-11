@@ -894,65 +894,7 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                       ) : null; })()}
                     </View>
 
-                    {selectedRecipe.description && (
-                      <View style={styles.modalDescription}>
-                        <Text style={styles.dietaryTitle}>{t('recipes.description')}</Text>
-                        <Text style={styles.descriptionText}>{selectedRecipe.description}</Text>
-                      </View>
-                    )}
-
-                    {/* Ingredients Section */}
-                    {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (
-                      <View style={styles.modalSection}>
-                        <Text style={styles.dietaryTitle}>{t('recipes.ingredients')}</Text>
-                        <ServingSelector count={servingCount} onChange={setServingCount} />
-                        {scaleIngredients(selectedRecipe.ingredients, getRecipeExtras(selectedRecipe.name || selectedRecipe.title).default_servings, servingCount).map((ingredient, index) => (
-                          <Text key={index} style={styles.ingredientText}>
-                            • {ingredient}
-                          </Text>
-                        ))}
-                      </View>
-                    )}
-
-                    {/* Instructions Section */}
-                    {selectedRecipe.steps && selectedRecipe.steps.length > 0 ? (
-                      <View style={styles.modalSection}>
-                        <Text style={styles.dietaryTitle}>{t('recipes.instructions')}</Text>
-                        {selectedRecipe.steps.map((step, idx) => (
-                          <View key={idx} style={styles.stepRow}>
-                            <View style={styles.stepNumber}>
-                              <Text style={styles.stepNumberText}>{idx + 1}</Text>
-                            </View>
-                            <Text style={styles.stepText}>{step}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    ) : selectedRecipe.instructions && selectedRecipe.instructions.length > 0 ? (
-                      <View style={styles.modalSection}>
-                        <Text style={styles.dietaryTitle}>{t('recipes.instructions')}</Text>
-                        <Text style={styles.instructionsText}>{selectedRecipe.instructions}</Text>
-                      </View>
-                    ) : null}
-
-                    {/* Chef tag in recipe modal */}
-                    {selectedRecipe?.chef && (
-                      <TouchableOpacity
-                        style={styles.modalChefTag}
-                        onPress={() => {
-                          const chef = { ...selectedRecipe.chef };
-                          setModalVisible(false);
-                          setSelectedRecipe(null);
-                          setShowGroupPicker(false);
-                          setSelectedGroupIds([]);
-                          setTimeout(() => openChefProfile(chef), 100);
-                        }}
-                      >
-                        <Text style={styles.modalChefTagText}>@{selectedRecipe.chef.tag}</Text>
-                        <Text style={styles.modalChefName}>{selectedRecipe.chef.name}</Text>
-                      </TouchableOpacity>
-                    )}
-
-                    {/* Add to group button */}
+                    {/* Add to group — prominent, right under the metrics so it's instantly visible */}
                     {selectedRecipe?.id && (
                       <View style={styles.addToGroupSection}>
                         <TouchableOpacity
@@ -1012,6 +954,65 @@ export default function IdeasScreen({ route, navigation, hideBottomNav, isActive
                         )}
                       </View>
                     )}
+
+                    {selectedRecipe.description && (
+                      <View style={styles.modalDescription}>
+                        <Text style={styles.dietaryTitle}>{t('recipes.description')}</Text>
+                        <Text style={styles.descriptionText}>{selectedRecipe.description}</Text>
+                      </View>
+                    )}
+
+                    {/* Ingredients Section */}
+                    {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (
+                      <View style={styles.modalSection}>
+                        <Text style={styles.dietaryTitle}>{t('recipes.ingredients')}</Text>
+                        <ServingSelector count={servingCount} onChange={setServingCount} />
+                        {scaleIngredients(selectedRecipe.ingredients, getRecipeExtras(selectedRecipe.name || selectedRecipe.title).default_servings, servingCount).map((ingredient, index) => (
+                          <Text key={index} style={styles.ingredientText}>
+                            • {ingredient}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Instructions Section */}
+                    {selectedRecipe.steps && selectedRecipe.steps.length > 0 ? (
+                      <View style={styles.modalSection}>
+                        <Text style={styles.dietaryTitle}>{t('recipes.instructions')}</Text>
+                        {selectedRecipe.steps.map((step, idx) => (
+                          <View key={idx} style={styles.stepRow}>
+                            <View style={styles.stepNumber}>
+                              <Text style={styles.stepNumberText}>{idx + 1}</Text>
+                            </View>
+                            <Text style={styles.stepText}>{step}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : selectedRecipe.instructions && selectedRecipe.instructions.length > 0 ? (
+                      <View style={styles.modalSection}>
+                        <Text style={styles.dietaryTitle}>{t('recipes.instructions')}</Text>
+                        <Text style={styles.instructionsText}>{selectedRecipe.instructions}</Text>
+                      </View>
+                    ) : null}
+
+                    {/* Chef tag in recipe modal */}
+                    {selectedRecipe?.chef && (
+                      <TouchableOpacity
+                        style={styles.modalChefTag}
+                        onPress={() => {
+                          const chef = { ...selectedRecipe.chef };
+                          setModalVisible(false);
+                          setSelectedRecipe(null);
+                          setShowGroupPicker(false);
+                          setSelectedGroupIds([]);
+                          setTimeout(() => openChefProfile(chef), 100);
+                        }}
+                      >
+                        <Text style={styles.modalChefTagText}>@{selectedRecipe.chef.tag}</Text>
+                        <Text style={styles.modalChefName}>{selectedRecipe.chef.name}</Text>
+                      </TouchableOpacity>
+                    )}
+
                   </View>
                 </>
               ) : (

@@ -52,6 +52,8 @@ export default function MainProfileScreen({
   shouldPreload,
   onSwitchToGroups,
   onSwitchToInspiration,
+  pendingOpenAddRecipe,
+  onPendingOpenAddRecipeCleared,
 }) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -155,6 +157,8 @@ export default function MainProfileScreen({
         chef={myChefProfile}
         onChefUpdated={(updated) => setMyChefProfile(updated)}
         navigation={navigation}
+        pendingOpenAddRecipe={pendingOpenAddRecipe}
+        onPendingOpenAddRecipeCleared={onPendingOpenAddRecipeCleared}
       />
     );
   }

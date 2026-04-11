@@ -21,7 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { updateChefProfile, deleteChefProfile, isChefPublicReady } from '../lib/chefService';
-import { getMyChefRecipes, addChefRecipe, updateChefRecipe, deleteChefRecipe, shareRecipeWithGroups } from '../lib/recipesService';
+import { getMyChefRecipes, addChefRecipe, updateChefRecipe, deleteChefRecipe, shareRecipeWithGroups, getRecipeShares } from '../lib/recipesService';
 import { uploadRecipeImage } from '../lib/recipeImageService';
 import { importRecipeFromUrl } from '../lib/recipeUrlImporter';
 import * as Clipboard from 'expo-clipboard';
@@ -76,7 +76,7 @@ const VISIBILITY_OPTIONS = [
   { key: 'public_groups', icon: 'share-2', label: 'visibilityPublicGroups' },
 ];
 
-export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
+export default function ChefDashboard({ chef, onChefUpdated, navigation, pendingOpenAddRecipe, onPendingOpenAddRecipeCleared }) {
   const { t } = useTranslation();
   const toast = useToast();
   const { groups } = useAppState();
@@ -88,6 +88,16 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
 
   // Add recipe form
   const [showAddForm, setShowAddForm] = useState(false);
+  // Auto-open the add-recipe form when signaled from outside (e.g. the
+  // GroupsScreen empty-state button jumping in here for the first-recipe flow).
+  useEffect(() => {
+    if (pendingOpenAddRecipe) {
+      setShowAddForm(true);
+      if (typeof onPendingOpenAddRecipeCleared === 'function') {
+        onPendingOpenAddRecipeCleared();
+      }
+    }
+  }, [pendingOpenAddRecipe, onPendingOpenAddRecipeCleared]);
   const [recipeName, setRecipeName] = useState('');
   const [recipeDescription, setRecipeDescription] = useState('');
   const [recipeCookingTime, setRecipeCookingTime] = useState('30');
@@ -567,6 +577,15 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
     setEditIngredients(stringsToIngredients(recipe.ingredients));
     setEditSteps(recipe.steps && recipe.steps.length > 0 ? [...recipe.steps] : ['']);
     setEditRecipeVisibility(recipe.visibility || 'public');
+    // Pre-load the groups this recipe is already shared with, so the picker
+    // shows them as selected and the user can add/remove without starting over.
+    getRecipeShares(recipe.id).then((res) => {
+      if (res?.success && Array.isArray(res.groupIds)) {
+        setSelectedGroups(res.groupIds);
+      } else {
+        setSelectedGroups([]);
+      }
+    }).catch(() => setSelectedGroups([]));
     setShowEditRecipe(true);
   };
 
@@ -621,10 +640,21 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
       });
 
       if (result.success) {
+        // Sync recipe_group_shares to reflect the visibility choice.
+        // - 'groups' / 'public_groups' → write the selected groups (replaces existing)
+        // - any other visibility → clear all shares
+        try {
+          if (editRecipeVisibility === 'groups' || editRecipeVisibility === 'public_groups') {
+            await shareRecipeWithGroups(editingRecipe.id, selectedGroups);
+          } else {
+            await shareRecipeWithGroups(editingRecipe.id, []);
+          }
+        } catch (_) {}
         successHaptic();
         toast.success(t('chef.recipeUpdated') || 'Recept bijgewerkt!');
         setShowEditRecipe(false);
         setEditingRecipe(null);
+        setSelectedGroups([]);
         await loadRecipes();
       } else {
         toast.error(result.error || 'Kon recept niet bijwerken');
@@ -2044,6 +2074,29 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                         ? t('chef.privacyHintPublic') || 'Dit recept wordt gedeeld met alle gebruikers'
                         : t('chef.privacyHintGroups') || 'Alleen de geselecteerde groepen kunnen dit zien'}
                     </Text>
+
+                    {/* Group Selector (when visibility = groups / public_groups) */}
+                    {(editRecipeVisibility === 'groups' || editRecipeVisibility === 'public_groups') && (
+                      <View style={styles.groupSelector}>
+                        <Text style={styles.formLabel}>{t('chef.selectGroups') || 'Deel met groepen'}</Text>
+                        {(groups || []).map((g) => (
+                          <TouchableOpacity
+                            key={g.id}
+                            style={[styles.groupCheckbox, selectedGroups.includes(g.id) && styles.groupCheckboxActive]}
+                            onPress={() => toggleGroupSelection(g.id)}
+                            activeOpacity={0.8}
+                          >
+                            <View style={[styles.checkbox, selectedGroups.includes(g.id) && styles.checkboxChecked]}>
+                              {selectedGroups.includes(g.id) && <Feather name="check" size={14} color={theme.colors.textInverse} />}
+                            </View>
+                            <Text style={styles.groupCheckboxText}>{g.name}</Text>
+                          </TouchableOpacity>
+                        ))}
+                        {(!groups || groups.length === 0) && (
+                          <Text style={styles.noGroupsText}>{t('groups.noGroups') || 'Geen groepen gevonden'}</Text>
+                        )}
+                      </View>
+                    )}
                   </>
                 );
               })()}

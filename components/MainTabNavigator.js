@@ -20,6 +20,9 @@ export default function MainTabNavigator({ navigation, route, pendingJoinCode, o
   const appState = useAppState();
   const [currentTab, setCurrentTab] = useState('groups');
   const [pendingOpenRecipe, setPendingOpenRecipe] = useState(null);
+  // When true, ChefDashboard (in Profile tab) auto-opens its add-recipe form.
+  // Used by GroupsScreen empty-state to jump straight to recipe creation.
+  const [pendingOpenAddRecipe, setPendingOpenAddRecipe] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
   const splashOpacity = useRef(new Animated.Value(1)).current;
@@ -240,6 +243,11 @@ export default function MainTabNavigator({ navigation, route, pendingJoinCode, o
             pendingJoinCode={pendingJoinCode}
             onJoinCodeHandled={onJoinCodeHandled}
             onPendingGroupReopenCleared={() => setPendingGroupReopen(null)}
+            onSwitchToInspiration={() => handleTabPress('inspiration')}
+            onOpenChefAddRecipe={() => {
+              setPendingOpenAddRecipe(true);
+              handleTabPress('profile');
+            }}
           />
         </View>
 
@@ -265,15 +273,17 @@ export default function MainTabNavigator({ navigation, route, pendingJoinCode, o
           styles.screenContainer,
           currentTab === 'profile' ? styles.activeScreen : styles.hiddenScreen
         ]}>
-          <MainProfileScreen 
+          <MainProfileScreen
             key={`profile-${profileRefreshKey}`}
-            route={{ params: {} }} 
+            route={{ params: {} }}
             navigation={enhancedNavigation}
             hideBottomNav={true}
             isActive={currentTab === 'profile'}
             shouldPreload={shouldPreloadOthers}
             onSwitchToGroups={() => handleTabPress('groups')}
             onSwitchToInspiration={(recipe) => { setPendingOpenRecipe(recipe); handleTabPress('inspiration'); }}
+            pendingOpenAddRecipe={pendingOpenAddRecipe}
+            onPendingOpenAddRecipeCleared={() => setPendingOpenAddRecipe(false)}
           />
         </View>
       </View>

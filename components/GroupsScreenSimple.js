@@ -17,14 +17,16 @@ import { useTranslation } from 'react-i18next';
 import { formatDateShortNL } from '../lib/dateFormatting';
 import { log, debugError } from '../lib/debugConfig';
 import { getTopVotedMeals } from '../lib/mealRequestService';
+import { getGroupRecipes as getGroupSharedRecipes } from '../lib/recipesService';
 import { useAppState } from '../lib/AppStateContext';
 import { useToast } from './ui/Toast';
 import { GroupCardSkeleton, MemberListSkeleton, TopMealsSkeleton, InlineLoader } from './ui/SkeletonLoader';
 import ServingSelector from './ui/ServingSelector';
 import { scaleIngredients } from '../lib/ingredientScaler';
 import { getRecipeExtras } from '../lib/recipeExtrasService';
-import { EmptyGroups, EmptyVotes, EmptyOccasions } from './ui/EmptyState';
+import EmptyState, { EmptyGroups, EmptyVotes, EmptyOccasions } from './ui/EmptyState';
 import GroupRecipesScreen from './GroupRecipesScreen';
+import SaveToGroupButton from './ui/SaveToGroupButton';
 import { 
   getMySpecialOccasions, 
   getPastOccasions,
@@ -2239,7 +2241,7 @@ const occasionStyles = StyleSheet.create({
 // ============================================
 // MAIN COMPONENT
 // ============================================
-export default function GroupsScreenSimple({ navigation, route, isActive = true, onReady, pendingGroupReopen, onPendingGroupReopenCleared, pendingJoinCode, onJoinCodeHandled }) {
+export default function GroupsScreenSimple({ navigation, route, isActive = true, onReady, pendingGroupReopen, onPendingGroupReopenCleared, pendingJoinCode, onJoinCodeHandled, onSwitchToInspiration, onOpenChefAddRecipe }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   
@@ -2504,6 +2506,70 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   const [topMealsLoading, setTopMealsLoading] = useState(false);
   const [activeRequestId, setActiveRequestId] = useState(null);
   const [activeRecipeType, setActiveRecipeType] = useState(null); // 'voting' or 'no_voting'
+  // Group-saved recipes (shared in-group carousel via recipe_group_shares)
+  // In-memory cache keyed by groupId so switching groups is instant.
+  const groupRecipesCacheRef = useRef({});
+  const [groupSavedRecipes, setGroupSavedRecipes] = useState([]);
+  const [groupSavedRecipesLoading, setGroupSavedRecipesLoading] = useState(false);
+  const loadGroupSavedRecipes = useCallback(async (groupId, { background = false } = {}) => {
+    if (!groupId) {
+      setGroupSavedRecipes([]);
+      return;
+    }
+    // Show cached data instantly if we have any; only spinner on a true cold load.
+    const cached = groupRecipesCacheRef.current[groupId];
+    if (Array.isArray(cached)) {
+      setGroupSavedRecipes(cached);
+    } else if (!background) {
+      setGroupSavedRecipesLoading(true);
+    }
+    try {
+      const result = await getGroupSharedRecipes(groupId);
+      const recipes = result?.success && Array.isArray(result.recipes) ? result.recipes : [];
+      groupRecipesCacheRef.current[groupId] = recipes;
+      setGroupSavedRecipes(recipes);
+    } catch (e) {
+      if (!cached) setGroupSavedRecipes([]);
+    } finally {
+      setGroupSavedRecipesLoading(false);
+    }
+  }, []);
+  // Reload group-saved recipes whenever the visible group changes
+  useEffect(() => {
+    if (!selectedGroupId) {
+      setGroupSavedRecipes([]);
+      return;
+    }
+    // Instantly paint cached data, then refresh in background.
+    const cached = groupRecipesCacheRef.current[selectedGroupId];
+    if (Array.isArray(cached)) {
+      setGroupSavedRecipes(cached);
+      loadGroupSavedRecipes(selectedGroupId, { background: true });
+    } else {
+      loadGroupSavedRecipes(selectedGroupId);
+    }
+  }, [selectedGroupId, loadGroupSavedRecipes]);
+  // Warm the cache for every group the user belongs to, in parallel, once on load.
+  // That way opening any group for the first time is instant.
+  const groupRecipesPreloadedRef = useRef(false);
+  useEffect(() => {
+    if (groupRecipesPreloadedRef.current) return;
+    if (!Array.isArray(groups) || groups.length === 0) return;
+    groupRecipesPreloadedRef.current = true;
+    const ids = groups.map((g) => g.group_id || g.id).filter(Boolean);
+    Promise.all(
+      ids.map(async (gid) => {
+        try {
+          const result = await getGroupSharedRecipes(gid);
+          if (result?.success && Array.isArray(result.recipes)) {
+            groupRecipesCacheRef.current[gid] = result.recipes;
+            // If this group is currently selected, paint immediately.
+            if (gid === selectedGroupId) setGroupSavedRecipes(result.recipes);
+          }
+        } catch (_) {}
+      })
+    );
+  }, [groups, selectedGroupId]);
   
   // Persistent memory of known active requests per group.
   // Survives collapse/expand cycles so Top 3 is restored immediately.
@@ -3068,6 +3134,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
           debugError('COMPONENTS', 'Error refreshing occasions on focus:', error);
         });
       }
+
+      // Refresh group-saved recipes so newly-saved recipes appear immediately
+      if (selectedGroupId) {
+        loadGroupSavedRecipes(selectedGroupId);
+      }
       
       // Refresh group Top 3 when returning from group voting (or any screen)
       // With goBack() from VotingScreen, activeRequestId and expandedGroupId are preserved.
@@ -3120,7 +3191,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       return () => {
         isActive = false;
       };
-    }, [activeRequestId, expandedOccasionId, expandedGroupId, contextLoadActiveMealRequest, invalidateCache])
+    }, [activeRequestId, expandedOccasionId, expandedGroupId, contextLoadActiveMealRequest, invalidateCache, selectedGroupId, loadGroupSavedRecipes])
   );
 
   // Global real-time subscription for daily responses across ALL groups
@@ -4392,17 +4463,24 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
 
   // Open Top 3 modal - always fetches fresh data when opened (all votes in group)
   const handleOpenTop3Group = useCallback(() => {
-    if (!activeRequestId) return;
     lightHaptic();
-    setTop3ModalLoadFn(() => contextLoadTopMeals(activeRequestId, true));
+    if (!activeRequestId) {
+      toast.info(t('meals.noActiveVoting') || 'Er is nog geen stemronde — start er eentje via "Stem nu"');
+      return;
+    }
+    // Double arrow: outer one bypasses React's functional state updater so
+    // the inner function (which returns a Promise on call) is stored as-is.
+    const loadFn = () => contextLoadTopMeals(activeRequestId, true);
+    setTop3ModalLoadFn(() => loadFn);
     setShowTop3Modal(true);
-  }, [activeRequestId, contextLoadTopMeals]);
+  }, [activeRequestId, contextLoadTopMeals, toast, t]);
 
 
   const handleOpenTop3Occasion = useCallback(() => {
     if (!expandedOccasionId) return;
     lightHaptic();
-    setTop3ModalLoadFn(() => getOccasionTopMeals(expandedOccasionId).then(r => r.topMeals || []));
+    const loadFn = () => getOccasionTopMeals(expandedOccasionId).then(r => r.topMeals || []);
+    setTop3ModalLoadFn(() => loadFn);
     setShowTop3Modal(true);
   }, [expandedOccasionId]);
 
@@ -5087,12 +5165,12 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               </View>
             </View>
 
-            {/* === SECTION 3: FOOD VOTING (interactive cards) === */}
-            {activeRecipeType !== 'no_voting' && myResponse === 'yes' && (
-              <View style={gpStyles.sectionSpaced}>
-                <View style={gpStyles.sectionHeader}>
-                  <Text style={gpStyles.sectionTitle}>{'Wat eten we vanavond?'}</Text>
-                  {actionLoading ? (
+            {/* === SECTION 3: GROUP RECIPES CAROUSEL — shared in-group saved recipes === */}
+            <View style={gpStyles.sectionSpaced}>
+              <View style={gpStyles.sectionHeader}>
+                <Text style={gpStyles.sectionTitle}>{'Recepten'}</Text>
+                {activeRecipeType !== 'no_voting' && myResponse === 'yes' && (
+                  actionLoading ? (
                     <ActivityIndicator color="#FF6B00" size="small" />
                   ) : topMeals && topMeals.length > 0 ? (
                     <TouchableOpacity
@@ -5110,29 +5188,59 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                       <Text style={gpStyles.voteBtnText}>{'Stem nu'}</Text>
                       <Feather name="arrow-right" size={14} color="#FFFFFF" />
                     </TouchableOpacity>
-                  )}
-                </View>
+                  )
+                )}
+              </View>
 
-                {topMeals && topMeals.length > 0 ? (
+              {groupSavedRecipesLoading && groupSavedRecipes.length === 0 ? (
+                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color="#FF6B00" />
+                </View>
+              ) : groupSavedRecipes.length === 0 ? (
+                <EmptyState
+                  compact
+                  title={t('chef.noRecipesYet') || 'Nog geen recepten geplaatst'}
+                  description={t('chef.publicToAppear') || 'Voeg een eerste groepsrecept toe om te beginnen'}
+                  actionLabel={t('chef.addFirstRecipe') || 'Voeg eerste recept toe'}
+                  actionIcon="plus"
+                  onAction={() => {
+                    lightHaptic();
+                    if (typeof onOpenChefAddRecipe === 'function') {
+                      onOpenChefAddRecipe();
+                    }
+                  }}
+                />
+              ) : (
+                <ScrollView
+                  style={{ maxHeight: 260 }}
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator={groupSavedRecipes.length > 3}
+                >
                   <View style={gpStyles.foodCards}>
-                    {topMeals.slice(0, 3).map((meal, idx) => {
-                      const name = meal.meal_data?.name || t('meals.recipe');
-                      const votes = meal.yes_votes ?? meal.vote_total ?? 0;
-                      const thumbnailUrl = meal.meal_data?.thumbnail_url;
-                      const cookingTime = meal.meal_data?.total_time_minutes;
+                    {groupSavedRecipes.map((recipe) => {
+                      const name = recipe.name || t('meals.recipe');
+                      const thumbnailUrl = recipe.thumbnail_url || recipe.image;
+                      const cookingTime = recipe.cooking_time_minutes;
                       return (
                         <TouchableOpacity
-                          key={meal.meal_option_id || idx}
+                          key={recipe.id}
                           style={gpStyles.foodCard}
-                          onPress={() => handleRecipePress(meal)}
+                          onPress={() => handleRecipePress({
+                            recipe_id: recipe.id,
+                            meal_option_id: `group-${recipe.id}`,
+                            meal_data: {
+                              name,
+                              thumbnail_url: thumbnailUrl,
+                              total_time_minutes: cookingTime,
+                              ingredients: recipe.ingredients,
+                              steps: recipe.steps,
+                              instructions: Array.isArray(recipe.steps) ? recipe.steps.join('\n') : '',
+                            },
+                          })}
                           activeOpacity={0.6}
                         >
                           {thumbnailUrl ? (
-                            <Image
-                              source={{ uri: thumbnailUrl }}
-                              style={gpStyles.foodCardImage}
-                              resizeMode="cover"
-                            />
+                            <Image source={{ uri: thumbnailUrl }} style={gpStyles.foodCardImage} resizeMode="cover" />
                           ) : (
                             <View style={[gpStyles.foodCardImage, gpStyles.foodCardImagePlaceholder]}>
                               <Text style={{ fontSize: 24 }}>🍽</Text>
@@ -5147,10 +5255,11 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                                   <Text style={gpStyles.foodCardMetaText}>{cookingTime} min</Text>
                                 </View>
                               ) : null}
-                              <View style={gpStyles.foodCardMetaItem}>
-                                <Feather name="thumbs-up" size={12} color="#FF6B00" />
-                                <Text style={[gpStyles.foodCardMetaText, { color: '#FF6B00' }]}>{votes}</Text>
-                              </View>
+                              {recipe.cuisine_type ? (
+                                <View style={gpStyles.foodCardMetaItem}>
+                                  <Text style={gpStyles.foodCardMetaText}>{recipe.cuisine_type}</Text>
+                                </View>
+                              ) : null}
                             </View>
                           </View>
                           <Feather name="chevron-right" size={18} color="#CCC" />
@@ -5158,60 +5267,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                       );
                     })}
                   </View>
-                ) : topMealsLoading ? (
-                  <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                    <ActivityIndicator size="small" color="#FF6B00" />
-                  </View>
-                ) : null}
-              </View>
-            )}
-
-            {/* Show top meals even when not voting (read-only) */}
-            {activeRecipeType !== 'no_voting' && myResponse !== 'yes' && topMeals?.length > 0 && (
-              <View style={gpStyles.sectionSpaced}>
-                <Text style={gpStyles.sectionTitle}>{t('meals.topRecipes') || 'Top recepten'}</Text>
-                <View style={gpStyles.foodCards}>
-                  {topMeals.slice(0, 3).map((meal, idx) => {
-                    const name = meal.meal_data?.name || t('meals.recipe');
-                    const votes = meal.yes_votes ?? meal.vote_total ?? 0;
-                    const thumbnailUrl = meal.meal_data?.thumbnail_url;
-                    const cookingTime = meal.meal_data?.total_time_minutes;
-                    return (
-                      <TouchableOpacity
-                        key={meal.meal_option_id || idx}
-                        style={gpStyles.foodCard}
-                        onPress={() => handleRecipePress(meal)}
-                        activeOpacity={0.6}
-                      >
-                        {thumbnailUrl ? (
-                          <Image source={{ uri: thumbnailUrl }} style={gpStyles.foodCardImage} resizeMode="cover" />
-                        ) : (
-                          <View style={[gpStyles.foodCardImage, gpStyles.foodCardImagePlaceholder]}>
-                            <Text style={{ fontSize: 24 }}>🍽</Text>
-                          </View>
-                        )}
-                        <View style={gpStyles.foodCardBody}>
-                          <Text style={gpStyles.foodCardName} numberOfLines={1}>{name}</Text>
-                          <View style={gpStyles.foodCardMeta}>
-                            {cookingTime ? (
-                              <View style={gpStyles.foodCardMetaItem}>
-                                <Feather name="clock" size={12} color="#999" />
-                                <Text style={gpStyles.foodCardMetaText}>{cookingTime} min</Text>
-                              </View>
-                            ) : null}
-                            <View style={gpStyles.foodCardMetaItem}>
-                              <Feather name="thumbs-up" size={12} color="#FF6B00" />
-                              <Text style={[gpStyles.foodCardMetaText, { color: '#FF6B00' }]}>{votes}</Text>
-                            </View>
-                          </View>
-                        </View>
-                        <Feather name="chevron-right" size={18} color="#CCC" />
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
+                </ScrollView>
+              )}
+            </View>
 
             {/* === SHOPPING STATUS === */}
             {myResponse === 'yes' && (
@@ -5278,9 +5336,9 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                   <Feather name="user-plus" size={16} color="#FF6B00" />
                   <Text style={gpStyles.secondaryBtnText}>{'Groepsleden uitnodigen'}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={gpStyles.secondaryBtn} onPress={() => setShowGroupRecipesModal(true)}>
-                  <Feather name="book-open" size={16} color="#FF6B00" />
-                  <Text style={gpStyles.secondaryBtnText}>{'Recepten'}</Text>
+                <TouchableOpacity style={gpStyles.secondaryBtn} onPress={handleOpenTop3Group}>
+                  <Feather name="award" size={16} color="#FF6B00" />
+                  <Text style={gpStyles.secondaryBtnText}>{'Top 3'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -5844,6 +5902,20 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                           <Text style={styles.recipeModalStepText}>{step}</Text>
                         </View>
                       ))}
+                    </View>
+                  )}
+                  {/* Save this recipe into one or more of the user's groups */}
+                  {selectedRecipe.recipe_id && (
+                    <View style={[styles.recipeModalSection, { marginTop: 12 }]}>
+                      <SaveToGroupButton
+                        recipe={{
+                          id: selectedRecipe.recipe_id,
+                          name: selectedRecipe.meal_data?.name,
+                        }}
+                        onSaved={() => {
+                          if (selectedGroupId) loadGroupSavedRecipes(selectedGroupId);
+                        }}
+                      />
                     </View>
                   )}
                   <View style={{ height: 30 }} />
