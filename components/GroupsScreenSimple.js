@@ -5053,12 +5053,23 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         setGroupPhotoUri(null);
         toast.success(t('groups.groupCreated'));
 
+        // Auto-expand the freshly-created group so the user lands right
+        // inside it instead of on the group list. We also bump it to
+        // selectedGroupId so the detail page opens.
+        const newGroupId = result.group?.id;
+        if (newGroupId) {
+          setExpandedGroupId(newGroupId);
+          expandedGroupIdRef.current = newGroupId;
+          setSelectedGroupId(newGroupId);
+        }
+
         // Load groups immediately so the new group appears instantly
         contextLoadGroups(true).then(() => loadSpecialOccasionsIndependent());
 
-        // Open the native share sheet right away with the same template
-        // the other invite entry points use, so first-time group creators
-        // don't end up with just a copied code and nothing else.
+        // Open the native share sheet with the same template the other
+        // invite entry points use. iOS needs a generous delay after a
+        // modal dismissal before it will present another system sheet,
+        // hence 800ms (not 450) and runAfterInteractions.
         const code = result.group?.join_code;
         if (code) {
           InteractionManager.runAfterInteractions(() => {
@@ -5066,7 +5077,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               openGroupShareSheet(code, {
                 onCopied: () => toast.success(t('groups.codeCopied') || 'Code gekopieerd!'),
               });
-            }, 450);
+            }, 800);
           });
         }
       } else {
