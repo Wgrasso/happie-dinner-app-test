@@ -29,6 +29,7 @@ import { getRecipeExtras } from '../lib/recipeExtrasService';
 import EmptyState, { EmptyGroups, EmptyVotes, EmptyOccasions } from './ui/EmptyState';
 import GroupRecipesScreen from './GroupRecipesScreen';
 import SaveToGroupButton from './ui/SaveToGroupButton';
+import ChefDashboard from './ChefDashboard';
 import { 
   getMySpecialOccasions, 
   getPastOccasions,
@@ -2588,6 +2589,43 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // Always open when the carousel is empty; collapsed behind a + button
   // when the carousel has at least one recipe.
   const [inlineImportExpanded, setInlineImportExpanded] = useState(false);
+  // Chef add-recipe modal — reuses the exact same form from ChefDashboard
+  // but rendered in a modal on top of the group screen. ChefDashboard
+  // renders in addOnlyMode so only the add-recipe form is visible.
+  const [showChefAddModal, setShowChefAddModal] = useState(false);
+  const [chefAddModalProfile, setChefAddModalProfile] = useState(null);
+  const [chefAddModalLoading, setChefAddModalLoading] = useState(false);
+  const openChefAddModal = useCallback(async () => {
+    lightHaptic();
+    setChefAddModalLoading(true);
+    setShowChefAddModal(true);
+    try {
+      const result = await ensureChefProfile();
+      if (result?.success && result?.chef) {
+        setChefAddModalProfile(result.chef);
+      } else {
+        toast.error(result?.error || 'Kon chef-profiel niet laden');
+        setShowChefAddModal(false);
+      }
+    } catch (e) {
+      toast.error(e?.message || 'Er ging iets mis');
+      setShowChefAddModal(false);
+    } finally {
+      setChefAddModalLoading(false);
+    }
+  }, [toast]);
+  const closeChefAddModal = useCallback(() => {
+    setShowChefAddModal(false);
+    setChefAddModalProfile(null);
+  }, []);
+  const handleChefAddModalSaved = useCallback(() => {
+    // Drop the cache and reload so the new recipe shows immediately.
+    if (selectedGroupId) {
+      if (groupRecipesCacheRef.current) delete groupRecipesCacheRef.current[selectedGroupId];
+      loadGroupSavedRecipes(selectedGroupId);
+    }
+    closeChefAddModal();
+  }, [selectedGroupId, loadGroupSavedRecipes, closeChefAddModal]);
   const [inlineDraft, setInlineDraft] = useState({
     name: '',
     description: '',
@@ -5380,6 +5418,36 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 <View style={{ paddingVertical: 20, alignItems: 'center' }}>
                   <ActivityIndicator size="small" color="#FF6B00" />
                 </View>
+              ) : groupSavedRecipes.length === 0 ? (
+                /* Empty-state CTA — opens the exact same add-recipe modal
+                   from the chef page. No inline URL input; users get the
+                   full featured form directly. */
+                <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                  <Feather name="book-open" size={24} color="#FFB380" style={{ marginBottom: 8 }} />
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1000', marginBottom: 4 }}>
+                    {'Voeg jullie eerste groepsrecept toe'}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#999', textAlign: 'center', marginBottom: 14 }}>
+                    {'Importeer van een website of vul het zelf in.'}
+                  </Text>
+                  <TouchableOpacity
+                    style={gpStyles.inlineAddMoreBtn}
+                    onPress={openChefAddModal}
+                    activeOpacity={0.8}
+                    disabled={chefAddModalLoading}
+                  >
+                    {chefAddModalLoading ? (
+                      <ActivityIndicator size="small" color="#FF6B00" />
+                    ) : (
+                      <>
+                        <Feather name="plus" size={16} color="#FF6B00" />
+                        <Text style={gpStyles.inlineAddMoreBtnText}>
+                          {'Recept toevoegen'}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
               ) : (groupSavedRecipes.length === 0 || inlineShowDraft || inlineImportExpanded) ? (
                 inlineShowDraft ? (
                   /* ── Editable draft form — used after URL import AND for manual entry ── */
@@ -5706,21 +5774,24 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     })}
                   </View>
                 </ScrollView>
-                {/* Collapsed "+ recept toevoegen" button below the carousel.
-                    Tap to expand the same URL import + manual form you get
-                    in the empty state. */}
+                {/* "+ Recept toevoegen" opens the exact same add-recipe form
+                    from the chef dashboard inside a modal. */}
                 <TouchableOpacity
                   style={gpStyles.inlineAddMoreBtn}
-                  onPress={() => {
-                    lightHaptic();
-                    setInlineImportExpanded(true);
-                  }}
+                  onPress={openChefAddModal}
                   activeOpacity={0.8}
+                  disabled={chefAddModalLoading}
                 >
-                  <Feather name="plus" size={16} color="#FF6B00" />
-                  <Text style={gpStyles.inlineAddMoreBtnText}>
-                    {'Recept toevoegen'}
-                  </Text>
+                  {chefAddModalLoading ? (
+                    <ActivityIndicator size="small" color="#FF6B00" />
+                  ) : (
+                    <>
+                      <Feather name="plus" size={16} color="#FF6B00" />
+                      <Text style={gpStyles.inlineAddMoreBtnText}>
+                        {'Recept toevoegen'}
+                      </Text>
+                    </>
+                  )}
                 </TouchableOpacity>
                 </>
               )}
@@ -6415,6 +6486,56 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         loadMeals={top3ModalLoadFn}
         onRecipePress={handleRecipePress}
       />
+
+      {/* Chef add-recipe modal — embeds the full ChefDashboard add form
+          (URL import + manual entry) with the current group pre-selected. */}
+      <Modal
+        visible={showChefAddModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeChefAddModal}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#FAF8F5' }}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            borderBottomWidth: 1,
+            borderBottomColor: '#EDE8DD',
+            backgroundColor: '#FFFFFF',
+          }}>
+            <TouchableOpacity
+              onPress={closeChefAddModal}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Text style={{ fontSize: 15, color: '#FF6B00', fontWeight: '600' }}>
+                {t('common.cancel') || 'Annuleren'}
+              </Text>
+            </TouchableOpacity>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1000' }}>
+              {'Recept toevoegen'}
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          {chefAddModalProfile ? (
+            <ChefDashboard
+              chef={chefAddModalProfile}
+              onChefUpdated={setChefAddModalProfile}
+              navigation={navigation}
+              addOnlyMode
+              preselectedGroupIds={selectedGroupId ? [selectedGroupId] : []}
+              initialVisibility="groups"
+              onRecipeCreated={handleChefAddModalSaved}
+            />
+          ) : (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="large" color="#FF6B00" />
+            </View>
+          )}
+        </SafeAreaView>
+      </Modal>
 
       {/* Create Group Modal */}
       <Modal visible={showCreateModal} transparent animationType="fade">

@@ -76,7 +76,20 @@ const VISIBILITY_OPTIONS = [
   { key: 'public_groups', icon: 'share-2', label: 'visibilityPublicGroups' },
 ];
 
-export default function ChefDashboard({ chef, onChefUpdated, navigation, pendingOpenAddRecipe, onPendingOpenAddRecipeCleared }) {
+export default function ChefDashboard({
+  chef,
+  onChefUpdated,
+  navigation,
+  pendingOpenAddRecipe,
+  onPendingOpenAddRecipeCleared,
+  // Embed mode — when set, hide the profile header and recipe list so the
+  // ChefDashboard renders as a pure "add recipe" surface. Used by the
+  // GroupsScreen to reuse the exact same form inside an in-group modal.
+  addOnlyMode = false,
+  preselectedGroupIds = null,
+  initialVisibility = null,
+  onRecipeCreated,
+}) {
   const { t } = useTranslation();
   const toast = useToast();
   const { groups } = useAppState();
@@ -86,8 +99,8 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Add recipe form
-  const [showAddForm, setShowAddForm] = useState(false);
+  // Add recipe form — always open in addOnlyMode so the modal renders the form immediately.
+  const [showAddForm, setShowAddForm] = useState(addOnlyMode);
   // Auto-open the add-recipe form when signaled from outside (e.g. the
   // GroupsScreen empty-state button jumping in here for the first-recipe flow).
   useEffect(() => {
@@ -115,8 +128,10 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
   // Default to private so recipes never leak by accident. Users must
   // explicitly pick "Iedereen" to go public, and that option is gated
   // behind a complete chef profile (photo + name).
-  const [visibility, setVisibility] = useState('private');
-  const [selectedGroups, setSelectedGroups] = useState([]);
+  const [visibility, setVisibility] = useState(initialVisibility || 'private');
+  const [selectedGroups, setSelectedGroups] = useState(
+    Array.isArray(preselectedGroupIds) ? preselectedGroupIds : []
+  );
   const [saving, setSaving] = useState(false);
   // URL import — primary path. Full form stays hidden until import succeeds
   // or the user explicitly picks manual entry.
@@ -427,7 +442,14 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
         successHaptic();
         toast.success(t('chef.recipePublished') || 'Recept gepubliceerd!');
         resetForm();
-        await loadRecipes();
+        if (!addOnlyMode) {
+          await loadRecipes();
+        }
+        // Signal the parent (e.g. GroupsScreen modal) that we're done so it
+        // can refresh its carousel and close the modal.
+        if (typeof onRecipeCreated === 'function') {
+          onRecipeCreated(result.recipe);
+        }
       } else {
         toast.error(result.error || 'Kon recept niet toevoegen');
       }
@@ -753,7 +775,8 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
           keyboardDismissMode="on-drag"
           nestedScrollEnabled
         >
-          {/* Chef Profile Header */}
+          {/* Chef Profile Header — hidden in add-only mode (embedded modals) */}
+          {!addOnlyMode && (
           <View style={styles.profileHeader}>
             {chef?.profile_image ? (
               <ExpoImage
@@ -784,9 +807,10 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
               </TouchableOpacity>
             </View>
           </View>
+          )}
 
-          {/* Social Links */}
-          {chef?.links && Object.keys(chef.links).length > 0 && (
+          {/* Social Links — hidden in add-only mode */}
+          {!addOnlyMode && chef?.links && Object.keys(chef.links).length > 0 && (
             <View style={styles.socialLinks}>
               {chef.links.instagram && (
                 <View style={styles.socialChip}>
@@ -811,7 +835,7 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
 
           {/* Profile-incomplete banner — nudges the user to add a photo so
               they can share publicly, without blocking private recipe saving */}
-          {!isChefPublicReady(chef) && (
+          {!addOnlyMode && !isChefPublicReady(chef) && (
             <TouchableOpacity
               style={styles.profileNotice}
               onPress={() => { lightHaptic(); openEditProfile(); }}
@@ -837,7 +861,8 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
             </TouchableOpacity>
           )}
 
-          {/* Section Header: Recipes */}
+          {/* Section Header: Recipes — hidden in add-only mode */}
+          {!addOnlyMode && (
           <View style={styles.sectionHeader}>
             <View>
               <Text style={styles.sectionTitle}>{t('chef.myRecipes') || 'Mijn recepten'}</Text>
@@ -861,6 +886,7 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
               <Feather name={showAddForm ? 'x' : 'plus'} size={20} color={theme.colors.textInverse} />
             </TouchableOpacity>
           </View>
+          )}
 
           {/* Add Recipe Form */}
           {showAddForm && (
@@ -1488,8 +1514,8 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation, pending
 
           {/* Recipe List — hidden when the add form is open so the user isn't
               looking at a redundant "add your first recipe" CTA while they're
-              literally already adding one. */}
-          {loading ? (
+              literally already adding one. Also hidden in add-only mode. */}
+          {addOnlyMode ? null : loading ? (
             <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 30 }} />
           ) : recipes.length === 0 && !showAddForm ? (
             <EmptyState
