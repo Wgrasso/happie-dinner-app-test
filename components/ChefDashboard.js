@@ -180,7 +180,10 @@ export default function ChefDashboard({
   // or the user explicitly picks manual entry.
   const [urlInput, setUrlInput] = useState('');
   const [importing, setImporting] = useState(false);
-  const [showFullForm, setShowFullForm] = useState(false);
+  // When the parent already handled the import/manual decision upstream
+  // (prefilled or manual entry from GroupsScreen's inline card), start the
+  // full form open so we don't flash the URL-import card for one frame.
+  const [showFullForm, setShowFullForm] = useState(Boolean(startInFullForm));
   // Accordion: only one form section expanded at a time.
   const [expandedSection, setExpandedSection] = useState('basis');
   const toggleSection = (key) => {
@@ -934,7 +937,11 @@ export default function ChefDashboard({
           {/* Add Recipe Form */}
           {showAddForm && (
             <View style={styles.addForm}>
-              {/* ── URL import card (primary path) ── */}
+              {/* ── URL import card (primary path) ──
+                  Hidden when the parent has already handled the import
+                  upstream (GroupsScreen inline card) — skip straight to
+                  the full form. */}
+              {!startInFullForm && (
               <View style={styles.importCard}>
                 <Text style={styles.importTitle}>
                   {t('userRecipes.importTitle') || 'Recept van een website?'}
@@ -1026,6 +1033,7 @@ export default function ChefDashboard({
                     'Werkt met AH, Jumbo, BBC Good Food, AllRecipes en meer'}
                 </Text>
               </View>
+              )}
 
               {/* ── Divider + "Or enter manually" (only when full form hidden) ── */}
               {!showFullForm && (
