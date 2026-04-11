@@ -921,7 +921,9 @@ const ExpandableGroupCard = React.memo(({
               style={cardStyles.menuItem}
               onPress={() => {
                 setShowActionsMenu(false);
-                onChangePhoto?.();
+                InteractionManager.runAfterInteractions(() => {
+                  setTimeout(() => onChangePhoto?.(), 300);
+                });
               }}
             >
               <Text style={cardStyles.menuItemText}>{group.photo_url ? 'Foto wijzigen' : 'Groepsfoto toevoegen'}</Text>
@@ -6373,8 +6375,13 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               <TouchableOpacity
                 style={cardStyles.menuItem}
                 onPress={() => {
+                  // Close the menu FIRST, then open the image picker on
+                  // the next tick. iOS refuses to present a second system
+                  // modal while the current one is still animating away.
                   setShowActionsMenu(false);
-                  handleChangeGroupPhoto(selectedGroupId);
+                  InteractionManager.runAfterInteractions(() => {
+                    setTimeout(() => handleChangeGroupPhoto(selectedGroupId), 300);
+                  });
                 }}
               >
                 <Text style={cardStyles.menuItemText}>{selectedGroup.photo_url ? 'Foto wijzigen' : 'Groepsfoto toevoegen'}</Text>
