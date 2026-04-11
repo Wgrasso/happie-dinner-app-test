@@ -2590,13 +2590,18 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
   // when the carousel has at least one recipe.
   const [inlineImportExpanded, setInlineImportExpanded] = useState(false);
   // Chef add-recipe modal — reuses the exact same form from ChefDashboard
-  // but rendered in a modal on top of the group screen. ChefDashboard
-  // renders in addOnlyMode so only the add-recipe form is visible.
+  // but rendered in a centered popup (not a full page). Opens from the
+  // inline URL import card with either prefilled recipe data (when the
+  // user clicked "Importeer recept") or empty (when they clicked
+  // "of voer handmatig in").
   const [showChefAddModal, setShowChefAddModal] = useState(false);
   const [chefAddModalProfile, setChefAddModalProfile] = useState(null);
   const [chefAddModalLoading, setChefAddModalLoading] = useState(false);
-  const openChefAddModal = useCallback(async () => {
+  const [chefAddPrefilledRecipe, setChefAddPrefilledRecipe] = useState(null);
+
+  const openChefAddModalWith = useCallback(async (prefilled) => {
     lightHaptic();
+    setChefAddPrefilledRecipe(prefilled || null);
     setChefAddModalLoading(true);
     setShowChefAddModal(true);
     try {
@@ -2614,10 +2619,17 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       setChefAddModalLoading(false);
     }
   }, [toast]);
+
+  const openChefAddModalEmpty = useCallback(() => {
+    openChefAddModalWith(null);
+  }, [openChefAddModalWith]);
+
   const closeChefAddModal = useCallback(() => {
     setShowChefAddModal(false);
     setChefAddModalProfile(null);
+    setChefAddPrefilledRecipe(null);
   }, []);
+
   const handleChefAddModalSaved = useCallback(() => {
     // Drop the cache and reload so the new recipe shows immediately.
     if (selectedGroupId) {
@@ -2676,28 +2688,27 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         );
         return;
       }
-      const r = result.recipe;
-      setInlineDraft({
-        name: r.name || '',
-        description: r.description || '',
-        image: r.image || '',
-        cooking_time_minutes: r.cooking_time_minutes ? String(r.cooking_time_minutes) : '',
-        cuisine_type: r.cuisine_type || '',
-        ingredients: Array.isArray(r.ingredients) ? r.ingredients.join('\n') : '',
-        steps: Array.isArray(r.steps) ? r.steps.join('\n') : '',
+      // Success — open the chef add modal with the imported data prefilled.
+      await openChefAddModalWith({
+        ...result.recipe,
+        source_url: clean,
       });
-      setInlineShowDraft(true);
+      // Clean up the inline card state now that the modal has taken over.
+      setInlineUrlInput('');
+      setInlineImportExpanded(false);
     } catch (e) {
       toast.error(e?.message || 'Kon recept niet importeren');
     } finally {
       setInlineImporting(false);
     }
-  }, [inlineUrlInput, selectedGroupId, toast, t]);
+  }, [inlineUrlInput, selectedGroupId, toast, t, openChefAddModalWith]);
 
   const handleInlineOpenManual = useCallback(() => {
     lightHaptic();
-    setInlineShowDraft(true);
-  }, []);
+    setInlineUrlInput('');
+    setInlineImportExpanded(false);
+    openChefAddModalEmpty();
+  }, [openChefAddModalEmpty]);
 
   const handleInlineSaveDraft = useCallback(async () => {
     const name = (inlineDraft.name || '').trim();
@@ -5418,37 +5429,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                 <View style={{ paddingVertical: 20, alignItems: 'center' }}>
                   <ActivityIndicator size="small" color="#FF6B00" />
                 </View>
-              ) : groupSavedRecipes.length === 0 ? (
-                /* Empty-state CTA — opens the exact same add-recipe modal
-                   from the chef page. No inline URL input; users get the
-                   full featured form directly. */
-                <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-                  <Feather name="book-open" size={24} color="#FFB380" style={{ marginBottom: 8 }} />
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1000', marginBottom: 4 }}>
-                    {'Voeg jullie eerste groepsrecept toe'}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#999', textAlign: 'center', marginBottom: 14 }}>
-                    {'Importeer van een website of vul het zelf in.'}
-                  </Text>
-                  <TouchableOpacity
-                    style={gpStyles.inlineAddMoreBtn}
-                    onPress={openChefAddModal}
-                    activeOpacity={0.8}
-                    disabled={chefAddModalLoading}
-                  >
-                    {chefAddModalLoading ? (
-                      <ActivityIndicator size="small" color="#FF6B00" />
-                    ) : (
-                      <>
-                        <Feather name="plus" size={16} color="#FF6B00" />
-                        <Text style={gpStyles.inlineAddMoreBtnText}>
-                          {'Recept toevoegen'}
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              ) : (groupSavedRecipes.length === 0 || inlineShowDraft || inlineImportExpanded) ? (
+              ) : (groupSavedRecipes.length === 0 || inlineImportExpanded) ? (
                 inlineShowDraft ? (
                   /* ── Editable draft form — used after URL import AND for manual entry ── */
                   <View style={gpStyles.inlineImportCard}>
@@ -5774,24 +5755,21 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                     })}
                   </View>
                 </ScrollView>
-                {/* "+ Recept toevoegen" opens the exact same add-recipe form
-                    from the chef dashboard inside a modal. */}
+                {/* "+ Recept toevoegen" expands the same inline URL input
+                    card that the empty state shows. Importing or choosing
+                    manual entry then opens the chef add-form modal. */}
                 <TouchableOpacity
                   style={gpStyles.inlineAddMoreBtn}
-                  onPress={openChefAddModal}
+                  onPress={() => {
+                    lightHaptic();
+                    setInlineImportExpanded(true);
+                  }}
                   activeOpacity={0.8}
-                  disabled={chefAddModalLoading}
                 >
-                  {chefAddModalLoading ? (
-                    <ActivityIndicator size="small" color="#FF6B00" />
-                  ) : (
-                    <>
-                      <Feather name="plus" size={16} color="#FF6B00" />
-                      <Text style={gpStyles.inlineAddMoreBtnText}>
-                        {'Recept toevoegen'}
-                      </Text>
-                    </>
-                  )}
+                  <Feather name="plus" size={16} color="#FF6B00" />
+                  <Text style={gpStyles.inlineAddMoreBtnText}>
+                    {'Recept toevoegen'}
+                  </Text>
                 </TouchableOpacity>
                 </>
               )}
@@ -6487,54 +6465,51 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         onRecipePress={handleRecipePress}
       />
 
-      {/* Chef add-recipe modal — embeds the full ChefDashboard add form
-          (URL import + manual entry) with the current group pre-selected. */}
+      {/* Chef add-recipe modal — embeds the ChefDashboard add form inside
+          a centered popup (NOT a full page) with the current group
+          pre-selected. Opens from the inline URL card when the user clicks
+          'Importeer recept' or 'zelf bewerken'. */}
       <Modal
         visible={showChefAddModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        transparent
+        animationType="fade"
         onRequestClose={closeChefAddModal}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#FAF8F5' }}>
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderBottomWidth: 1,
-            borderBottomColor: '#EDE8DD',
-            backgroundColor: '#FFFFFF',
-          }}>
-            <TouchableOpacity
-              onPress={closeChefAddModal}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Text style={{ fontSize: 15, color: '#FF6B00', fontWeight: '600' }}>
-                {t('common.cancel') || 'Annuleren'}
-              </Text>
-            </TouchableOpacity>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1000' }}>
-              {'Recept toevoegen'}
-            </Text>
-            <View style={{ width: 60 }} />
-          </View>
-          {chefAddModalProfile ? (
-            <ChefDashboard
-              chef={chefAddModalProfile}
-              onChefUpdated={setChefAddModalProfile}
-              navigation={navigation}
-              addOnlyMode
-              preselectedGroupIds={selectedGroupId ? [selectedGroupId] : []}
-              initialVisibility="groups"
-              onRecipeCreated={handleChefAddModalSaved}
-            />
-          ) : (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <ActivityIndicator size="large" color="#FF6B00" />
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={closeChefAddModal}
+          />
+          <View style={gpStyles.chefModalContent}>
+            <View style={gpStyles.chefModalHeader}>
+              <Text style={gpStyles.chefModalTitle}>{'Recept toevoegen'}</Text>
+              <TouchableOpacity
+                style={gpStyles.chefModalClose}
+                onPress={closeChefAddModal}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Text style={gpStyles.chefModalCloseText}>✕</Text>
+              </TouchableOpacity>
             </View>
-          )}
-        </SafeAreaView>
+            {chefAddModalProfile ? (
+              <ChefDashboard
+                chef={chefAddModalProfile}
+                onChefUpdated={setChefAddModalProfile}
+                navigation={navigation}
+                addOnlyMode
+                preselectedGroupIds={selectedGroupId ? [selectedGroupId] : []}
+                initialVisibility="groups"
+                prefilledRecipe={chefAddPrefilledRecipe}
+                onRecipeCreated={handleChefAddModalSaved}
+              />
+            ) : (
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+                <ActivityIndicator size="large" color="#FF6B00" />
+              </View>
+            )}
+          </View>
+        </View>
       </Modal>
 
       {/* Create Group Modal */}
@@ -7131,6 +7106,49 @@ const gpStyles = StyleSheet.create({
   inlineAddMoreBtnText: {
     color: '#FF6B00',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  // --- Chef add-form popup modal ---
+  chefModalContent: {
+    width: '94%',
+    maxWidth: 440,
+    maxHeight: '90%',
+    backgroundColor: '#FAF8F5',
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#FF6B00',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  chefModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDE8DD',
+    backgroundColor: '#FFFFFF',
+  },
+  chefModalTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1A1000',
+  },
+  chefModalClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F5F2EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chefModalCloseText: {
+    fontSize: 16,
+    color: '#6B5A48',
     fontWeight: '600',
   },
   // --- Cards / Sections ---

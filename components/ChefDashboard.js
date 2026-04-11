@@ -88,6 +88,10 @@ export default function ChefDashboard({
   addOnlyMode = false,
   preselectedGroupIds = null,
   initialVisibility = null,
+  // Pre-filled recipe data — typically set when the caller has already
+  // imported a recipe from a URL and wants to let the user review/edit
+  // it before saving. The fields land in the form on first mount.
+  prefilledRecipe = null,
   onRecipeCreated,
 }) {
   const { t } = useTranslation();
@@ -101,6 +105,32 @@ export default function ChefDashboard({
 
   // Add recipe form — always open in addOnlyMode so the modal renders the form immediately.
   const [showAddForm, setShowAddForm] = useState(addOnlyMode);
+  // When the parent passed a prefilled recipe, drop it into the form state
+  // on first mount. We also jump straight to the full form (skipping the
+  // URL import card) since the import has already happened upstream.
+  useEffect(() => {
+    if (!prefilledRecipe) return;
+    const r = prefilledRecipe;
+    if (r.name) setRecipeName(r.name);
+    if (r.description) setRecipeDescription(r.description);
+    if (r.cooking_time_minutes) setRecipeCookingTime(String(r.cooking_time_minutes));
+    if (r.cuisine_type) setRecipeCuisine(r.cuisine_type);
+    if (r.image) setRecipeImageUri(r.image);
+    setInputMode('simple');
+    if (Array.isArray(r.ingredients) && r.ingredients.length > 0) {
+      setSimpleIngredients(r.ingredients.join('\n'));
+    }
+    if (Array.isArray(r.steps) && r.steps.length > 0) {
+      setSimpleSteps(r.steps.join('\n'));
+    }
+    setShowFullForm(true);
+    setShowAddForm(true);
+    // Clear URL input so the "just imported" card isn't stale.
+    setUrlInput('');
+    // Intentionally run once per prefilled payload — the parent gives us a
+    // fresh object reference each time it wants to (re)seed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefilledRecipe]);
   // Auto-open the add-recipe form when signaled from outside (e.g. the
   // GroupsScreen empty-state button jumping in here for the first-recipe flow).
   useEffect(() => {
