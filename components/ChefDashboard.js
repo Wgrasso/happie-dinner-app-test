@@ -31,7 +31,6 @@ import PrimaryButton from './ui/PrimaryButton';
 import Input from './ui/Input';
 import ListEditor from './ui/ListEditor';
 import EmptyState from './ui/EmptyState';
-import NotificationsDashboard from './NotificationsDashboard';
 import { lightHaptic, successHaptic } from '../lib/haptics';
 import { useToast } from './ui/Toast';
 import { useAppState } from '../lib/AppStateContext';
@@ -115,7 +114,6 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
   const [importing, setImporting] = useState(false);
   const [showFullForm, setShowFullForm] = useState(false);
   // Accordion: only one form section expanded at a time.
-  const [showNotificationsDash, setShowNotificationsDash] = useState(false);
   const [expandedSection, setExpandedSection] = useState('basis');
   const toggleSection = (key) => {
     lightHaptic();
@@ -730,22 +728,10 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
               {chef?.description ? (
                 <Text style={styles.profileDescription} numberOfLines={3}>{chef.description}</Text>
               ) : null}
-              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                <TouchableOpacity style={styles.editProfileBtn} onPress={openEditProfile} activeOpacity={0.8}>
-                  <Feather name="edit-2" size={13} color={theme.colors.primary} />
-                  <Text style={styles.editProfileBtnText}>{t('chef.editProfile') || 'Profiel bewerken'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.editProfileBtn}
-                  onPress={() => { lightHaptic(); setShowNotificationsDash(true); }}
-                  activeOpacity={0.8}
-                >
-                  <Feather name="bell" size={13} color={theme.colors.primary} />
-                  <Text style={styles.editProfileBtnText}>
-                    {t('notifications.dashboardTitle') || 'Notificaties'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity style={styles.editProfileBtn} onPress={openEditProfile} activeOpacity={0.8}>
+                <Feather name="edit-2" size={13} color={theme.colors.primary} />
+                <Text style={styles.editProfileBtnText}>{t('chef.editProfile') || 'Profiel bewerken'}</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -831,11 +817,6 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
             <View style={styles.addForm}>
               {/* ── URL import card (primary path) ── */}
               <View style={styles.importCard}>
-                {/* Hero icon */}
-                <View style={styles.importHero}>
-                  <Feather name="link-2" size={22} color={theme.colors.secondary} />
-                </View>
-
                 <Text style={styles.importTitle}>
                   {t('userRecipes.importTitle') || 'Recept van een website?'}
                 </Text>
@@ -1525,11 +1506,6 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <NotificationsDashboard
-        visible={showNotificationsDash}
-        onClose={() => setShowNotificationsDash(false)}
-      />
-
       {/* Recipe Detail Modal */}
       <Modal
         visible={recipeModalVisible}
@@ -1957,30 +1933,120 @@ export default function ChefDashboard({ chef, onChefUpdated, navigation }) {
                 </>
               )}
 
-              {/* Visibility */}
+              {/* Visibility — same hero card + chip row used in the add form */}
               <Text style={styles.formLabel}>{t('chef.visibility') || 'Wie kan dit zien?'}</Text>
-              <View style={styles.visibilityRow}>
-                {VISIBILITY_OPTIONS.map((opt) => (
-                  <TouchableOpacity
-                    key={opt.key}
-                    style={[styles.visibilityOption, editRecipeVisibility === opt.key && styles.visibilityOptionActive]}
-                    onPress={() => { lightHaptic(); setEditRecipeVisibility(opt.key); }}
-                    activeOpacity={0.8}
-                  >
-                    <Feather
-                      name={opt.icon}
-                      size={16}
-                      color={editRecipeVisibility === opt.key ? theme.colors.textInverse : theme.colors.primary}
-                    />
-                    <Text style={[
-                      styles.visibilityOptionText,
-                      editRecipeVisibility === opt.key && styles.visibilityOptionTextActive,
-                    ]}>
-                      {t(`chef.${opt.label}`) || opt.key}
+              {(() => {
+                const publicOpt = VISIBILITY_OPTIONS.find((o) => o.key === 'public');
+                const others = VISIBILITY_OPTIONS.filter((o) => o.key !== 'public');
+                const publicActive = editRecipeVisibility === 'public';
+                const publicReady = isChefPublicReady(chef);
+                const handlePublicTap = () => {
+                  lightHaptic();
+                  if (!publicReady) {
+                    Alert.alert(
+                      t('chef.completeProfileTitle') || 'Profiel eerst afmaken',
+                      t('chef.completeProfileMessage') ||
+                        'Voeg een profielfoto en een chefsnaam toe voordat je recepten met iedereen deelt.',
+                      [{ text: t('common.ok') || 'OK', style: 'cancel' }],
+                    );
+                    return;
+                  }
+                  setEditRecipeVisibility('public');
+                };
+                return (
+                  <>
+                    {publicOpt && (
+                      <TouchableOpacity
+                        style={[
+                          styles.visibilityHero,
+                          publicActive && styles.visibilityHeroActive,
+                          !publicReady && styles.visibilityHeroLocked,
+                        ]}
+                        onPress={handlePublicTap}
+                        activeOpacity={0.85}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: publicActive, disabled: !publicReady }}
+                      >
+                        <View
+                          style={[
+                            styles.visibilityHeroIcon,
+                            publicActive && styles.visibilityHeroIconActive,
+                          ]}
+                        >
+                          <Feather
+                            name={publicReady ? 'globe' : 'lock'}
+                            size={18}
+                            color={publicActive ? theme.colors.textInverse : theme.colors.secondary}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[
+                              styles.visibilityHeroTitle,
+                              publicActive && styles.visibilityHeroTitleActive,
+                            ]}
+                          >
+                            {t(`chef.${publicOpt.label}`) || 'Iedereen'}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.visibilityHeroHint,
+                              publicActive && styles.visibilityHeroHintActive,
+                            ]}
+                          >
+                            {publicReady
+                              ? t('chef.visibilityPublicHint') || 'Zichtbaar voor alle gebruikers'
+                              : t('chef.visibilityPublicLockedHint') || 'Maak eerst je chef-profiel compleet'}
+                          </Text>
+                        </View>
+                        {publicActive ? (
+                          <Feather name="check-circle" size={20} color={theme.colors.textInverse} />
+                        ) : null}
+                      </TouchableOpacity>
+                    )}
+                    <View style={styles.visibilityChipRow}>
+                      {others.map((opt) => {
+                        const isActive = editRecipeVisibility === opt.key;
+                        return (
+                          <TouchableOpacity
+                            key={opt.key}
+                            style={[
+                              styles.visibilityChip,
+                              isActive && styles.visibilityChipActive,
+                            ]}
+                            onPress={() => { lightHaptic(); setEditRecipeVisibility(opt.key); }}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: isActive }}
+                          >
+                            <Feather
+                              name={opt.icon}
+                              size={14}
+                              color={isActive ? theme.colors.textInverse : theme.colors.textSecondary}
+                            />
+                            <Text
+                              style={[
+                                styles.visibilityChipText,
+                                isActive && styles.visibilityChipTextActive,
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {t(`chef.${opt.label}`) || opt.key}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    <Text style={styles.privacyHint}>
+                      {editRecipeVisibility === 'private'
+                        ? t('chef.privacyHintPrivate') || 'Alleen jij kunt dit recept zien'
+                        : editRecipeVisibility === 'public'
+                        ? t('chef.privacyHintPublic') || 'Dit recept wordt gedeeld met alle gebruikers'
+                        : t('chef.privacyHintGroups') || 'Alleen de geselecteerde groepen kunnen dit zien'}
                     </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                  </>
+                );
+              })()}
 
               {/* Save */}
               <TouchableOpacity
@@ -2076,24 +2142,21 @@ const createStyles = (theme) => StyleSheet.create({
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1.5,
     borderColor: theme.colors.border,
-    padding: 20,
+    paddingTop: 22,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
     marginBottom: 10,
     alignItems: 'center',
   },
-  importHero: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: `${theme.colors.secondary}1A`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
   importTitle: {
-    fontSize: 17,
+    // Bigger, higher — the title IS the visual focus now that the link
+    // icon is gone. Playfair serif matches the rest of the brand headers.
+    fontFamily: theme.typography?.fontFamily?.heading || 'PlayfairDisplay_700Bold',
+    fontSize: 22,
     fontWeight: '700',
     color: theme.colors.text,
     textAlign: 'center',
+    marginTop: 2,
     marginBottom: 6,
   },
   importSubtitle: {

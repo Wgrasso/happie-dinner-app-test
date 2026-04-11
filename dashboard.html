@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happie Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0F1117; color: #E4E4E7; }
+  .header { padding: 20px 28px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1E2028; }
+  .header h1 { font-size: 22px; font-weight: 700; color: #E8845C; }
+  .header .meta { font-size: 12px; color: #71717A; }
+  .header .live { display: inline-block; width: 8px; height: 8px; background: #22C55E; border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .refresh-btn { background: #1E2028; border: 1px solid #2A2D37; color: #A1A1AA; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+  .refresh-btn:hover { background: #2A2D37; color: #E4E4E7; }
+  .reset-key { background: none; border: none; color: #52525B; cursor: pointer; font-size: 11px; text-decoration: underline; }
+  .reset-key:hover { color: #A1A1AA; }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 20px 28px; }
+  .stat-card { background: #16181D; border: 1px solid #1E2028; border-radius: 14px; padding: 20px; }
+  .stat-card .label { font-size: 12px; color: #71717A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-card .value { font-size: 32px; font-weight: 700; color: #FAFAFA; }
+  .stat-card .sub { font-size: 12px; color: #71717A; margin-top: 4px; }
+
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 28px 20px; }
+  .chart-card { background: #16181D; border: 1px solid #1E2028; border-radius: 14px; padding: 20px; }
+  .chart-card canvas { width: 100% !important; height: 200px !important; }
+  .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .chart-header h3 { font-size: 14px; color: #A1A1AA; font-weight: 500; margin: 0; }
+
+  .tables { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 28px 20px; }
+  .table-card { background: #16181D; border: 1px solid #1E2028; border-radius: 14px; padding: 20px; max-height: 340px; overflow-y: auto; }
+  .table-card h3 { font-size: 14px; color: #A1A1AA; margin-bottom: 14px; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: #71717A; font-weight: 500; padding: 6px 8px; border-bottom: 1px solid #1E2028; }
+  td { padding: 8px; border-bottom: 1px solid #1E2028; color: #D4D4D8; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .badge-yes { background: #052E16; color: #4ADE80; }
+  .badge-no { background: #350A0A; color: #F87171; }
+
+  .time-toggle { display: flex; gap: 4px; }
+  .time-btn { background: #1E2028; border: 1px solid #2A2D37; color: #71717A; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+  .time-btn.active { background: #E8845C; color: #FFF; border-color: #E8845C; }
+
+  .error { background: #350A0A; color: #F87171; padding: 12px 20px; margin: 20px 28px; border-radius: 10px; font-size: 13px; }
+
+  .announce-bar { padding: 0 28px 20px; }
+  .announce-card { background: #16181D; border: 1px solid #1E2028; border-radius: 14px; padding: 20px; }
+  .announce-card h3 { font-size: 14px; color: #A1A1AA; font-weight: 500; margin-bottom: 14px; }
+  .announce-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .announce-input { flex: 1; background: #0F1117; border: 1px solid #2A2D37; border-radius: 8px; padding: 10px 14px; color: #E4E4E7; font-size: 14px; font-family: inherit; }
+  .announce-input:focus { outline: none; border-color: #E8845C; }
+  .announce-input::placeholder { color: #52525B; }
+  .announce-btn { background: #E8845C; color: #FFF; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .announce-btn:hover { background: #D4743E; }
+  .announce-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .announce-info { font-size: 12px; color: #52525B; }
+  .announce-result { font-size: 12px; margin-top: 8px; padding: 8px 12px; border-radius: 6px; }
+  .announce-result.success { background: #052E16; color: #4ADE80; }
+  .announce-result.fail { background: #350A0A; color: #F87171; }
+
+  .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; }
+  .confirm-box { background: #16181D; border: 1px solid #2A2D37; border-radius: 16px; padding: 28px; max-width: 440px; width: 90%; }
+  .confirm-box h3 { color: #FAFAFA; font-size: 18px; margin-bottom: 12px; }
+  .confirm-box p { color: #A1A1AA; font-size: 14px; line-height: 1.5; margin-bottom: 6px; }
+  .confirm-box .preview { background: #0F1117; border: 1px solid #2A2D37; border-radius: 8px; padding: 12px; margin: 12px 0; }
+  .confirm-box .preview .prev-title { color: #E8845C; font-weight: 600; font-size: 14px; }
+  .confirm-box .preview .prev-body { color: #D4D4D8; font-size: 13px; margin-top: 4px; }
+  .confirm-btns { display: flex; gap: 10px; margin-top: 18px; }
+  .confirm-btns button { flex: 1; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-cancel { background: #2A2D37; color: #A1A1AA; }
+  .btn-cancel:hover { background: #3A3D47; }
+  .btn-send { background: #E8845C; color: #FFF; }
+  .btn-send:hover { background: #D4743E; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🍳 Happie Dashboard</h1>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <span class="meta"><span class="live"></span> Live</span>
+    <span class="meta" id="last-updated"></span>
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    <button class="reset-key" onclick="localStorage.removeItem('happie_dashboard_key');location.reload()">Reset key</button>
+  </div>
+</div>
+
+<div class="announce-bar">
+  <div class="announce-card">
+    <h3>📢 Announcement sturen naar alle gebruikers</h3>
+    <div class="announce-row">
+      <input class="announce-input" id="announce-title" placeholder="Titel (bijv. 'Nieuwe update!')" maxlength="60">
+      <input class="announce-input" id="announce-body" placeholder="Bericht (bijv. 'Check de nieuwe features...')" maxlength="200" style="flex:2">
+      <button class="announce-btn" id="announce-send" onclick="prepareAnnouncement()">Verstuur</button>
+    </div>
+    <div class="announce-row" style="gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:12px;color:#71717A;">Filter:</span>
+      <select class="announce-input" id="announce-filter" style="flex:0 0 auto;width:auto;padding:6px 10px;font-size:12px;" onchange="updateFilterInfo()">
+        <option value="all">Alle gebruikers</option>
+        <option value="group-size">Groepsgrootte</option>
+        <option value="no-group">Zonder groep</option>
+        <option value="inactive">Niet gestemd vandaag</option>
+      </select>
+      <div id="filter-size-opts" style="display:none;gap:6px;align-items:center;">
+        <span style="font-size:12px;color:#71717A;">Min:</span>
+        <input class="announce-input" id="filter-min" type="number" min="1" value="1" style="flex:0 0 auto;width:60px;padding:6px 10px;font-size:12px;">
+        <span style="font-size:12px;color:#71717A;">Max:</span>
+        <input class="announce-input" id="filter-max" type="number" min="1" value="2" style="flex:0 0 auto;width:60px;padding:6px 10px;font-size:12px;">
+        <span style="font-size:12px;color:#71717A;">leden</span>
+      </div>
+    </div>
+    <div class="announce-info" id="announce-info">Stuurt een push notificatie naar alle gebruikers met een push token.</div>
+    <div id="announce-result"></div>
+  </div>
+</div>
+
+<div class="announce-bar">
+  <div class="announce-card">
+    <h3>💬 Bericht sturen in groepschats</h3>
+    <div class="announce-row">
+      <input class="announce-input" id="chat-msg" placeholder="Bericht (bijv. 'Vergeet niet te stemmen vanavond!')" style="flex:2">
+      <button class="announce-btn" id="chat-send" onclick="prepareChatBroadcast()">Verstuur</button>
+    </div>
+    <div class="announce-row" style="gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:12px;color:#71717A;">Filter:</span>
+      <select class="announce-input" id="chat-filter" style="flex:0 0 auto;width:auto;padding:6px 10px;font-size:12px;" onchange="updateChatFilterInfo()">
+        <option value="all">Alle groepen</option>
+        <option value="group-size">Groepsgrootte</option>
+        <option value="no-vote-today">Nog niet gestemd vandaag</option>
+        <option value="has-vote-today">Al gestemd vandaag</option>
+      </select>
+      <div id="chat-filter-size-opts" style="display:none;gap:6px;align-items:center;">
+        <span style="font-size:12px;color:#71717A;">Min:</span>
+        <input class="announce-input" id="chat-filter-min" type="number" min="1" value="1" style="flex:0 0 auto;width:60px;padding:6px 10px;font-size:12px;">
+        <span style="font-size:12px;color:#71717A;">Max:</span>
+        <input class="announce-input" id="chat-filter-max" type="number" min="1" value="2" style="flex:0 0 auto;width:60px;padding:6px 10px;font-size:12px;">
+        <span style="font-size:12px;color:#71717A;">leden</span>
+      </div>
+    </div>
+    <div class="announce-info" id="chat-info">Stuurt een bericht in de groepschat van alle groepen.</div>
+    <div id="chat-result"></div>
+  </div>
+</div>
+
+<div class="announce-bar">
+  <div class="announce-card">
+    <h3>👋 Solo-groepen nudge (1 lid)</h3>
+    <p style="font-size:12px;color:#71717A;margin-bottom:10px;">Vindt groepen met maar 1 lid, voegt Happie toe als lid, en stuurt een chatbericht om meer mensen uit te nodigen.</p>
+    <div class="announce-row">
+      <input class="announce-input" id="solo-msg" placeholder="Bericht (bijv. 'Hey! Nodig je vrienden uit om samen te koken 🍳')" style="flex:2" value="Hey! 👋 Happie is leuker met vrienden. Nodig ze uit via de groepscode en kook samen!">
+      <button class="announce-btn" id="solo-send" onclick="prepareSoloNudge()">Verstuur</button>
+    </div>
+    <div class="announce-info" id="solo-info">Laden...</div>
+    <div id="solo-result"></div>
+  </div>
+</div>
+
+<div class="announce-bar">
+  <div class="announce-card">
+    <h3>🪟 In-App Popup beheren</h3>
+    <div id="popup-active" style="margin-bottom:12px;"></div>
+    <div class="announce-row">
+      <input class="announce-input" id="popup-title" placeholder="Titel (bijv. 'Welkom bij Happie!')">
+    </div>
+    <div class="announce-row">
+      <textarea class="announce-input" id="popup-body" placeholder="Bericht — gebruik [linktekst](https://url) voor links" rows="3" style="resize:vertical;min-height:60px;"></textarea>
+    </div>
+    <div class="announce-row" style="align-items:center;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;background:#1E2028;border:1px solid #2A2D37;border-radius:8px;padding:8px 14px;flex:0 0 auto;">
+        <span style="font-size:13px;color:#A1A1AA;">📷 Afbeelding</span>
+        <input type="file" id="popup-image-file" accept="image/*" style="display:none;" onchange="handlePopupImageUpload(this)">
+      </label>
+      <span id="popup-image-name" style="font-size:12px;color:#52525B;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Geen bestand gekozen</span>
+      <img id="popup-image-preview" style="display:none;width:40px;height:40px;border-radius:6px;object-fit:cover;">
+      <input class="announce-input" id="popup-btn-text" placeholder="Knop tekst (standaard: OK)" style="flex:1">
+      <input class="announce-input" id="popup-btn-link" placeholder="Knop link URL (optioneel)" style="flex:1">
+    </div>
+    <div class="announce-row" style="gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:12px;color:#71717A;">Filter:</span>
+      <select class="announce-input" id="popup-filter" style="flex:0 0 auto;width:auto;padding:6px 10px;font-size:12px;" onchange="updatePopupFilterInfo()">
+        <option value="all">Alle gebruikers</option>
+        <option value="group-size">Groepsgrootte</option>
+        <option value="no-group">Zonder groep</option>
+        <option value="inactive">Niet gestemd vandaag</option>
+      </select>
+      <div id="popup-filter-size-opts" style="display:none;gap:6px;align-items:center;">
+        <span style="font-size:12px;color:#71717A;">Min:</span>
+        <input class="announce-input" id="popup-filter-min" type="number" min="1" value="1" style="flex:0 0 auto;width:60px;padding:6px 10px;font-size:12px;">
+        <span style="font-size:12px;color:#71717A;">Max:</span>
+        <input class="announce-input" id="popup-filter-max" type="number" min="1" value="2" style="flex:0 0 auto;width:60px;padding:6px 10px;font-size:12px;">
+        <span style="font-size:12px;color:#71717A;">leden</span>
+      </div>
+    </div>
+    <div class="announce-row" style="gap:8px;">
+      <button class="announce-btn" onclick="savePopup()">Popup activeren</button>
+      <button class="announce-btn" style="background:#2A2D37;" onclick="deactivateAllPopups()">Alle popups uitzetten</button>
+    </div>
+    <div class="announce-info">Popup verschijnt 1x per gebruiker bij het openen van de app. Ondersteunt [linktekst](url) in het bericht.</div>
+    <div id="popup-result"></div>
+  </div>
+</div>
+
+<div id="confirm-modal" style="display:none"></div>
+
+<div class="grid" id="stats-grid" style="grid-template-columns:repeat(5,1fr);">
+  <div class="stat-card"><div class="label">Laden...</div><div class="value">-</div></div>
+  <div class="stat-card"><div class="label">Laden...</div><div class="value">-</div></div>
+  <div class="stat-card"><div class="label">Laden...</div><div class="value">-</div></div>
+  <div class="stat-card"><div class="label">Laden...</div><div class="value">-</div></div>
+  <div class="stat-card"><div class="label">Laden...</div><div class="value">-</div></div>
+</div>
+
+<div class="charts">
+  <div class="chart-card">
+    <div class="chart-header">
+      <h3>Responses per uur</h3>
+      <div class="time-toggle" data-chart="responses">
+        <button class="time-btn active" onclick="toggle(this,'responses','24h')">24u</button>
+        <button class="time-btn" onclick="toggle(this,'responses','2h')">2u</button>
+      </div>
+    </div>
+    <canvas id="responsesChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <h3>Chat berichten per uur</h3>
+      <div class="time-toggle" data-chart="chat">
+        <button class="time-btn active" onclick="toggle(this,'chat','24h')">24u</button>
+        <button class="time-btn" onclick="toggle(this,'chat','2h')">2u</button>
+      </div>
+    </div>
+    <canvas id="chatChart"></canvas>
+  </div>
+</div>
+
+<div class="charts">
+  <div class="chart-card">
+    <div class="chart-header">
+      <h3>Nieuwe gebruikers</h3>
+      <div class="time-toggle" data-chart="signups">
+        <button class="time-btn active" onclick="toggle(this,'signups','24h')">24u</button>
+        <button class="time-btn" onclick="toggle(this,'signups','2h')">2u</button>
+      </div>
+    </div>
+    <canvas id="signupsChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <h3>Votes per uur</h3>
+      <div class="time-toggle" data-chart="votes">
+        <button class="time-btn active" onclick="toggle(this,'votes','24h')">24u</button>
+        <button class="time-btn" onclick="toggle(this,'votes','2h')">2u</button>
+      </div>
+    </div>
+    <canvas id="votesTimeChart"></canvas>
+  </div>
+</div>
+
+<div class="charts">
+  <div class="chart-card">
+    <div class="chart-header"><h3>Groepen per ledenaantal</h3></div>
+    <canvas id="groupSizeChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header"><h3>Top recepten (actieve rondes)</h3></div>
+    <canvas id="topRecipesChart"></canvas>
+  </div>
+</div>
+
+<div class="charts">
+  <div class="chart-card">
+    <div class="chart-header"><h3>App versies</h3></div>
+    <canvas id="versionChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header"><h3>Versie details</h3></div>
+    <div id="version-table" style="font-size:13px;"></div>
+  </div>
+</div>
+
+<div class="tables">
+  <div class="table-card" style="grid-column:span 2;max-height:none;">
+    <h3>Alle groepen — eerste stem vandaag</h3>
+    <div style="display:flex;gap:24px;">
+      <div style="flex:1">
+        <div style="font-size:12px;color:#71717A;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">❌ Nog geen stem</div>
+        <div id="groups-no-vote"></div>
+      </div>
+      <div style="width:1px;background:#1E2028;"></div>
+      <div style="flex:1">
+        <div style="font-size:12px;color:#71717A;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">✅ Al gestemd</div>
+        <div id="groups-has-vote"></div>
+      </div>
+    </div>
+  </div>
+  <div class="table-card">
+    <h3>Nieuwste gebruikers</h3>
+    <table id="users-table">
+      <thead><tr><th>Naam</th><th>Email</th><th>Sinds</th></tr></thead>
+      <tbody><tr><td colspan="3" style="color:#71717A">Laden...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ NOTIFICATIONS (owner-only, not shown in the mobile app) ═══ -->
+<div class="tables" style="padding:0 28px 20px;">
+  <div class="table-card" style="grid-column:span 2;max-height:none;">
+    <h3>Notificaties — templates &amp; verzonden</h3>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:280px;">
+        <div style="font-size:12px;color:#71717A;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">📨 Templates</div>
+        <div id="notif-templates" style="font-size:13px;color:#A1A1AA;"></div>
+      </div>
+      <div style="width:1px;background:#1E2028;"></div>
+      <div style="flex:2;min-width:320px;">
+        <div style="font-size:12px;color:#71717A;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">📬 Verzonden (laatste 50)</div>
+        <div id="notif-log" style="font-size:13px;color:#A1A1AA;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://xyynvfmjwhzlqdteofep.supabase.co';
+let SUPABASE_KEY = localStorage.getItem('happie_dashboard_key');
+if (!SUPABASE_KEY) {
+  SUPABASE_KEY = prompt('Plak je Supabase service_role key:\n(Dashboard → Settings → API → service_role)');
+  if (SUPABASE_KEY) localStorage.setItem('happie_dashboard_key', SUPABASE_KEY);
+}
+if (!SUPABASE_KEY) { document.body.innerHTML = '<div class="error">Geen key. Refresh om opnieuw te proberen.</div>'; throw new Error('No key'); }
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const C = { orange:'#E8845C', green:'#4ADE80', red:'#F87171', blue:'#60A5FA', purple:'#A78BFA', gray:'#52525B' };
+const scaleOpts = {
+  x: { grid:{color:'#1E2028'}, ticks:{color:'#52525B',font:{size:10}} },
+  y: { grid:{color:'#1E2028'}, ticks:{color:'#52525B',font:{size:10},stepSize:1}, beginAtZero:true },
+};
+const defOpts = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:scaleOpts };
+
+const charts = {};
+const ranges = { responses:'24h', chat:'24h', signups:'24h', votes:'24h' };
+
+function todayStart() { const d=new Date(); d.setHours(0,0,0,0); return d.toISOString(); }
+function hoursAgo(h) { return new Date(Date.now()-h*3600000).toISOString(); }
+function since(range) { return range==='2h' ? hoursAgo(2) : todayStart(); }
+function fmtTime(iso) { return new Date(iso).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}); }
+function fmtDate(iso) { return new Date(iso).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}); }
+
+function bucketize(data, range, dateField='created_at') {
+  const size = range==='2h' ? 5 : 60; // 5 min for 2h, 60 min for 24h
+  const buckets = {};
+
+  // Pre-fill all time slots so graph goes up to "now"
+  const now = new Date();
+  const nowMins = now.getHours()*60+now.getMinutes();
+  if (range === '2h') {
+    const startMins = Math.max(0, nowMins - 120);
+    for (let m = Math.floor(startMins/size)*size; m <= nowMins; m += size) {
+      const key = String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+      buckets[key] = 0;
+    }
+  } else {
+    for (let h = 0; h <= now.getHours(); h++) {
+      buckets[String(h).padStart(2,'0') + ':00'] = 0;
+    }
+  }
+
+  (data||[]).forEach(r => {
+    const d = new Date(r[dateField]);
+    const mins = d.getHours()*60+d.getMinutes();
+    const b = Math.floor(mins/size)*size;
+    const key = String(Math.floor(b/60)).padStart(2,'0') + ':' + String(b%60).padStart(2,'0');
+    buckets[key] = (buckets[key]||0) + 1;
+  });
+  return buckets;
+}
+
+function toggle(btn, chart, range) {
+  btn.parentElement.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ranges[chart] = range;
+  loaders[chart](range);
+}
+
+// === STATS ===
+async function loadStats() {
+  const today = new Date().toISOString().split('T')[0];
+  const [totalUsers, totalGroups, todayYes, todayNo, todayMessages, profilesData] = await Promise.all([
+    sb.from('profiles').select('*',{count:'exact',head:true}).then(r=>r.count||0),
+    sb.from('groups').select('*',{count:'exact',head:true}).eq('is_active',true).then(r=>r.count||0),
+    sb.from('daily_responses').select('*',{count:'exact',head:true}).eq('response','yes').eq('response_date',today).then(r=>r.count||0),
+    sb.from('daily_responses').select('*',{count:'exact',head:true}).eq('response','no').eq('response_date',today).then(r=>r.count||0),
+    sb.from('group_messages').select('*',{count:'exact',head:true}).gte('created_at',todayStart()).then(r=>r.count||0),
+    sb.from('profiles').select('push_token'),
+  ]);
+
+  const allProfiles = profilesData.data || [];
+  const withToken = allProfiles.filter(p => p.push_token && p.push_token.startsWith('ExponentPushToken')).length;
+  const withoutToken = allProfiles.length - withToken;
+  const pct = allProfiles.length > 0 ? Math.round(withToken / allProfiles.length * 100) : 0;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="label">Gebruikers</div><div class="value">${totalUsers}</div></div>
+    <div class="stat-card"><div class="label">Groepen</div><div class="value">${totalGroups}</div></div>
+    <div class="stat-card"><div class="label">Responses vandaag</div><div class="value">${todayYes+todayNo}</div>
+      <div class="sub"><span class="badge badge-yes">${todayYes} ja</span> <span class="badge badge-no">${todayNo} nee</span></div></div>
+    <div class="stat-card"><div class="label">Berichten vandaag</div><div class="value">${todayMessages}</div></div>
+    <div class="stat-card"><div class="label">Push notificaties</div><div class="value">${pct}%</div>
+      <div class="sub"><span class="badge badge-yes">${withToken} aan</span> <span class="badge badge-no">${withoutToken} uit</span></div></div>
+  `;
+}
+
+// === CHART LOADERS ===
+async function loadResponses(range) {
+  const {data} = await sb.from('daily_responses').select('created_at, response').gte('created_at',since(range)).order('created_at');
+  const size = range==='2h'?5:60;
+  const buckets = {};
+
+  // Pre-fill time slots up to now
+  const now = new Date();
+  const nowMins = now.getHours()*60+now.getMinutes();
+  if (range === '2h') {
+    const startMins = Math.max(0, nowMins - 120);
+    for (let m = Math.floor(startMins/size)*size; m <= nowMins; m += size) {
+      const key = String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+      buckets[key] = {yes:0,no:0};
+    }
+  } else {
+    for (let h = 0; h <= now.getHours(); h++) {
+      buckets[String(h).padStart(2,'0') + ':00'] = {yes:0,no:0};
+    }
+  }
+
+  (data||[]).forEach(r => {
+    const d=new Date(r.created_at), mins=d.getHours()*60+d.getMinutes();
+    const b=Math.floor(mins/size)*size;
+    const key=String(Math.floor(b/60)).padStart(2,'0')+':'+String(b%60).padStart(2,'0');
+    if(!buckets[key]) buckets[key]={yes:0,no:0};
+    buckets[key][r.response==='yes'?'yes':'no']++;
+  });
+  const labels=Object.keys(buckets).sort();
+  if(charts.responses) charts.responses.destroy();
+  charts.responses = new Chart(document.getElementById('responsesChart'),{
+    type:'bar', data:{labels, datasets:[
+      {label:'Ja',data:labels.map(l=>buckets[l].yes),backgroundColor:C.green,borderRadius:4},
+      {label:'Nee',data:labels.map(l=>buckets[l].no),backgroundColor:C.red,borderRadius:4},
+    ]}, options:{...defOpts,plugins:{legend:{display:true,labels:{color:'#71717A',font:{size:11}}}}}
+  });
+}
+
+async function loadChat(range) {
+  const {data} = await sb.from('group_messages').select('created_at').gte('created_at',since(range)).order('created_at');
+  const buckets = bucketize(data,range);
+  const labels=Object.keys(buckets).sort();
+  if(charts.chat) charts.chat.destroy();
+  charts.chat = new Chart(document.getElementById('chatChart'),{
+    type:'line', data:{labels, datasets:[{data:labels.map(l=>buckets[l]),borderColor:C.orange,backgroundColor:C.orange+'20',fill:true,tension:0.3,pointRadius:3}]},
+    options:defOpts
+  });
+}
+
+async function loadSignups(range) {
+  const {data} = await sb.from('profiles').select('created_at').gte('created_at',since(range)).order('created_at');
+  const buckets = bucketize(data,range);
+  const labels=Object.keys(buckets).sort();
+  if(charts.signups) charts.signups.destroy();
+  charts.signups = new Chart(document.getElementById('signupsChart'),{
+    type:'bar', data:{labels, datasets:[{data:labels.map(l=>buckets[l]),backgroundColor:C.blue,borderRadius:4}]},
+    options:defOpts
+  });
+}
+
+async function loadVotesTime(range) {
+  const {data} = await sb.from('meal_votes').select('created_at').gte('created_at',since(range)).order('created_at');
+  const buckets = bucketize(data,range);
+  const labels=Object.keys(buckets).sort();
+  if(charts.votes) charts.votes.destroy();
+  charts.votes = new Chart(document.getElementById('votesTimeChart'),{
+    type:'line', data:{labels, datasets:[{data:labels.map(l=>buckets[l]),borderColor:C.purple,backgroundColor:C.purple+'20',fill:true,tension:0.3,pointRadius:3}]},
+    options:defOpts
+  });
+}
+
+async function loadGroupSize() {
+  const {data:groups} = await sb.from('groups').select('id').eq('is_active',true);
+  if(!groups?.length) return;
+  const sizes={};
+  await Promise.all(groups.map(async g=>{
+    const{count}=await sb.from('group_members').select('*',{count:'exact',head:true}).eq('group_id',g.id).eq('is_active',true);
+    sizes[count]=(sizes[count]||0)+1;
+  }));
+  const max = Math.max(...Object.keys(sizes).map(Number));
+  const labels = [];
+  const values = [];
+  for(let i=1;i<=max;i++){ labels.push(String(i)); values.push(sizes[i]||0); }
+  if(charts.groupSize) charts.groupSize.destroy();
+  charts.groupSize = new Chart(document.getElementById('groupSizeChart'),{
+    type:'bar', data:{labels,datasets:[{data:values,backgroundColor:C.blue,borderRadius:4}]},
+    options:{...defOpts, plugins:{legend:{display:false}}, scales:{...scaleOpts, x:{...scaleOpts.x,title:{display:true,text:'Leden',color:'#52525B',font:{size:11}}}}}
+  });
+}
+
+async function loadTopRecipes() {
+  const {data:requests} = await sb.from('meal_requests').select('id').eq('status','active').limit(5);
+  if(!requests?.length){if(charts.topRecipes)charts.topRecipes.destroy();return;}
+  const {data:options} = await sb.from('meal_options').select('id, meal_data').in('request_id',requests.map(r=>r.id));
+  if(!options?.length) return;
+  const {data:votes} = await sb.from('meal_votes').select('meal_option_id, vote').in('meal_option_id',options.map(o=>o.id));
+  const vc={};(votes||[]).forEach(v=>{if(v.vote==='yes')vc[v.meal_option_id]=(vc[v.meal_option_id]||0)+1;});
+  const sorted=options.map(o=>({name:o.meal_data?.name||'?',votes:vc[o.id]||0})).sort((a,b)=>b.votes-a.votes).slice(0,8);
+  if(charts.topRecipes) charts.topRecipes.destroy();
+  charts.topRecipes = new Chart(document.getElementById('topRecipesChart'),{
+    type:'bar', data:{labels:sorted.map(s=>s.name.length>22?s.name.slice(0,20)+'…':s.name),datasets:[{data:sorted.map(s=>s.votes),backgroundColor:C.orange,borderRadius:4}]},
+    options:{...defOpts,indexAxis:'y'}
+  });
+}
+
+// === TABLES ===
+async function loadGroupsTable() {
+  const today = new Date().toISOString().split('T')[0];
+  const {data:groups} = await sb.from('groups').select('id, name, join_code').eq('is_active',true).order('name');
+  if(!groups?.length) return;
+
+  // Get all yes responses today in one query
+  const {data:responses} = await sb.from('daily_responses').select('group_id').eq('response','yes').eq('response_date',today);
+  const groupsWithVote = new Set((responses||[]).map(r=>r.group_id));
+
+  // Get member counts
+  const counts = {};
+  await Promise.all(groups.map(async g=>{
+    const{count}=await sb.from('group_members').select('*',{count:'exact',head:true}).eq('group_id',g.id).eq('is_active',true);
+    counts[g.id]=count||0;
+  }));
+
+  const itemHtml = (g) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #1E2028;">
+      <div>
+        <span style="color:#E4E4E7;font-size:13px;font-weight:500;">${g.name}</span>
+        <span style="color:#52525B;font-size:11px;margin-left:8px;">${counts[g.id]} leden</span>
+      </div>
+      <span style="font-family:monospace;color:#52525B;font-size:11px;">${g.join_code}</span>
+    </div>`;
+
+  const noVote = groups.filter(g => !groupsWithVote.has(g.id));
+  const hasVote = groups.filter(g => groupsWithVote.has(g.id));
+
+  document.getElementById('groups-no-vote').innerHTML = noVote.length
+    ? noVote.map(itemHtml).join('')
+    : '<div style="color:#52525B;font-size:13px;padding:8px;">Alle groepen hebben al gestemd!</div>';
+  document.getElementById('groups-has-vote').innerHTML = hasVote.length
+    ? hasVote.map(itemHtml).join('')
+    : '<div style="color:#52525B;font-size:13px;padding:8px;">Nog geen groep heeft gestemd.</div>';
+}
+
+async function loadUsersTable() {
+  const {data} = await sb.from('profiles').select('full_name, email, created_at').order('created_at',{ascending:false}).limit(15);
+  if(!data?.length) return;
+  document.querySelector('#users-table tbody').innerHTML = data.map(u=>`
+    <tr><td>${u.full_name||'-'}</td><td>${u.email||'-'}</td><td>${fmtDate(u.created_at)}</td></tr>
+  `).join('');
+}
+
+// === LOADER MAP ===
+const loaders = { responses:loadResponses, chat:loadChat, signups:loadSignups, votes:loadVotesTime };
+
+async function loadAll() {
+  document.getElementById('last-updated').textContent = 'Updating...';
+  try {
+    await Promise.all([
+      loadStats(),
+      loadResponses(ranges.responses),
+      loadChat(ranges.chat),
+      loadSignups(ranges.signups),
+      loadVotesTime(ranges.votes),
+      loadGroupSize(),
+      loadTopRecipes(),
+      loadVersionChart(),
+      loadGroupsTable(),
+      loadUsersTable(),
+      loadNotifications(),
+    ]);
+  } catch(e) { console.error('Dashboard error:',e); }
+  document.getElementById('last-updated').textContent = 'Bijgewerkt: '+new Date().toLocaleTimeString('nl-NL');
+}
+
+// Tiny HTML escaper used by the notifications panel below. Anything that
+// is rendered via innerHTML must pass through this so DB-stored copy can
+// never inject script tags or event handlers.
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// === NOTIFICATIONS ===
+// Renders the templates the app can send (currently just inactive_reminder)
+// + the most recent notification_log rows. Owner-only, not in the app.
+const NOTIF_TEMPLATES = [
+  {
+    kind: 'inactive_reminder',
+    title: 'We missen je! 🍽️',
+    body: 'We merken dat je al een paar dagen niet hebt gestemd. Kom lekker terug en kies wat jullie vanavond eten.',
+    trigger: 'Automatisch verzonden als iemand 4+ dagen niet heeft gestemd (max 1× per 14 dagen).',
+  },
+];
+
+function renderNotifTemplates() {
+  const html = NOTIF_TEMPLATES.map(t => `
+    <div style="border:1px solid #1E2028;border-radius:10px;padding:12px;margin-bottom:10px;background:#0F1117;">
+      <div style="display:inline-block;background:#E8845C22;color:#E8845C;font-size:10px;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;margin-bottom:8px;">${escHtml(t.kind)}</div>
+      <div style="font-weight:700;color:#FAFAFA;font-size:13px;margin-bottom:3px;">${escHtml(t.title)}</div>
+      <div style="color:#A1A1AA;font-size:12px;line-height:17px;margin-bottom:8px;">${escHtml(t.body)}</div>
+      <div style="display:flex;gap:5px;align-items:flex-start;font-size:11px;color:#71717A;line-height:15px;border-top:1px solid #1E2028;padding-top:8px;">
+        <span>⏱</span><span>${escHtml(t.trigger)}</span>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('notif-templates').innerHTML = html;
+}
+
+async function loadNotifications() {
+  renderNotifTemplates();
+  try {
+    const { data, error } = await sb
+      .from('notification_log')
+      .select('id, user_id, kind, title, body, status, error, sent_at, created_at')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    const container = document.getElementById('notif-log');
+    if (error) {
+      container.textContent = 'Tabel notification_log bestaat nog niet. Run migrations/add-notification-log.sql in Supabase SQL editor.';
+      container.style.color = '#71717A';
+      container.style.fontSize = '12px';
+      return;
+    }
+    if (!data || data.length === 0) {
+      container.textContent = 'Nog niets verzonden.';
+      container.style.color = '#71717A';
+      container.style.fontSize = '12px';
+      return;
+    }
+
+    const fmt = (iso) => new Date(iso).toLocaleString('nl-NL', {
+      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+    });
+
+    container.innerHTML = data.map(log => {
+      const statusColor = log.status === 'failed' ? '#EF4444'
+        : log.status === 'scheduled' ? '#FACC15' : '#22C55E';
+      const statusIcon = log.status === 'failed' ? '✕'
+        : log.status === 'scheduled' ? '⏱' : '✓';
+      return `
+        <div style="border:1px solid #1E2028;border-radius:10px;padding:12px;margin-bottom:8px;background:#0F1117;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="display:inline-block;background:#E8845C22;color:#E8845C;font-size:10px;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;">${escHtml(log.kind)}</div>
+            <div style="font-size:11px;color:${statusColor};">${statusIcon} ${escHtml(log.status)} · ${escHtml(fmt(log.sent_at || log.created_at))}</div>
+          </div>
+          <div style="font-weight:700;color:#FAFAFA;font-size:13px;margin-bottom:2px;">${escHtml(log.title)}</div>
+          <div style="color:#A1A1AA;font-size:12px;line-height:17px;">${escHtml(log.body)}</div>
+          ${log.error ? `<div style="margin-top:6px;font-size:11px;color:#EF4444;">${escHtml(log.error)}</div>` : ''}
+          <div style="margin-top:6px;font-size:10px;color:#52525B;font-family:monospace;">user: ${escHtml(String(log.user_id || '').slice(0, 8))}…</div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    console.error('loadNotifications error:', e);
+  }
+}
+
+// === ANNOUNCEMENTS ===
+function updateFilterInfo() {
+  const filter = document.getElementById('announce-filter').value;
+  const sizeOpts = document.getElementById('filter-size-opts');
+  sizeOpts.style.display = filter === 'group-size' ? 'flex' : 'none';
+  const info = document.getElementById('announce-info');
+  if (filter === 'all') info.textContent = 'Stuurt naar alle gebruikers met een push token.';
+  else if (filter === 'group-size') info.textContent = 'Stuurt naar gebruikers in groepen met het opgegeven aantal leden.';
+  else if (filter === 'no-group') info.textContent = 'Stuurt naar gebruikers die in geen enkele groep zitten.';
+  else if (filter === 'inactive') info.textContent = 'Stuurt naar gebruikers die vandaag nog niet "ja" hebben gestemd.';
+}
+
+async function getFilteredTokens() {
+  const filter = document.getElementById('announce-filter').value;
+
+  if (filter === 'all') {
+    const { data } = await sb.from('profiles').select('push_token').not('push_token', 'is', null);
+    return (data || []).map(p => p.push_token).filter(t => t?.startsWith('ExponentPushToken'));
+  }
+
+  if (filter === 'group-size') {
+    const min = parseInt(document.getElementById('filter-min').value) || 1;
+    const max = parseInt(document.getElementById('filter-max').value) || 99;
+    const { data: groups } = await sb.from('groups').select('id').eq('is_active', true);
+    if (!groups?.length) return [];
+    const matchingGroups = [];
+    await Promise.all(groups.map(async g => {
+      const { count } = await sb.from('group_members').select('*', { count: 'exact', head: true }).eq('group_id', g.id).eq('is_active', true);
+      if (count >= min && count <= max) matchingGroups.push(g.id);
+    }));
+    if (!matchingGroups.length) return [];
+    const userIds = new Set();
+    for (const gId of matchingGroups) {
+      const { data: members } = await sb.from('group_members').select('user_id').eq('group_id', gId).eq('is_active', true);
+      (members || []).forEach(m => userIds.add(m.user_id));
+    }
+    if (!userIds.size) return [];
+    const { data: profiles } = await sb.from('profiles').select('id, push_token').in('id', [...userIds]).not('push_token', 'is', null);
+    return (profiles || []).map(p => p.push_token).filter(t => t?.startsWith('ExponentPushToken'));
+  }
+
+  if (filter === 'no-group') {
+    const { data: allMembers } = await sb.from('group_members').select('user_id').eq('is_active', true);
+    const inGroup = new Set((allMembers || []).map(m => m.user_id));
+    const { data: profiles } = await sb.from('profiles').select('id, push_token').not('push_token', 'is', null);
+    return (profiles || []).filter(p => !inGroup.has(p.id) && p.push_token?.startsWith('ExponentPushToken')).map(p => p.push_token);
+  }
+
+  if (filter === 'inactive') {
+    const today = new Date().toISOString().split('T')[0];
+    const { data: voted } = await sb.from('daily_responses').select('user_id').eq('response', 'yes').eq('response_date', today);
+    const votedIds = new Set((voted || []).map(r => r.user_id));
+    const { data: profiles } = await sb.from('profiles').select('id, push_token').not('push_token', 'is', null);
+    return (profiles || []).filter(p => !votedIds.has(p.id) && p.push_token?.startsWith('ExponentPushToken')).map(p => p.push_token);
+  }
+
+  return [];
+}
+
+async function prepareAnnouncement() {
+  const title = document.getElementById('announce-title').value.trim();
+  const body = document.getElementById('announce-body').value.trim();
+  if (!title || !body) { showResult('Vul titel en bericht in.', false); return; }
+
+  const btn = document.getElementById('announce-send');
+  btn.disabled = true; btn.textContent = 'Laden...';
+
+  const tokens = await getFilteredTokens();
+
+  btn.disabled = false; btn.textContent = 'Verstuur';
+
+  if (tokens.length === 0) { showResult('Geen gebruikers gevonden met deze filter.', false); return; }
+
+  const filterLabel = document.getElementById('announce-filter').selectedOptions[0].text;
+
+  document.getElementById('confirm-modal').style.display = '';
+  document.getElementById('confirm-modal').innerHTML = `
+    <div class="confirm-overlay" onclick="if(event.target===this)closeConfirm()">
+      <div class="confirm-box">
+        <h3>Announcement versturen?</h3>
+        <p>Filter: <strong>${escHtml(filterLabel)}</strong></p>
+        <p>Ontvangers: <strong>${tokens.length}</strong> gebruiker${tokens.length===1?'':'s'}</p>
+        <div class="preview">
+          <div class="prev-title">${escHtml(title)}</div>
+          <div class="prev-body">${escHtml(body)}</div>
+        </div>
+        <p style="color:#F87171;font-size:12px;">⚠️ Dit kan niet ongedaan worden gemaakt.</p>
+        <div class="confirm-btns">
+          <button class="btn-cancel" onclick="closeConfirm()">Annuleren</button>
+          <button class="btn-send" onclick="sendAnnouncement()">Verstuur naar ${tokens.length} gebruikers</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  window._pendingTokens = tokens;
+  window._pendingTitle = title;
+  window._pendingBody = body;
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  document.getElementById('confirm-modal').innerHTML = '';
+}
+
+async function sendAnnouncement() {
+  const tokens = window._pendingTokens;
+  const title = window._pendingTitle;
+  const body = window._pendingBody;
+  closeConfirm();
+
+  const btn = document.getElementById('announce-send');
+  btn.disabled = true;
+  btn.textContent = 'Versturen...';
+
+  try {
+    // Build all messages
+    const messages = tokens.map(token => ({
+      to: token, sound: 'default', title, body, data: { type: 'announcement' },
+    }));
+
+    // Send via Supabase pg_net (no CORS issues) by calling an RPC
+    // We use a raw SQL call via Supabase's rpc to invoke pg_net
+    const batches = [];
+    for (let i = 0; i < messages.length; i += 100) {
+      batches.push(messages.slice(i, i + 100));
+    }
+
+    let totalSent = 0;
+    for (const batch of batches) {
+      const { error } = await sb.rpc('send_push_notification', {
+        payload: JSON.stringify(batch)
+      });
+
+      if (error) {
+        console.error('[ANNOUNCE] RPC error:', error);
+        // Fallback: try direct fetch (works from localhost)
+        const res = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(batch),
+        });
+        if (res.ok) totalSent += batch.length;
+        else { showResult('Expo API error: ' + res.status, false); return; }
+      } else {
+        totalSent += batch.length;
+      }
+    }
+
+    showResult(`✓ Verstuurd naar ${totalSent} gebruikers!`, true);
+    document.getElementById('announce-title').value = '';
+    document.getElementById('announce-body').value = '';
+  } catch (e) {
+    console.error('[ANNOUNCE] Error:', e);
+    showResult('Fout: ' + e.message, false);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Verstuur';
+}
+
+function showResult(msg, ok) {
+  const el = document.getElementById('announce-result');
+  el.className = 'announce-result ' + (ok ? 'success' : 'fail');
+  el.textContent = msg;
+  setTimeout(() => { el.textContent = ''; el.className = ''; }, 5000);
+}
+
+function escHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// === CHAT BROADCAST ===
+function updateChatFilterInfo() {
+  const filter = document.getElementById('chat-filter').value;
+  const sizeOpts = document.getElementById('chat-filter-size-opts');
+  sizeOpts.style.display = filter === 'group-size' ? 'flex' : 'none';
+  const info = document.getElementById('chat-info');
+  if (filter === 'all') info.textContent = 'Stuurt een bericht in de groepschat van alle groepen.';
+  else if (filter === 'group-size') info.textContent = 'Stuurt naar groepen met het opgegeven aantal leden.';
+  else if (filter === 'no-vote-today') info.textContent = 'Stuurt naar groepen waar vandaag nog niemand "ja" heeft gezegd.';
+  else if (filter === 'has-vote-today') info.textContent = 'Stuurt naar groepen waar vandaag al iemand "ja" heeft gezegd.';
+}
+
+async function getFilteredGroups() {
+  const filter = document.getElementById('chat-filter').value;
+  const { data: allGroups } = await sb.from('groups').select('id, name').eq('is_active', true);
+  if (!allGroups?.length) return [];
+
+  if (filter === 'all') return allGroups;
+
+  if (filter === 'group-size') {
+    const min = parseInt(document.getElementById('chat-filter-min').value) || 1;
+    const max = parseInt(document.getElementById('chat-filter-max').value) || 99;
+    const result = [];
+    await Promise.all(allGroups.map(async g => {
+      const { count } = await sb.from('group_members').select('*', { count: 'exact', head: true }).eq('group_id', g.id).eq('is_active', true);
+      if (count >= min && count <= max) result.push(g);
+    }));
+    return result;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const { data: responses } = await sb.from('daily_responses').select('group_id').eq('response', 'yes').eq('response_date', today);
+  const votedGroups = new Set((responses || []).map(r => r.group_id));
+
+  if (filter === 'no-vote-today') return allGroups.filter(g => !votedGroups.has(g.id));
+  if (filter === 'has-vote-today') return allGroups.filter(g => votedGroups.has(g.id));
+  return allGroups;
+}
+
+async function prepareChatBroadcast() {
+  const msg = document.getElementById('chat-msg').value.trim();
+  if (!msg) { showChatResult('Vul een bericht in.', false); return; }
+
+  const btn = document.getElementById('chat-send');
+  btn.disabled = true; btn.textContent = 'Laden...';
+
+  const groups = await getFilteredGroups();
+
+  btn.disabled = false; btn.textContent = 'Verstuur';
+
+  if (groups.length === 0) { showChatResult('Geen groepen gevonden met deze filter.', false); return; }
+
+  const filterLabel = document.getElementById('chat-filter').selectedOptions[0].text;
+  const groupNames = groups.slice(0, 5).map(g => g.name).join(', ') + (groups.length > 5 ? ` +${groups.length - 5} meer` : '');
+
+  document.getElementById('confirm-modal').style.display = '';
+  document.getElementById('confirm-modal').innerHTML = `
+    <div class="confirm-overlay" onclick="if(event.target===this)closeChatConfirm()">
+      <div class="confirm-box">
+        <h3>Bericht sturen in groepschats?</h3>
+        <p>Filter: <strong>${escHtml(filterLabel)}</strong></p>
+        <p>Groepen: <strong>${groups.length}</strong> (${escHtml(groupNames)})</p>
+        <div class="preview">
+          <div class="prev-title">💬 Happie</div>
+          <div class="prev-body">${escHtml(msg)}</div>
+        </div>
+        <p style="color:#F87171;font-size:12px;">⚠️ Dit verschijnt als chatbericht in elke groep.</p>
+        <div class="confirm-btns">
+          <button class="btn-cancel" onclick="closeChatConfirm()">Annuleren</button>
+          <button class="btn-send" onclick="sendChatBroadcast()">Verstuur in ${groups.length} groepen</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  window._pendingChatGroups = groups;
+  window._pendingChatMsg = msg;
+}
+
+function closeChatConfirm() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  document.getElementById('confirm-modal').innerHTML = '';
+}
+
+async function sendChatBroadcast() {
+  const groups = window._pendingChatGroups;
+  const msg = window._pendingChatMsg;
+  closeChatConfirm();
+
+  const btn = document.getElementById('chat-send');
+  btn.disabled = true; btn.textContent = 'Versturen...';
+
+  try {
+    let sent = 0;
+    for (const group of groups) {
+      // Send as the group creator (always a member)
+      const { data: g } = await sb.from('groups').select('created_by').eq('id', group.id).single();
+      if (!g?.created_by) continue;
+
+      const { error } = await sb.from('group_messages').insert({
+        group_id: group.id,
+        user_id: g.created_by,
+        message: 'Happie team: ' + msg,
+      });
+      console.log('[CHAT]', group.name, error ? 'ERROR: ' + error.message : 'OK');
+      if (!error) sent++;
+    }
+
+    showChatResult(`✓ Verstuurd in ${sent}/${groups.length} groepen!`, true);
+    document.getElementById('chat-msg').value = '';
+  } catch (e) {
+    showChatResult('Fout: ' + e.message, false);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Verstuur';
+}
+
+function showChatResult(msg, ok) {
+  const el = document.getElementById('chat-result');
+  el.className = 'announce-result ' + (ok ? 'success' : 'fail');
+  el.textContent = msg;
+  setTimeout(() => { el.textContent = ''; el.className = ''; }, 5000);
+}
+
+// === APP VERSIONS ===
+async function loadVersionChart() {
+  const { data } = await sb.from('profiles').select('app_version');
+  if (!data?.length) return;
+
+  const counts = {};
+  let noVersion = 0;
+  (data || []).forEach(p => {
+    if (p.app_version) {
+      counts[p.app_version] = (counts[p.app_version] || 0) + 1;
+    } else {
+      noVersion++;
+    }
+  });
+
+  const labels = Object.keys(counts).sort().reverse();
+  if (noVersion > 0) labels.push('Onbekend');
+  const values = labels.map(l => l === 'Onbekend' ? noVersion : counts[l]);
+  const total = data.length;
+
+  const colors = [C.green, C.blue, C.orange, C.purple, C.red, C.gray];
+
+  if (charts.version) charts.version.destroy();
+  charts.version = new Chart(document.getElementById('versionChart'), {
+    type: 'doughnut',
+    data: {
+      labels: labels.map(l => `v${l}`),
+      datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#71717A', font: { size: 11 }, padding: 12 } } } },
+  });
+
+  // Version table
+  document.getElementById('version-table').innerHTML = labels.map((v, i) => {
+    const count = values[i];
+    const pct = Math.round(count / total * 100);
+    return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E2028;">
+      <span style="color:${colors[i % colors.length]};">v${v}</span>
+      <span style="color:#A1A1AA;">${count} gebruikers (${pct}%)</span>
+    </div>`;
+  }).join('');
+}
+
+// === POPUP MANAGEMENT ===
+function updatePopupFilterInfo() {
+  const filter = document.getElementById('popup-filter').value;
+  document.getElementById('popup-filter-size-opts').style.display = filter === 'group-size' ? 'flex' : 'none';
+}
+
+async function loadActivePopups() {
+  const { data } = await sb.from('app_popups').select('*').eq('is_active', true).order('created_at', { ascending: false });
+  const el = document.getElementById('popup-active');
+  if (!data?.length) {
+    el.innerHTML = '<span style="font-size:12px;color:#52525B;">Geen actieve popups.</span>';
+    return;
+  }
+  el.innerHTML = data.map(p => `
+    <div style="background:#1A1C22;border:1px solid #2A2D37;border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <span style="color:#E8845C;font-weight:600;font-size:13px;">${escHtml(p.title || '(geen titel)')}</span>
+        <span style="color:#52525B;font-size:11px;margin-left:8px;">Filter: ${p.filter_type}${p.filter_type==='group-size' ? ' ('+p.filter_min+'-'+p.filter_max+')' : ''}</span>
+        <div style="color:#71717A;font-size:11px;margin-top:2px;">${escHtml((p.body||'').slice(0,80))}${(p.body||'').length>80?'…':''}</div>
+      </div>
+      <button onclick="deactivatePopup('${p.id}')" style="background:#350A0A;color:#F87171;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Uit</button>
+    </div>
+  `).join('');
+}
+
+let _popupImageFile = null;
+
+async function handlePopupImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  _popupImageFile = file;
+  document.getElementById('popup-image-name').textContent = file.name;
+  const preview = document.getElementById('popup-image-preview');
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = 'block';
+}
+
+async function uploadPopupImage(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const fileName = `popups/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+
+  const arrayBuffer = await file.arrayBuffer();
+  const { error } = await sb.storage
+    .from('admin-uploads')
+    .upload(fileName, arrayBuffer, {
+      contentType: file.type,
+      cacheControl: '31536000',
+    });
+
+  if (error) {
+    // Bucket might not exist, try to create it
+    if (error.message?.includes('not found') || error.statusCode === 404) {
+      showPopupResult('Storage bucket "admin-uploads" bestaat niet. Maak deze aan in Supabase Dashboard → Storage.', false);
+    }
+    return null;
+  }
+
+  const { data: urlData } = sb.storage.from('admin-uploads').getPublicUrl(fileName);
+  return urlData?.publicUrl || null;
+}
+
+async function savePopup() {
+  const title = document.getElementById('popup-title').value.trim();
+  const body = document.getElementById('popup-body').value.trim();
+  const button_text = document.getElementById('popup-btn-text').value.trim() || 'OK';
+  const button_link = document.getElementById('popup-btn-link').value.trim() || null;
+
+  let image_url = null;
+  if (_popupImageFile) {
+    showPopupResult('Afbeelding uploaden...', true);
+    image_url = await uploadPopupImage(_popupImageFile);
+    if (!image_url) return;
+  }
+  const filter_type = document.getElementById('popup-filter').value;
+  const filter_min = filter_type === 'group-size' ? parseInt(document.getElementById('popup-filter-min').value) || 1 : null;
+  const filter_max = filter_type === 'group-size' ? parseInt(document.getElementById('popup-filter-max').value) || 99 : null;
+
+  if (!title && !body) { showPopupResult('Vul minstens een titel of bericht in.', false); return; }
+
+  const { error } = await sb.from('app_popups').insert({
+    title, body, image_url, button_text, button_link,
+    filter_type, filter_min, filter_max, is_active: true,
+  });
+
+  if (error) {
+    showPopupResult('Fout: ' + error.message, false);
+  } else {
+    showPopupResult('Popup geactiveerd!', true);
+    document.getElementById('popup-title').value = '';
+    document.getElementById('popup-body').value = '';
+    document.getElementById('popup-btn-text').value = '';
+    document.getElementById('popup-btn-link').value = '';
+    document.getElementById('popup-image-file').value = '';
+    document.getElementById('popup-image-name').textContent = 'Geen bestand gekozen';
+    document.getElementById('popup-image-preview').style.display = 'none';
+    _popupImageFile = null;
+    loadActivePopups();
+  }
+}
+
+async function deactivatePopup(id) {
+  await sb.from('app_popups').update({ is_active: false }).eq('id', id);
+  showPopupResult('Popup uitgezet.', true);
+  loadActivePopups();
+}
+
+async function deactivateAllPopups() {
+  await sb.from('app_popups').update({ is_active: false }).eq('is_active', true);
+  showPopupResult('Alle popups uitgezet.', true);
+  loadActivePopups();
+}
+
+function showPopupResult(msg, ok) {
+  const el = document.getElementById('popup-result');
+  el.className = 'announce-result ' + (ok ? 'success' : 'fail');
+  el.textContent = msg;
+  setTimeout(() => { el.textContent = ''; el.className = ''; }, 5000);
+}
+
+// === SOLO GROUP NUDGE ===
+const HAPPIE_USER_ID = '00000000-0000-0000-0000-000000000000';
+
+async function loadSoloGroupCount() {
+  const { data: groups } = await sb.from('groups').select('id').eq('is_active', true);
+  if (!groups?.length) { document.getElementById('solo-info').textContent = 'Geen actieve groepen.'; return; }
+
+  let soloCount = 0;
+  await Promise.all(groups.map(async g => {
+    const { count } = await sb.from('group_members').select('*', { count: 'exact', head: true }).eq('group_id', g.id).eq('is_active', true);
+    if (count === 1) soloCount++;
+  }));
+
+  document.getElementById('solo-info').textContent = `${soloCount} groep${soloCount === 1 ? '' : 'en'} met maar 1 lid gevonden.`;
+}
+
+async function getSoloGroups() {
+  const { data: groups } = await sb.from('groups').select('id, name').eq('is_active', true);
+  if (!groups?.length) return [];
+
+  const soloGroups = [];
+  await Promise.all(groups.map(async g => {
+    const { count } = await sb.from('group_members').select('*', { count: 'exact', head: true }).eq('group_id', g.id).eq('is_active', true);
+    if (count === 1) soloGroups.push(g);
+  }));
+  return soloGroups;
+}
+
+async function prepareSoloNudge() {
+  const msg = document.getElementById('solo-msg').value.trim();
+  if (!msg) { showSoloResult('Vul een bericht in.', false); return; }
+
+  const btn = document.getElementById('solo-send');
+  btn.disabled = true; btn.textContent = 'Laden...';
+
+  const groups = await getSoloGroups();
+
+  btn.disabled = false; btn.textContent = 'Verstuur';
+
+  if (groups.length === 0) { showSoloResult('Geen groepen met maar 1 lid gevonden!', false); return; }
+
+  const groupNames = groups.slice(0, 5).map(g => g.name).join(', ') + (groups.length > 5 ? ` +${groups.length - 5} meer` : '');
+
+  document.getElementById('confirm-modal').style.display = '';
+  document.getElementById('confirm-modal').innerHTML = `
+    <div class="confirm-overlay" onclick="if(event.target===this)closeSoloConfirm()">
+      <div class="confirm-box">
+        <h3>Solo-groepen nudge versturen?</h3>
+        <p>Groepen met 1 lid: <strong>${groups.length}</strong></p>
+        <p style="font-size:12px;color:#A1A1AA;">${escHtml(groupNames)}</p>
+        <div class="preview">
+          <div class="prev-title">💬 Happie</div>
+          <div class="prev-body">${escHtml(msg)}</div>
+        </div>
+        <p style="color:#71717A;font-size:12px;">Happie wordt als lid toegevoegd en stuurt dit bericht in de chat. De gebruiker krijgt een notification-bolletje.</p>
+        <div class="confirm-btns">
+          <button class="btn-cancel" onclick="closeSoloConfirm()">Annuleren</button>
+          <button class="btn-send" onclick="sendSoloNudge()">Verstuur in ${groups.length} groepen</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  window._pendingSoloGroups = groups;
+  window._pendingSoloMsg = msg;
+}
+
+function closeSoloConfirm() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  document.getElementById('confirm-modal').innerHTML = '';
+}
+
+async function sendSoloNudge() {
+  const groups = window._pendingSoloGroups;
+  const msg = window._pendingSoloMsg;
+  closeSoloConfirm();
+
+  const btn = document.getElementById('solo-send');
+  btn.disabled = true; btn.textContent = 'Versturen...';
+
+  try {
+    let sent = 0;
+    for (const group of groups) {
+      // 1. Check if Happie is already a member
+      const { data: existing } = await sb.from('group_members')
+        .select('id, is_active')
+        .eq('group_id', group.id)
+        .eq('user_id', HAPPIE_USER_ID)
+        .maybeSingle();
+
+      if (existing && existing.is_active) {
+        // Already active member, just send message
+      } else if (existing && !existing.is_active) {
+        // Reactivate membership
+        await sb.from('group_members').update({ is_active: true }).eq('id', existing.id);
+      } else {
+        // Add Happie as new member
+        const { error: memberErr } = await sb.from('group_members').insert({
+          group_id: group.id,
+          user_id: HAPPIE_USER_ID,
+          is_active: true,
+        });
+        if (memberErr) {
+          console.error('[SOLO]', group.name, 'member add error:', memberErr.message);
+          continue;
+        }
+      }
+
+      // 2. Send chat message as Happie
+      const { error: msgErr } = await sb.from('group_messages').insert({
+        group_id: group.id,
+        user_id: HAPPIE_USER_ID,
+        message: msg,
+      });
+
+      if (msgErr) {
+        console.error('[SOLO]', group.name, 'msg error:', msgErr.message);
+      } else {
+        console.log('[SOLO]', group.name, 'OK');
+        sent++;
+      }
+    }
+
+    showSoloResult(`✓ Verstuurd in ${sent}/${groups.length} solo-groepen!`, true);
+    loadSoloGroupCount();
+  } catch (e) {
+    showSoloResult('Fout: ' + e.message, false);
+  }
+
+  btn.disabled = false; btn.textContent = 'Verstuur';
+}
+
+function showSoloResult(msg, ok) {
+  const el = document.getElementById('solo-result');
+  el.className = 'announce-result ' + (ok ? 'success' : 'fail');
+  el.textContent = msg;
+  setTimeout(() => { el.textContent = ''; el.className = ''; }, 5000);
+}
+
+loadAll();
+loadActivePopups();
+loadSoloGroupCount();
+setInterval(loadAll, 30000);
+setInterval(loadActivePopups, 30000);
+</script>
+</body>
+</html>
