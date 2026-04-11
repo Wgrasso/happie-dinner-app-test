@@ -279,6 +279,7 @@ const Top3Modal = React.memo(({ visible, onClose, loadMeals, onRecipePress }) =>
               {displayMeals.map((meal, index) => {
                 const mealName = meal.meal_data?.name || t('meals.recipe');
                 const voteCount = meal.yes_votes ?? meal.vote_total ?? 0;
+                const thumbnailUrl = meal.meal_data?.thumbnail_url || meal.meal_data?.image;
                 return (
                   <TouchableOpacity
                     key={meal.meal_option_id || meal.option_id || index}
@@ -286,6 +287,19 @@ const Top3Modal = React.memo(({ visible, onClose, loadMeals, onRecipePress }) =>
                     onPress={() => { onRecipePress?.(meal); onClose(); }}
                     activeOpacity={0.7}
                   >
+                    {thumbnailUrl ? (
+                      <ExpoImage
+                        source={{ uri: thumbnailUrl }}
+                        style={top3ModalStyles.recipeThumb}
+                        contentFit="cover"
+                        transition={150}
+                        cachePolicy="memory-disk"
+                      />
+                    ) : (
+                      <View style={[top3ModalStyles.recipeThumb, top3ModalStyles.recipeThumbPlaceholder]}>
+                        <Text style={{ fontSize: 22 }}>🍽</Text>
+                      </View>
+                    )}
                     <View style={top3ModalStyles.recipeInfo}>
                       <Text style={top3ModalStyles.recipeName} numberOfLines={1}>{mealName}</Text>
                       <Text style={top3ModalStyles.voteCount}>{voteCount} {voteCount === 1 ? t('meals.vote') : t('meals.votes')}</Text>
@@ -362,7 +376,18 @@ const top3ModalStyles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F5F2EE',
     borderRadius: 14,
-    padding: 14,
+    padding: 10,
+  },
+  recipeThumb: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    marginRight: 12,
+    backgroundColor: '#ECE6DD',
+  },
+  recipeThumbPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   rankBadge: {
     width: 32,
