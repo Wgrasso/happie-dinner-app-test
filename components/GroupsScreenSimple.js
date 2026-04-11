@@ -2987,21 +2987,15 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
       // Load groups from context (uses cache if available)
       const loadedGroups = await loadGroupsRef.current();
       setLoading(false);
-      
-      // Signal that groups screen is ready (triggers preloading of other tabs)
-      if (onReady) {
-        onReady();
-      }
-      
-      // IMMEDIATELY return control - everything else happens in background
-      // This ensures the UI renders as fast as possible
-      
+
+      // Wait for the data that visibly populates the groups page BEFORE
+      // we signal ready, so the splash screen stays up until the UI has
+      // its full content (avatars filled in, recipes loaded, top meals
+      // ready). A 3s max wait prevents a broken network from pinning
+      // the splash indefinitely.
       if (loadedGroups && loadedGroups.length > 0 && !isCancelled) {
-        // Defer ALL heavy work after initial paint
-        const handle = InteractionManager.runAfterInteractions(async () => {
-          if (isCancelled) return;
-          
-          // Prefetch today's responses for collapsed cards
+        const warmup = (async () => {
+          // Prefetch today's responses for collapsed cards.
           if (fetchResponsesRef.current) {
             try {
               const responses = await fetchResponsesRef.current(loadedGroups, user?.id);
@@ -3010,17 +3004,42 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
               if (applyResponsesRef.current) {
                 applyResponsesRef.current(responses || {}, signature);
               }
-            } catch (e) {
-              // Ignore errors - responses will load when user expands card
-            }
+            } catch (_) {}
           }
-          
-          // Preload ALL group data for instant expansion
+
+          // Preload members + meal requests + top meals so expanding any
+          // group is instant.
           if (!isCancelled && preloadAllGroupDataRef.current) {
-            preloadAllGroupDataRef.current(loadedGroups);
+            try {
+              await preloadAllGroupDataRef.current(loadedGroups);
+            } catch (_) {}
           }
-        });
-        deferredTasks.push(handle);
+
+          // Warm the group-recipes cache for every group in parallel so
+          // the carousel is already populated the moment the user hits it.
+          try {
+            const ids = loadedGroups.map((g) => g.group_id || g.id).filter(Boolean);
+            await Promise.all(
+              ids.map(async (gid) => {
+                try {
+                  const result = await getGroupSharedRecipes(gid);
+                  if (result?.success && Array.isArray(result.recipes) && groupRecipesCacheRef.current) {
+                    groupRecipesCacheRef.current[gid] = result.recipes;
+                  }
+                } catch (_) {}
+              })
+            );
+          } catch (_) {}
+        })();
+
+        const maxWait = new Promise((resolve) => setTimeout(resolve, 3000));
+        await Promise.race([warmup, maxWait]);
+      }
+
+      // Signal that groups screen is ready (triggers preloading of other
+      // tabs AND fades out the splash screen).
+      if (onReady && !isCancelled) {
+        onReady();
       }
 
       // Load secondary sections (special occasions + history) after the
