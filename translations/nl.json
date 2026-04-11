@@ -94,7 +94,12 @@
     "groupRecipes": "Groepsrecepten",
     "noGroupRecipesTitle": "Nog geen recepten in deze groep",
     "noGroupRecipesHint": "Voeg recepten toe op de Chefs-pagina en kies \"Groepen\" bij het delen om ze hier te zien.",
-    "noGroupRecipes": "Nog geen recepten gedeeld met deze groep"
+    "noGroupRecipes": "Nog geen recepten gedeeld met deze groep",
+    "removeFromGroup": "Verwijder uit groep",
+    "removeRecipeTitle": "Recept verwijderen",
+    "removeRecipeConfirm": "Wil je dit recept uit deze groep halen?",
+    "recipeRemoved": "Recept verwijderd",
+    "allGroupsAlreadyHave": "Dit recept zit al in al je groepen"
   },
   "dinner": {
     "sendRequest": "Diner Verzoek Sturen",
@@ -610,6 +615,7 @@
     "deleteAccountConfirm": "Weet je zeker dat je je chef profiel wilt verwijderen? Al je recepten worden ook verwijderd. Dit kan niet ongedaan worden.",
     "accountDeleted": "Chef profiel verwijderd",
     "addToGroup": "Recept toevoegen aan groep",
+    "addToOtherGroup": "Delen met groep",
     "addedToGroup": "Toegevoegd aan",
     "addToGroupConfirm": "Toevoegen"
   }

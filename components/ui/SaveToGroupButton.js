@@ -39,6 +39,7 @@ export default function SaveToGroupButton({
   recipe,
   groups: groupsOverride,
   currentGroupId,
+  shareId,
   variant = 'solid',
   label,
   onSaved,
@@ -111,10 +112,11 @@ export default function SaveToGroupButton({
   };
 
   const handleRemoveFromCurrent = () => {
-    if (!currentGroupId || !recipe?.id || removing) return;
+    if (!currentGroupId || removing) return;
+    if (!recipe?.id && !shareId) return;
     Alert.alert(
       t('groups.removeRecipeTitle') || 'Recept verwijderen',
-      t('groups.removeRecipeConfirm') || 'Weet je zeker dat je dit recept uit deze groep wilt halen?',
+      t('groups.removeRecipeConfirm') || 'Wil je dit recept uit deze groep halen?',
       [
         { text: t('common.cancel') || 'Annuleren', style: 'cancel' },
         {
@@ -124,10 +126,13 @@ export default function SaveToGroupButton({
             setRemoving(true);
             lightHaptic();
             try {
-              const result = await removeRecipeFromGroup(recipe.id, currentGroupId);
+              // Prefer deleting by the row's own primary key when we have
+              // it — that's the only reliable path for snapshot-only rows
+              // whose recipe.id isn't a real UUID.
+              const result = await removeRecipeFromGroup(recipe?.id, currentGroupId, shareId);
               if (!result?.success) throw new Error(result?.error || 'Kon niet verwijderen');
               successHaptic();
-              toast.success(t('groups.recipeRemoved') || 'Recept verwijderd uit groep');
+              toast.success(t('groups.recipeRemoved') || 'Recept verwijderd');
               setAlreadySharedIds((prev) => prev.filter((id) => id !== currentGroupId));
               if (typeof onRemoved === 'function') onRemoved(currentGroupId);
             } catch (e) {
@@ -154,53 +159,50 @@ export default function SaveToGroupButton({
 
   return (
     <View style={styles.container}>
-      <View style={styles.topRow}>
-        <TouchableOpacity
-          style={[
-            variant === 'inline' ? styles.btnInline : styles.btnSolid,
-            inGroupContext && { flex: 1 },
-          ]}
-          onPress={() => {
-            lightHaptic();
-            setShowPicker((v) => !v);
-            setSelectedIds([]);
-          }}
-          activeOpacity={0.8}
+      <TouchableOpacity
+        style={variant === 'inline' ? styles.btnInline : styles.btnSolid}
+        onPress={() => {
+          lightHaptic();
+          setShowPicker((v) => !v);
+          setSelectedIds([]);
+        }}
+        activeOpacity={0.8}
+      >
+        <Feather
+          name={showPicker ? 'chevron-up' : 'plus-circle'}
+          size={variant === 'inline' ? 16 : 18}
+          color={variant === 'inline' ? '#FF6B00' : '#FFF'}
+        />
+        <Text
+          style={variant === 'inline' ? styles.btnInlineText : styles.btnSolidText}
+          numberOfLines={1}
         >
-          <Feather
-            name={showPicker ? 'chevron-up' : 'plus-circle'}
-            size={variant === 'inline' ? 16 : 18}
-            color={variant === 'inline' ? '#FF6B00' : '#FFF'}
-          />
-          <Text
-            style={variant === 'inline' ? styles.btnInlineText : styles.btnSolidText}
-            numberOfLines={1}
-          >
-            {buttonLabel}
-          </Text>
-        </TouchableOpacity>
+          {buttonLabel}
+        </Text>
+      </TouchableOpacity>
 
-        {inGroupContext && (
-          <TouchableOpacity
-            style={styles.removeBtn}
-            onPress={handleRemoveFromCurrent}
-            disabled={removing}
-            activeOpacity={0.8}
-            accessibilityLabel={t('groups.removeFromGroup') || 'Verwijder uit deze groep'}
-          >
-            {removing ? (
-              <ActivityIndicator size="small" color="#FFF" />
-            ) : (
-              <>
-                <Feather name="trash-2" size={16} color="#FFF" />
-                <Text style={styles.removeBtnText} numberOfLines={1}>
-                  {t('groups.removeFromGroup') || 'Verwijderen'}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
-      </View>
+      {/* Remove-from-current sits on its own full-width row below so labels
+          always have room to breathe. */}
+      {inGroupContext && (
+        <TouchableOpacity
+          style={styles.removeBtn}
+          onPress={handleRemoveFromCurrent}
+          disabled={removing}
+          activeOpacity={0.8}
+          accessibilityLabel={t('groups.removeFromGroup') || 'Verwijder uit groep'}
+        >
+          {removing ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <>
+              <Feather name="trash-2" size={16} color="#FFF" />
+              <Text style={styles.removeBtnText} numberOfLines={1}>
+                {t('groups.removeFromGroup') || 'Verwijder uit groep'}
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      )}
 
       {showPicker && (
         <View style={styles.pickerList}>
@@ -257,19 +259,16 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    gap: 8,
-  },
   removeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#CC2200',
+    paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 12,
-    gap: 6,
+    gap: 8,
+    marginTop: 8,
   },
   removeBtnText: {
     color: '#FFF',

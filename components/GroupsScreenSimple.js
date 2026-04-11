@@ -17,7 +17,8 @@ import { useTranslation } from 'react-i18next';
 import { formatDateShortNL } from '../lib/dateFormatting';
 import { log, debugError } from '../lib/debugConfig';
 import { getTopVotedMeals } from '../lib/mealRequestService';
-import { getGroupRecipes as getGroupSharedRecipes } from '../lib/recipesService';
+import { getGroupRecipes as getGroupSharedRecipes, addChefRecipe, shareRecipeWithGroups } from '../lib/recipesService';
+import { ensureChefProfile } from '../lib/chefService';
 import { importRecipeFromUrl } from '../lib/recipeUrlImporter';
 import { useAppState } from '../lib/AppStateContext';
 import { useToast } from './ui/Toast';
@@ -2671,8 +2672,18 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     setInlineSavingDraft(true);
     lightHaptic();
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Niet ingelogd');
+      // Mirror the chef page flow exactly:
+      //   1. Make sure the user has a chef profile (auto-created on first use)
+      //   2. Insert the recipe into the `recipes` table via addChefRecipe
+      //   3. Share it with the current group via shareRecipeWithGroups
+      //      (which writes a frozen recipe_data snapshot into recipe_group_shares)
+      // That way recipes created here are visible everywhere a chef's recipe
+      // would be (chef dashboard, group carousel, group detail modal).
+      const profileResult = await ensureChefProfile();
+      if (!profileResult?.success || !profileResult?.chef?.id) {
+        throw new Error(profileResult?.error || 'Kon chef-profiel niet aanmaken');
+      }
+      const chef = profileResult.chef;
 
       const ingredients = (inlineDraft.ingredients || '')
         .split('\n')
@@ -2684,34 +2695,32 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
         .filter(Boolean);
       const cookMin = parseInt(inlineDraft.cooking_time_minutes, 10);
 
-      const syntheticId =
-        'inline-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
-      const snapshot = {
-        id: syntheticId,
+      const addResult = await addChefRecipe(chef.id, {
         name,
-        title: name,
-        description: (inlineDraft.description || '').trim(),
+        description: (inlineDraft.description || '').trim() || null,
         image: (inlineDraft.image || '').trim() || null,
-        thumbnail_url: (inlineDraft.image || '').trim() || null,
         cooking_time_minutes: Number.isFinite(cookMin) && cookMin > 0 ? cookMin : null,
         cuisine_type: (inlineDraft.cuisine_type || '').trim() || null,
         ingredients,
         steps,
-        instructions: steps.join('\n'),
-        source_url: (inlineUrlInput || '').trim() || null,
-      };
+        // Visible to members of the selected group only — the user explicitly
+        // created it from within a group, so defaulting to private-to-groups
+        // is the least surprising choice.
+        visibility: 'groups',
+      });
+      if (!addResult?.success || !addResult?.recipe) {
+        throw new Error(addResult?.error || 'Kon recept niet aanmaken');
+      }
+      const newRecipe = addResult.recipe;
 
-      const { error } = await supabase.from('recipe_group_shares').insert([{
-        recipe_id: null, // pure snapshot — no source row in recipes table
-        group_id: selectedGroupId,
-        shared_by: user.id,
-        recipe_data: snapshot,
-      }]);
-      if (error) throw error;
+      const shareResult = await shareRecipeWithGroups(newRecipe, [selectedGroupId]);
+      if (!shareResult?.success) {
+        throw new Error(shareResult?.error || 'Kon niet delen met groep');
+      }
 
       successHaptic();
       toast.success(t('chef.recipePublished') || 'Recept toegevoegd!');
-      // Refresh just the current group.
+      // Invalidate the cache for this group and reload.
       if (groupRecipesCacheRef.current) delete groupRecipesCacheRef.current[selectedGroupId];
       loadGroupSavedRecipes(selectedGroupId);
       resetInlineDraft();
@@ -2720,7 +2729,7 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
     } finally {
       setInlineSavingDraft(false);
     }
-  }, [inlineDraft, selectedGroupId, inlineUrlInput, toast, t, loadGroupSavedRecipes, resetInlineDraft]);
+  }, [inlineDraft, selectedGroupId, toast, t, loadGroupSavedRecipes, resetInlineDraft]);
 
   // Warm the cache for every group the user belongs to, in parallel, once on load.
   // That way opening any group for the first time is instant.
@@ -5634,11 +5643,17 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                           style={gpStyles.foodCard}
                           onPress={() => handleRecipePress({
                             recipe_id: recipe.id,
+                            share_id: recipe.share_id || null,
+                            share_group_id: recipe.share_group_id || selectedGroupId,
                             meal_option_id: `group-${recipe.id}`,
                             meal_data: {
                               name,
+                              description: recipe.description,
                               thumbnail_url: thumbnailUrl,
+                              image: recipe.image || thumbnailUrl,
                               total_time_minutes: cookingTime,
+                              cooking_time_minutes: cookingTime,
+                              cuisine_type: recipe.cuisine_type,
                               ingredients: recipe.ingredients,
                               steps: recipe.steps,
                               instructions: Array.isArray(recipe.steps) ? recipe.steps.join('\n') : '',
@@ -6311,23 +6326,28 @@ export default function GroupsScreenSimple({ navigation, route, isActive = true,
                       ))}
                     </View>
                   )}
-                  {/* Save this recipe into one or more of the user's groups */}
-                  {selectedRecipe.recipe_id && (
+                  {/* Save this recipe into one or more of the user's groups.
+                      Rendered for every recipe (chef, inline, voting result)
+                      so the save/remove actions are always within reach. */}
+                  {(selectedRecipe.recipe_id || selectedRecipe.share_id) && (
                     <View style={[styles.recipeModalSection, { marginTop: 12 }]}>
                       <SaveToGroupButton
                         recipe={{
                           id: selectedRecipe.recipe_id,
                           name: selectedRecipe.meal_data?.name,
                           description: selectedRecipe.meal_data?.description,
-                          image: selectedRecipe.meal_data?.thumbnail_url,
+                          image: selectedRecipe.meal_data?.image || selectedRecipe.meal_data?.thumbnail_url,
                           thumbnail_url: selectedRecipe.meal_data?.thumbnail_url,
-                          cooking_time_minutes: selectedRecipe.meal_data?.total_time_minutes,
+                          cooking_time_minutes:
+                            selectedRecipe.meal_data?.cooking_time_minutes ||
+                            selectedRecipe.meal_data?.total_time_minutes,
                           cuisine_type: selectedRecipe.meal_data?.cuisine_type,
                           ingredients: selectedRecipe.meal_data?.ingredients,
                           steps: selectedRecipe.meal_data?.steps,
                           instructions: selectedRecipe.meal_data?.instructions,
                         }}
-                        currentGroupId={selectedGroupId}
+                        currentGroupId={selectedRecipe.share_group_id || selectedGroupId}
+                        shareId={selectedRecipe.share_id || null}
                         onSaved={() => {
                           if (selectedGroupId) loadGroupSavedRecipes(selectedGroupId);
                         }}

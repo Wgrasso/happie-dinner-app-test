@@ -94,7 +94,12 @@
     "groupRecipes": "Group Recipes",
     "noGroupRecipesTitle": "No recipes in this group yet",
     "noGroupRecipesHint": "Add recipes on the Chefs page and pick \"Groups\" when sharing to see them here.",
-    "noGroupRecipes": "No recipes shared with this group yet"
+    "noGroupRecipes": "No recipes shared with this group yet",
+    "removeFromGroup": "Remove from group",
+    "removeRecipeTitle": "Remove recipe",
+    "removeRecipeConfirm": "Remove this recipe from the group?",
+    "recipeRemoved": "Recipe removed",
+    "allGroupsAlreadyHave": "Already in all your groups"
   },
   "dinner": {
     "sendRequest": "Send Dinner Request",
@@ -611,6 +616,7 @@
     "deleteAccountConfirm": "Are you sure you want to delete your chef profile? All your recipes will also be deleted. This cannot be undone.",
     "accountDeleted": "Chef profile deleted",
     "addToGroup": "Add recipe to group",
+    "addToOtherGroup": "Share to group",
     "addedToGroup": "Added to",
     "addToGroupConfirm": "Add"
   }
