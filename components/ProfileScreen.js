@@ -269,7 +269,14 @@ export default function ProfileScreen({ route, navigation }) {
               
               // Clear all local cached data
               await appState.clearAllCachedData();
-              
+
+              // Forget the biometric-unlocked refresh token so the
+              // next launch doesn't auto-log the user back in.
+              try {
+                const bio = await import('../lib/biometricAuth');
+                await bio.clearBiometricSession();
+              } catch (_) {}
+
               await supabase.auth.signOut();
               navigation.navigate('SignIn');
             } catch (error) {
@@ -308,8 +315,12 @@ export default function ProfileScreen({ route, navigation }) {
               }
 
               await appState.clearAllCachedData();
+              try {
+                const bio = await import('../lib/biometricAuth');
+                await bio.clearBiometricSession();
+              } catch (_) {}
               await supabase.auth.signOut();
-              
+
               Alert.alert(t('profile.accountDeleted'), t('profile.accountDeletedSuccess'), [
                 { text: 'OK', onPress: () => navigation.navigate('SignIn') }
               ]);

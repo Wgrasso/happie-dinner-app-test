@@ -7,6 +7,12 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as Crypto from 'expo-crypto';
 import { useTheme } from '../lib/ThemeContext';
+import {
+  authenticateAndRestoreSession,
+  hasSavedBiometricSession,
+  isBiometricAvailable,
+  saveBiometricSession,
+} from '../lib/biometricAuth';
 
 // Required so the auth session resolves cleanly on web / iOS when the
 // browser redirects back to the app scheme.
@@ -74,12 +80,42 @@ export default function SignInScreen({ navigation }) {
 
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
+  const [biometricBusy, setBiometricBusy] = useState(false);
 
   useEffect(() => {
     if (Platform.OS === 'ios') {
       AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => {});
     }
   }, []);
+
+  // Auto-attempt biometric login on mount. If the device has Face ID
+  // / Touch ID enrolled and a previous session was saved, trigger the
+  // prompt immediately — no button tap needed.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [available, saved] = await Promise.all([
+          isBiometricAvailable(),
+          hasSavedBiometricSession(),
+        ]);
+        if (!available || !saved || cancelled) return;
+        setBiometricBusy(true);
+        const result = await authenticateAndRestoreSession();
+        if (cancelled) return;
+        if (result?.success) {
+          navigation.navigate('MainTabs', { screen: 'groups' });
+        }
+      } catch (_) {
+        // User cancelled or biometrics failed — silently fall back
+        // to the email/password form.
+      } finally {
+        if (!cancelled) setBiometricBusy(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [navigation]);
 
   const handleAppleSignIn = async () => {
     setSocialLoading(true);
@@ -116,6 +152,9 @@ export default function SignInScreen({ navigation }) {
         if (credential.fullName?.givenName) {
           const fullName = [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean).join(' ');
           await supabase.auth.updateUser({ data: { full_name: fullName } });
+        }
+        if (data?.session) {
+          saveBiometricSession(data.session).catch(() => {});
         }
         navigation.navigate('MainTabs', { screen: 'groups' });
       }
@@ -154,8 +193,11 @@ export default function SignInScreen({ navigation }) {
       const hashParams = new URLSearchParams((result.url.split('#')[1] || '').replace(/^\?/, ''));
       const code = url.searchParams.get('code') || hashParams.get('code');
       if (code) {
-        const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+        const { data: exData, error: exErr } = await supabase.auth.exchangeCodeForSession(code);
         if (exErr) { Alert.alert('Error', exErr.message); return; }
+        if (exData?.session) {
+          saveBiometricSession(exData.session).catch(() => {});
+        }
         navigation.navigate('MainTabs', { screen: 'groups' });
         return;
       }
@@ -163,10 +205,13 @@ export default function SignInScreen({ navigation }) {
       const accessToken = url.searchParams.get('access_token') || hashParams.get('access_token');
       const refreshToken = url.searchParams.get('refresh_token') || hashParams.get('refresh_token');
       if (accessToken) {
-        await supabase.auth.setSession({
+        const { data: setData } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || '',
         });
+        if (setData?.session) {
+          saveBiometricSession(setData.session).catch(() => {});
+        }
         navigation.navigate('MainTabs', { screen: 'groups' });
       }
     } catch (e) {
@@ -193,17 +238,19 @@ export default function SignInScreen({ navigation }) {
       if (error) {
         // Provide specific error messages for common issues
         let errorMessage = error.message;
-        
+
         if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
           errorMessage = 'Please confirm your email address before signing in. Check your inbox for a confirmation email and click the link.';
         } else if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials')) {
           errorMessage = 'Invalid email or password. Please check your credentials and try again. If you just signed up, make sure to confirm your email first.';
         }
-        
+
         Alert.alert(t('auth.signInError'), errorMessage);
       } else {
-        const user = data.user;
-        
+        // Remember the session for biometric login on next launch.
+        if (data?.session) {
+          saveBiometricSession(data.session).catch(() => {});
+        }
         // Navigate to groups page (middle tab) after login
         navigation.navigate('MainTabs', { screen: 'groups' });
       }
